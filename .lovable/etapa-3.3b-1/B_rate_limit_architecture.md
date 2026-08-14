@@ -1,30 +1,27 @@
-# RATE LIMIT ARCHITECTURE (B) — ETAPA 3.3B-1
+# RATE LIMIT ARCHITECTURE (B) — ETAPA 3.3B-1R1
 
-## 1. COMPARAÇÃO DE OPÇÕES
+## 1. CLASSIFICAÇÃO TÉCNICA
+Esta solução é classificada como **Application-layer Distributed Rate Limiting**. Ela protege os recursos da aplicação (Siteverify, RPC, Database) contra abuso, mas não substitui a proteção de rede L3/L4.
 
-| CRITÉRIO | OPÇÃO A (REDIS/KV) | OPÇÃO B (SUPABASE/POSTGRES) | OPÇÃO C (CLOUDFLARE WAF) |
-|---|---|---|---|
-| **Persistente?** | Sim/Não (depende de TTL) | Sim | Não (Camada L7) |
-| **Distribuída?** | Sim | Sim (via DB central) | Sim |
-| **Atomicidade?** | Alta | Alta (via SQL Transactions) | N/A |
-| **Latência** | Muito Baixa (< 5ms) | Média (15-40ms) | Zero (Bloqueio na borda) |
-| **Nova Infra?** | Sim (Upstash/Redis) | Não (Já existente) | Não (Gerenciada) |
-| **Protege Siteverify?** | Sim | Sim | Sim |
-| **Auditoria** | Moderada | Alta (Tabelas SQL) | Baixa (Logs Cloudflare) |
+## 2. ALGORITMO: SLIDING WINDOW COUNTER
+Utilizaremos a técnica de janelas fixas acumuladas para aproximar uma janela deslizante com baixo custo de memória e alta precisão.
 
-## 2. ARQUITETURA ESCOLHIDA: OPÇÃO B (SUPABASE/POSTGRES)
-Dado que o projeto já utiliza Lovable Cloud com Supabase e não possui Redis configurado, a Opção B é a mais robusta, auditável e econômica.
+### Detalhes Matemáticos:
+- **Estrutura**: Buckets de janela fixa (ex: 1 minuto).
+- **Fórmula**: `count = current_window_count + (previous_window_count * (1 - fraction_of_current_window_elapsed))`.
+- **Janelas**: Buckets de 60 segundos.
+- **Atomicidade**: Garantida via procedimento SQL (`av_check_rate_limit`) com transação isolada.
+- **Clock**: `CURRENT_TIMESTAMP` do PostgreSQL.
 
-## 3. ALGORITMO: SLIDING WINDOW LOG (OU COUNTER)
-Utilizaremos um **Sliding Window Counter** simplificado via PostgreSQL para garantir precisão sem a complexidade de logs de timestamps individuais.
+## 3. ESCOPOS E NAMESPACES
+As chaves persistidas seguirão o padrão:
+`HMAC(AV_RATE_LIMIT_HASH_SECRET, "v1:" + SCOPE + ":" + IDENTIFIER)`
 
-## 4. FLUXO DE EXECUÇÃO (SERVER ROUTE)
-1. Receber Request -> Validar Origin/CORS.
-2. Extrair IP via `CF-Connecting-IP`.
-3. Computar `client_hash` usando segredo server-side.
-4. Chamar RPC `av_check_rate_limit(client_hash, endpoint)`.
-5. Se RPC retornar `limited`:
-    - Logar `correlation_id` e `LIMITED`.
-    - Retornar HTTP 429.
-6. Se RPC retornar `ok`:
-    - Seguir para `verifyTurnstileToken()`.
+- **SCOPE 1**: `order:client:burst` (Limites curtos)
+- **SCOPE 2**: `order:client:sustained` (Limites longos)
+- **SCOPE 3**: `order:global:burst` (Proteção coletiva)
+
+## 4. IMPACTO NO POSTGRES E MITIGAÇÃO
+- **Problema**: O bucket global pode gerar uma "hot row" (contenção de linha).
+- **Mitigação**: O bucket global será verificado apenas se o bucket por cliente passar, e usaremos índices eficientes (`bucket_key_hash`) com RLS estrito.
+- **Cleanup**: Os buckets expiram naturalmente via TTL ou cleanup por `expires_at` em tarefas de manutenção.
