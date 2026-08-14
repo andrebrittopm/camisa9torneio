@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAvCreateOrderRoute = ApiPublicAvCreateOrderRouteImport.update({
+  id: '/api/public/av-create-order',
+  path: '/api/public/av-create-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/av-create-order'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/av-create-order'
+  id: '__root__' | '/' | '/api/public/av-create-order'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicAvCreateOrderRoute: typeof ApiPublicAvCreateOrderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/av-create-order': {
+      id: '/api/public/av-create-order'
+      path: '/api/public/av-create-order'
+      fullPath: '/api/public/av-create-order'
+      preLoaderRoute: typeof ApiPublicAvCreateOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicAvCreateOrderRoute: ApiPublicAvCreateOrderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
