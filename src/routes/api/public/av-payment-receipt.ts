@@ -6,7 +6,8 @@ import { createClient } from '@supabase/supabase-js';
  * ETAPA 4.3B — SERVER ROUTE PARA UPLOAD PRIVADO DE COMPROVANTE
  */
 
-const MAX_PAYLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (Arquivo Real)
+const MAX_REQUEST_SIZE = 11 * 1024 * 1024; // 11MB (Request total com overhead multipart)
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
 
 function getAllowedOrigins(request: Request): string[] {
@@ -94,8 +95,8 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
           }
 
           const contentLength = parseInt(request.headers.get('content-length') || '0');
-          if (contentLength > MAX_PAYLOAD_SIZE) {
-            return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE" }), { status: 413, headers: corsHeaders });
+          if (contentLength > MAX_REQUEST_SIZE) {
+            return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders });
           }
 
           // 4. Processar Multipart
@@ -106,28 +107,51 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
             return new Response(JSON.stringify({ error: "FILE_REQUIRED" }), { status: 400, headers: corsHeaders });
           }
 
-          if (!ALLOWED_MIMES.includes(file.type)) {
-            return new Response(JSON.stringify({ error: "UNSUPPORTED_FILE_TYPE" }), { status: 415, headers: corsHeaders });
+          if (file.size > MAX_FILE_SIZE) {
+            return new Response(JSON.stringify({ error: "FILE_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders });
           }
 
-          // 5. Integridade (SHA-256)
+          // 5. Sniffing de Magic Bytes (Autoridade Final sobre MIME)
           const arrayBuffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer.slice(0, 8));
+          let detectedMime = "";
+
+          // JPEG: FF D8 FF
+          if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+            detectedMime = "image/jpeg";
+          }
+          // PNG: 89 50 4E 47 0D 0A 1A 0A
+          else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 && 
+                   bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A) {
+            detectedMime = "image/png";
+          }
+          // PDF: 25 50 44 46 2D
+          else if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2D) {
+            detectedMime = "application/pdf";
+          }
+
+          if (!detectedMime || !ALLOWED_MIMES.includes(detectedMime)) {
+            console.warn(`[AV] correlation=${correlationId} stage=validation code=INVALID_MAGIC_BYTES detected=${detectedMime || 'unknown'}`);
+            return new Response(JSON.stringify({ error: "UNSUPPORTED_FILE_TYPE", correlation_id: correlationId }), { status: 415, headers: corsHeaders });
+          }
+
+          // 6. Integridade (SHA-256)
           const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
           const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-          // 6. Config Supabase Admin
+          // 7. Config Supabase Admin
           const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
           const supabase = createClient(supabaseUrl, supabaseKey);
 
-          // 7. Upload para Storage (Private Bucket)
-          const fileExt = file.type.split('/')[1] || 'bin';
+          // 8. Upload para Storage (Private Bucket)
+          const fileExt = detectedMime.split('/')[1] || 'bin';
           const storagePath = `${orderId}/${submissionId}.${fileExt}`;
 
           const { error: uploadError } = await supabase.storage
             .from('av-payment-receipts')
             .upload(storagePath, arrayBuffer, {
-              contentType: file.type,
+              contentType: detectedMime,
               upsert: true
             });
 
@@ -136,12 +160,12 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
             return new Response(JSON.stringify({ error: "UPLOAD_FAILED", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
           }
 
-          // 8. Registro Atômico na Database via RPC
+          // 9. Registro Atômico na Database via RPC
           const { data: rpcResult, error: rpcError } = await supabase.rpc('av_submit_payment_receipt', {
             p_submission_id: submissionId,
             p_order_id: orderId,
             p_storage_path: storagePath,
-            p_mime_type: file.type,
+            p_mime_type: detectedMime,
             p_size_bytes: file.size,
             p_file_sha256: hashHex
           });

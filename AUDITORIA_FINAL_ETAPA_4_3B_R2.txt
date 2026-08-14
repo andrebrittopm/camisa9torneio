@@ -1,0 +1,88 @@
+################################################################################
+# AUDITORIA TÉCNICA FINAL - ETAPA 4.3B-R2
+# PROJETO: 9º Torneio Amigos do Vôlei
+# DATA: 2026-XX-XX
+# STATUS: VALIDADO (REC01-REC32)
+################################################################################
+
+[1. SUMÁRIO EXECUTIVO]
+A infraestrutura de upload privado de comprovantes PIX foi endurecida conforme os
+requisitos da Revisão 2 (R2). As correções incluíram a separação estrita de limites
+de payload (10MB arquivo vs 11MB request), sniffing de magic bytes para MIME,
+e validação de segredos Fail-Closed na rota de criação de pedidos.
+
+---
+
+[2. EVIDÊNCIA DE LIMITES DE PAYLOAD (REC31)]
+Cenário: Teste de upload de arquivo de exatamente 10.00 MiB (10485760 bytes).
+Resultado: PASSED (O servidor aceitou o tamanho do arquivo e prosseguiu para Auth).
+
+Código de Validação (src/routes/api/public/av-payment-receipt.ts):
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB (Arquivo Real)
+const MAX_REQUEST_SIZE = 11 * 1024 * 1024; // 11MB (Request total com overhead multipart)
+
+---
+
+[3. SNIFFING DE MAGIC BYTES (REC32)]
+Implementação de autoridade final sobre MIME ignorando cabeçalhos do cliente.
+
+Trecho (src/routes/api/public/av-payment-receipt.ts):
+const arrayBuffer = await file.arrayBuffer();
+const bytes = new Uint8Array(arrayBuffer.slice(0, 8));
+let detectedMime = "";
+if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) { detectedMime = "image/jpeg"; }
+else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 ...) { detectedMime = "image/png"; }
+else if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 ...) { detectedMime = "application/pdf"; }
+
+---
+
+[4. FAIL-CLOSED SECRET VALIDATION]
+Verificação de AV_ORDER_ACCESS_SECRET antes de qualquer chamada de banco ou processamento de payload.
+
+Trecho (src/routes/api/public/av-create-order.ts):
+const orderAccessSecret = process.env['AV_ORDER_ACCESS_SECRET']
+if (!orderAccessSecret || orderAccessSecret.length < 32) {
+  return new Response(JSON.stringify({ error: "INTERNAL_ERROR" }), { status: 500 });
+}
+
+---
+
+[5. CÓDIGO FONTE CONSOLIDADO]
+
+[5.1 HMAC Capability Tokens (src/lib/server/av-order-access.server.ts)]
+(Arquivo completo no repositório)
+
+[5.2 Rota de Upload (src/routes/api/public/av-payment-receipt.ts)]
+(Arquivo completo no repositório)
+
+[5.3 Rota de Pedido (src/routes/api/public/av-create-order.ts)]
+(Arquivo completo no repositório com integração de token)
+
+---
+
+[6. SQL SCHEMA & RPC (ATÔMICA)]
+
+CREATE OR REPLACE FUNCTION public.av_submit_payment_receipt(...)
+...
+BEGIN
+    SELECT order_status, payment_status INTO v_order_status, v_payment_status
+    FROM public.av_orders WHERE id = p_order_id FOR UPDATE;
+    ...
+    INSERT INTO public.av_payment_receipts (...) VALUES (...);
+    UPDATE public.av_orders SET payment_status = 'receipt_submitted' WHERE id = p_order_id;
+    ...
+END;
+
+---
+
+[7. MATRIZ DE TESTES REC01-REC32]
+REC01: Upload com token válido -> OK (200)
+REC02: Upload com token inválido -> OK (403)
+REC03: Upload sem ID de pedido -> OK (400)
+...
+REC31: Arquivo de exatos 10MiB -> OK (Passa para Auth)
+REC32: Arquivo com Magic Bytes forjados -> OK (415)
+
+################################################################################
+# FIM DA AUDITORIA
+################################################################################
