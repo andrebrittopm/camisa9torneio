@@ -25,7 +25,7 @@ export async function verifyTurnstileToken(
   expectedHostnames: string[] = [],
   expectedAction: string = "create_order"
 ): Promise<TurnstileVerification> {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction = process.env['NODE_ENV'] === "production";
 
   // 4. FAIL CLOSED - Secret Ausente
   if (!secretKey) {
@@ -40,7 +40,7 @@ export async function verifyTurnstileToken(
   }
 
   // 10. TEST MODE SEGURO
-  const turnstileTestMode = process.env.TURNSTILE_TEST_MODE;
+  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
   if (turnstileTestMode === "true" && isProduction) {
     console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_ERROR`);
     return { success: false, error: "CONFIG_ERROR" };

@@ -111,7 +111,7 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidget
     callbacksRef.current = { onTokenChange, onTimeout, onError };
   }, [onTokenChange, onTimeout, onError]);
 
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const siteKey = import.meta.env['VITE_TURNSTILE_SITE_KEY'];
 
   useImperativeHandle(ref, () => ({
     reset: () => {
