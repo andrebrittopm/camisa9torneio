@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
-import { generateReceiptAccessToken } from '@/lib/server/av-order-access'
+import { generateReceiptAccessToken } from '@/lib/server/av-order-access.server'
 
 
 /**

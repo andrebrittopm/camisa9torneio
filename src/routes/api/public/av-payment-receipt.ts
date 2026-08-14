@@ -1,4 +1,4 @@
-import { verifyReceiptAccessToken } from '@/lib/server/av-order-access';
+import { verifyReceiptAccessToken } from '@/lib/server/av-order-access.server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
