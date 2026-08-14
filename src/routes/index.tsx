@@ -1,4 +1,6 @@
+/** ETAPA 4.2A — CONFIGURADOR E MONTAGEM LOCAL DO PEDIDO IMPLEMENTADOS E VALIDADOS. */
 import { createFileRoute } from '@tanstack/react-router'
+
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
