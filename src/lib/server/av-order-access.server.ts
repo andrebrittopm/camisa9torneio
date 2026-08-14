@@ -9,8 +9,9 @@ import { createHmac } from 'crypto';
  * Gera um token de acesso determinístico para o pedido.
  * v1|receipt-upload|<order_id>
  */
-export async function generateReceiptAccessToken(orderId: string): Promise<string> {
-  const secret = process.env['AV_ORDER_ACCESS_SECRET'];
+export async function generateReceiptAccessToken(orderId: string, secretOverride?: string): Promise<string> {
+  const secret = secretOverride || process.env['AV_ORDER_ACCESS_SECRET'];
+
   
   if (!secret || secret.length < 32) {
     throw new Error('AV_ORDER_ACCESS_SECRET is missing or weak');
@@ -45,8 +46,9 @@ export async function generateReceiptAccessToken(orderId: string): Promise<strin
 /**
  * Valida o token de acesso de forma constant-time.
  */
-export async function verifyReceiptAccessToken(orderId: string, token: string): Promise<boolean> {
-  const secret = process.env['AV_ORDER_ACCESS_SECRET'];
+export async function verifyReceiptAccessToken(orderId: string, token: string, secretOverride?: string): Promise<boolean> {
+  const secret = secretOverride || process.env['AV_ORDER_ACCESS_SECRET'];
+
   
   if (!secret || secret.length < 32) {
     return false;
