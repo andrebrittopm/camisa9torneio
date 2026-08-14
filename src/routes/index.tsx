@@ -1,4 +1,4 @@
-/** ETAPA 4.1A — CATÁLOGO PÚBLICO SERVER-SIDE DO 9º TORNEIO... [APROVADO E INTEGRADO] */
+/** ARTEFATOS REAIS DA ETAPA 4.1A EXPORTADOS PARA AUDITORIA EXTERNA. NENHUMA NOVA ALTERAÇÃO EXECUTADA. */
 import { createFileRoute } from '@tanstack/react-router'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
