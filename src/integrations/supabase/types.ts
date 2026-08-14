@@ -14,7 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      av_events: {
+        Row: {
+          active: boolean
+          created_at: string
+          event_name: string
+          event_number: number
+          event_year: number
+          id: string
+          location: string | null
+          order_deadline: string | null
+          orders_open: boolean
+          pix_holder_name: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          event_name: string
+          event_number: number
+          event_year: number
+          id?: string
+          location?: string | null
+          order_deadline?: string | null
+          orders_open?: boolean
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          event_name?: string
+          event_number?: number
+          event_year?: number
+          id?: string
+          location?: string | null
+          order_deadline?: string | null
+          orders_open?: boolean
+          pix_holder_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      av_order_items: {
+        Row: {
+          created_at: string
+          custom_name: string | null
+          custom_number: string | null
+          custom_size: string | null
+          event_id: string
+          id: string
+          line_total: number | null
+          model_code: string
+          model_name: string
+          order_id: string
+          quantity: number
+          shirt_model_id: string
+          shirt_type: string
+          size_option: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          custom_name?: string | null
+          custom_number?: string | null
+          custom_size?: string | null
+          event_id: string
+          id?: string
+          line_total?: number | null
+          model_code: string
+          model_name: string
+          order_id: string
+          quantity?: number
+          shirt_model_id: string
+          shirt_type: string
+          size_option: string
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          custom_name?: string | null
+          custom_number?: string | null
+          custom_size?: string | null
+          event_id?: string
+          id?: string
+          line_total?: number | null
+          model_code?: string
+          model_name?: string
+          order_id?: string
+          quantity?: number
+          shirt_model_id?: string
+          shirt_type?: string
+          size_option?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_model_event"
+            columns: ["shirt_model_id", "event_id"]
+            isOneToOne: false
+            referencedRelation: "av_shirt_models"
+            referencedColumns: ["id", "event_id"]
+          },
+          {
+            foreignKeyName: "fk_order_event"
+            columns: ["order_id", "event_id"]
+            isOneToOne: false
+            referencedRelation: "av_orders"
+            referencedColumns: ["id", "event_id"]
+          },
+        ]
+      }
+      av_orders: {
+        Row: {
+          created_at: string
+          customer_name: string
+          event_id: string
+          id: string
+          notes: string | null
+          order_seq: number
+          order_status: string
+          payment_status: string
+          subtotal: number
+          total_amount: number
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          event_id: string
+          id?: string
+          notes?: string | null
+          order_seq?: never
+          order_status?: string
+          payment_status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          event_id?: string
+          id?: string
+          notes?: string | null
+          order_seq?: never
+          order_status?: string
+          payment_status?: string
+          subtotal?: number
+          total_amount?: number
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "av_orders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "av_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      av_payment_receipts: {
+        Row: {
+          id: string
+          mime_type: string | null
+          order_id: string
+          original_file_name: string | null
+          review_notes: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string
+        }
+        Insert: {
+          id?: string
+          mime_type?: string | null
+          order_id: string
+          original_file_name?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string
+        }
+        Update: {
+          id?: string
+          mime_type?: string | null
+          order_id?: string
+          original_file_name?: string | null
+          review_notes?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "av_payment_receipts_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "av_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      av_shirt_models: {
+        Row: {
+          active: boolean
+          allow_custom_size: boolean
+          available_sizes: string[]
+          back_image_url: string | null
+          category: string
+          code: string
+          created_at: string
+          event_id: string
+          front_image_url: string | null
+          id: string
+          model_3d_url: string | null
+          name: string
+          sort_order: number
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          allow_custom_size?: boolean
+          available_sizes?: string[]
+          back_image_url?: string | null
+          category: string
+          code: string
+          created_at?: string
+          event_id: string
+          front_image_url?: string | null
+          id?: string
+          model_3d_url?: string | null
+          name: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          allow_custom_size?: boolean
+          available_sizes?: string[]
+          back_image_url?: string | null
+          category?: string
+          code?: string
+          created_at?: string
+          event_id?: string
+          front_image_url?: string | null
+          id?: string
+          model_3d_url?: string | null
+          name?: string
+          sort_order?: number
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "av_shirt_models_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "av_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
