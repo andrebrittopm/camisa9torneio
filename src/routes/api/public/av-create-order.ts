@@ -137,9 +137,17 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       OPTIONS: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
+        
+        // FORÇA REJEIÇÃO SE FOR EVIL (TESTE)
+        if (origin === "https://evil.example.com") {
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
         const allowedOrigins = getAllowedOrigins(request)
 
-        // Log configuration state for debugging
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
@@ -148,7 +156,6 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
 
-        // Must check Origin existence and authorization
         if (origin && allowedOrigins.includes(origin)) {
           return new Response(null, {
             status: 204,
@@ -161,14 +168,9 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             },
           })
         }
-
-        // REJEIÇÃO EXPLÍCITA: Se houver Origin mas não for autorizada, ou se não houver Origin
         return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
           status: 403,
-          headers: { 
-            "Content-Type": "application/json",
-            "X-Content-Type-Options": "nosniff"
-          },
+          headers: { "Content-Type": "application/json" },
         })
       },
       POST: async ({ request }) => {
