@@ -1,3 +1,4 @@
+/** ETAPA 4.1A — CATÁLOGO PÚBLICO SERVER-SIDE DO 9º TORNEIO... [APROVADO E INTEGRADO] */
 import { createFileRoute } from '@tanstack/react-router'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
