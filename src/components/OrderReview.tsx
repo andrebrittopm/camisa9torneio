@@ -46,6 +46,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
         quantity: i.quantity,
         model_name: i.model_name,
         shirt_type: i.category
+      }))
     };
     return JSON.stringify(essentialData);
   }, [eventInfo.id, customer, items]);
@@ -92,6 +93,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
         quantity: i.quantity,
         model_name: i.model_name,
         shirt_type: i.category
+      }))
     };
 
     const { order: orderResult, receiptAccessToken } = await submitAvOrder(payload);
