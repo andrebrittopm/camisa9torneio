@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAvCatalogRoute = ApiPublicAvCatalogRouteImport.update({
+  id: '/api/public/av-catalog',
+  path: '/api/public/av-catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAvCreateOrderRoute = ApiPublicAvCreateOrderRouteImport.update({
@@ -25,27 +31,32 @@ const ApiPublicAvCreateOrderRoute = ApiPublicAvCreateOrderRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/av-create-order'
+  fullPaths: '/' | '/api/public/av-catalog' | '/api/public/av-create-order'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/av-create-order'
-  id: '__root__' | '/' | '/api/public/av-create-order'
+  to: '/' | '/api/public/av-catalog' | '/api/public/av-create-order'
+  id:
+    '__root__' | '/' | '/api/public/av-catalog' | '/api/public/av-create-order'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicAvCatalogRoute: typeof ApiPublicAvCatalogRoute
   ApiPublicAvCreateOrderRoute: typeof ApiPublicAvCreateOrderRoute
 }
 
@@ -56,6 +67,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/av-catalog': {
+      id: '/api/public/av-catalog'
+      path: '/api/public/av-catalog'
+      fullPath: '/api/public/av-catalog'
+      preLoaderRoute: typeof ApiPublicAvCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/av-create-order': {
@@ -70,6 +88,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicAvCatalogRoute: ApiPublicAvCatalogRoute,
   ApiPublicAvCreateOrderRoute: ApiPublicAvCreateOrderRoute,
 }
 export const routeTree = rootRouteImport
