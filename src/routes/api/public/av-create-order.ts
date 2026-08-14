@@ -401,7 +401,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
 
         } catch (err) {
-          console.error(`[AV] correlation=${correlationId} stage=fatal code=INTERNAL_ERROR`)
+          console.error(`[AV] correlation=${correlationId} stage=fatal code=INTERNAL_ERROR error=${err instanceof Error ? err.message : String(err)}`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
             status: 500,
             headers: corsHeaders,
