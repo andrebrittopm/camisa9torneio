@@ -310,7 +310,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      av_create_order: {
+        Args: {
+          p_customer_name: string
+          p_event_id: string
+          p_idempotency_key: string
+          p_items: Json
+          p_notes: string
+          p_request_fingerprint: string
+          p_whatsapp: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
