@@ -1,23 +1,83 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { TurnstileWidget, type TurnstileWidgetHandle } from "./TurnstileWidget";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+/**
+ * ETAPA 3.3A-2A — CUSTOMIZATION PREVIEW INTEGRADO COM TURNSTILE
+ * Nota: Este componente agora atua como o formulário real de pedido.
+ */
 
 export function CustomizationPreview() {
   const [athleteName, setAthleteName] = useState("ANDRÉ");
   const [athleteNumber, setAthleteNumber] = useState("10");
   const [selectedSize, setSelectedSize] = useState("M");
   
+  // Estado Turnstile
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+
   const sizes = ["PP", "P", "M", "G", "GG", "XG", "XXG"];
+
+  const handleOrderSubmit = async () => {
+    if (!turnstileToken) {
+      toast.error("Por favor, valide a proteção anti-bot.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Mock da chamada real
+      // turnstile_token é enviado no JSON
+      // idempotency_key é mantida para retries lógicos
+      const payload = {
+        event_id: "00000000-0000-0000-0000-000000000000", // Placeholder para auditoria
+        customer_name: athleteName,
+        whatsapp: "67999999999",
+        notes: null,
+        idempotency_key: idempotencyKeyRef.current,
+        turnstile_token: turnstileToken,
+        items: [
+          {
+            shirt_model_id: "00000000-0000-0000-0000-000000000000",
+            size_option: selectedSize,
+            quantity: 1,
+            custom_name: athleteName,
+            custom_number: athleteNumber
+          }
+        ]
+      };
+
+      console.log("[AV] Enviando pedido...", payload);
+      
+      // Simulação de delay
+      await new Promise(r => setTimeout(r, 1000));
+      
+      toast.info("A criação real de pedidos será habilitada na próxima etapa.");
+
+    } catch (error) {
+      toast.error("Erro ao processar pedido.");
+    } finally {
+      // 14. RESET APÓS SUBMIT
+      setIsSubmitting(false);
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
+    }
+  };
 
   return (
     <section id="pedido" className="py-24 relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-0 right-0 w-1/2 h-full bg-royal/5 blur-[120px] rounded-full pointer-events-none" />
       
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Mockup Preview Area */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -26,22 +86,18 @@ export function CustomizationPreview() {
           >
              <div className="absolute inset-0 bg-grid-tech opacity-10" />
              
-             {/* Product Stage in Preview */}
              <div className="relative z-10 w-full h-full border border-dashed border-ice/10 rounded-3xl flex flex-col items-center justify-center group">
-                {/* Silhouette with personalization */}
                 <div className="relative w-48 h-72 md:w-56 md:h-80 flex flex-col items-center justify-center transition-transform duration-500 group-hover:scale-105">
                   <svg viewBox="0 0 60 100" className="absolute inset-0 w-full h-full text-ice/5 fill-current drop-shadow-2xl">
                     <path d="M30 0C10 0 0 10 0 30V80H10V95H50V80H60V30C60 10 50 0 30 0Z" />
                   </svg>
                   
-                  {/* Name on shirt */}
                   <div className="absolute top-[35%] w-full text-center px-4 overflow-hidden">
                     <span className="text-ice font-heading font-black uppercase text-[10px] md:text-xs tracking-[0.3em] block truncate drop-shadow-md">
                       {athleteName || "SEU NOME"}
                     </span>
                   </div>
                   
-                  {/* Number on shirt */}
                   <div className="absolute top-[45%] w-full text-center">
                     <span className="text-gold font-heading font-black text-6xl md:text-8xl leading-none drop-shadow-lg">
                       {athleteNumber || "00"}
@@ -55,7 +111,6 @@ export function CustomizationPreview() {
                 </div>
              </div>
              
-             {/* Floating UI Badge */}
              <div className="absolute top-8 left-8 flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center border border-gold/20">
                   <span className="text-gold text-xs font-black">09</span>
@@ -64,7 +119,6 @@ export function CustomizationPreview() {
              </div>
           </motion.div>
 
-          {/* Form UI */}
           <div className="flex flex-col">
             <div className="mb-10 text-center lg:text-left">
               <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] mb-4 block">Exclusividade</span>
@@ -118,11 +172,30 @@ export function CustomizationPreview() {
                 </div>
               </div>
 
+              {/* Integração Turnstile */}
+              <div className="py-2 border-t border-white/5">
+                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-4 block">Verificação de Segurança</Label>
+                <TurnstileWidget 
+                  ref={turnstileRef}
+                  onTokenChange={setTurnstileToken}
+                  onError={() => toast.error("Erro na validação de segurança.")}
+                />
+              </div>
+
+              <Button
+                size="lg"
+                className="w-full h-18 text-lg font-black uppercase tracking-widest glow-gold rounded-2xl active:scale-[0.98] transition-all"
+                disabled={!turnstileToken || isSubmitting || !athleteName.trim() || !athleteNumber.trim()}
+                onClick={handleOrderSubmit}
+              >
+                {isSubmitting ? "Processando..." : "Reservar Agora"}
+              </Button>
+
               <div className="pt-2">
                 <div className="flex items-start gap-4 p-5 rounded-2xl bg-royal/10 border border-royal/20">
                   <div className="mt-1 w-2 h-2 rounded-full bg-gold animate-pulse shrink-0" />
                   <p className="text-ice/50 text-[10px] font-bold uppercase tracking-[0.15em] leading-relaxed">
-                    Personalização local para demonstração visual. Seus dados serão salvos somente no momento da reserva oficial.
+                    Sua reserva será processada de forma segura. O pagamento será combinado após a confirmação do pedido.
                   </p>
                 </div>
               </div>
@@ -133,6 +206,3 @@ export function CustomizationPreview() {
     </section>
   );
 }
-
-// Helper for cn (already defined in project, but locally for this file if needed)
-import { cn } from "@/lib/utils";
