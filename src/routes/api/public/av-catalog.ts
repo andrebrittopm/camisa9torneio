@@ -19,7 +19,7 @@ const EventSchema = z.object({
   event_year: z.number().int(),
   event_name: z.string().min(1),
   location: z.string().min(1),
-  unit_price: z.number().positive(),
+  unit_price: z.number().finite().nonnegative(),
   orders_open: z.boolean(),
   order_deadline: z.string().datetime({ offset: true }).nullable(),
   active: z.boolean(),
@@ -107,20 +107,38 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
           // 1. Consulta do Evento
-          const { data: eventRow, error: eventError } = await supabase
+          const { data: eventRows, error: eventError } = await supabase
             .from('av_events')
-            .select('*')
+            .select('id, event_number, event_year, event_name, location, unit_price, orders_open, order_deadline, active')
             .eq('event_number', TARGET_EVENT_NUMBER)
             .eq('event_year', TARGET_EVENT_YEAR)
             .eq('active', true)
-            .single()
 
-          if (eventError || !eventRow) {
+          if (eventError) {
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_event code=QUERY_ERROR`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers,
+            })
+          }
+
+          if (!eventRows || eventRows.length === 0) {
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_event code=NOT_FOUND`)
             return new Response(JSON.stringify({ error: "CATALOG_NOT_AVAILABLE", correlation_id: correlationId }), {
               status: 404,
               headers,
             })
           }
+
+          if (eventRows.length > 1) {
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_event code=DATA_INTEGRITY_ERROR context=multiple_events`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers,
+            })
+          }
+
+          const eventRow = eventRows[0]
 
           // Validar dados do evento
           let validatedEvent: EventData
@@ -137,13 +155,22 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // 3. Consulta dos Modelos
           const { data: modelRows, error: modelsError } = await supabase
             .from('av_shirt_models')
-            .select('*')
+            .select('id, code, name, category, front_image_url, model_3d_url, available_sizes, allow_custom_size, sort_order')
             .eq('event_id', validatedEvent.id)
             .eq('active', true)
             .order('sort_order', { ascending: true })
             .order('code', { ascending: true })
 
-          if (modelsError || !modelRows || modelRows.length === 0) {
+          if (modelsError) {
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_models code=QUERY_ERROR`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers,
+            })
+          }
+
+          if (!modelRows || modelRows.length === 0) {
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_models code=NOT_FOUND`)
             return new Response(JSON.stringify({ error: "CATALOG_NOT_AVAILABLE", correlation_id: correlationId }), {
               status: 404,
               headers,
