@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,24 +6,32 @@ import { Button } from "@/components/ui/button";
 import { TurnstileWidget, type TurnstileWidgetHandle } from "./TurnstileWidget";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
 
 /**
  * ETAPA 3.3A-2A — CUSTOMIZATION PREVIEW INTEGRADO COM TURNSTILE
  * Nota: Este componente agora atua como o formulário real de pedido.
  */
 
-export function CustomizationPreview() {
+export function CustomizationPreview({
+  selectedModel,
+  eventInfo
+}: {
+  selectedModel: AvShirtModel | null;
+  eventInfo: AvCatalogEvent;
+}) {
   const [athleteName, setAthleteName] = useState("ANDRÉ");
   const [athleteNumber, setAthleteNumber] = useState("10");
   const [selectedSize, setSelectedSize] = useState("M");
   
-  // Estado Turnstile
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
-  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  const formattedPrice = useMemo(() => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(eventInfo.unit_price);
+  }, [eventInfo.unit_price]);
 
-  const sizes = ["PP", "P", "M", "G", "GG", "XG", "XXG"];
+  const sizes = selectedModel?.available_sizes || [];
 
   const handleOrderSubmit = async () => {
     if (!turnstileToken) {
@@ -87,6 +95,14 @@ export function CustomizationPreview() {
              <div className="absolute inset-0 bg-grid-tech opacity-10" />
              
              <div className="relative z-10 w-full h-full border border-dashed border-ice/10 rounded-3xl flex flex-col items-center justify-center group">
+                {selectedModel?.image_url ? (
+                  <img 
+                    src={selectedModel.image_url} 
+                    alt={selectedModel.name}
+                    className="absolute inset-0 w-full h-full object-contain p-8 opacity-20"
+                  />
+                ) : null}
+                
                 <div className="relative w-48 h-72 md:w-56 md:h-80 flex flex-col items-center justify-center transition-transform duration-500 group-hover:scale-105">
                   <svg viewBox="0 0 60 100" className="absolute inset-0 w-full h-full text-ice/5 fill-current drop-shadow-2xl">
                     <path d="M30 0C10 0 0 10 0 30V80H10V95H50V80H60V30C60 10 50 0 30 0Z" />
@@ -113,7 +129,7 @@ export function CustomizationPreview() {
              
              <div className="absolute top-8 left-8 flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center border border-gold/20">
-                  <span className="text-gold text-xs font-black">09</span>
+                  <span className="text-gold text-xs font-black">{eventInfo.event_number.toString().padStart(2, '0')}</span>
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-ice/40">Configurador v1.0</span>
              </div>
@@ -123,11 +139,22 @@ export function CustomizationPreview() {
             <div className="mb-10 text-center lg:text-left">
               <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px] mb-4 block">Exclusividade</span>
               <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-6 tracking-tighter">
-                Faça do seu jeito
+                {selectedModel?.name || "Faça do seu jeito"}
               </h2>
-              <p className="text-ice/60 text-lg leading-relaxed max-w-xl">
-                Personalize cada detalhe técnico da sua armadura. Nome, número e o ajuste perfeito para sua performance em quadra.
-              </p>
+              <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                <p className="text-ice/60 text-lg leading-relaxed max-w-xl">
+                  Personalize sua armadura oficial para o {eventInfo.event_name}.
+                </p>
+                <div className="bg-gold/10 px-6 py-2 rounded-full border border-gold/20 shrink-0">
+                  <span className="text-gold font-black text-2xl">{formattedPrice}</span>
+                </div>
+              </div>
+              {selectedModel?.allow_custom_size && sizes.includes('OUTRO') && (
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-royal/20 border border-royal/30 rounded-lg mb-4">
+                  <div className="w-1.5 h-1.5 bg-royal-light rounded-full animate-pulse" />
+                  <span className="text-[9px] font-black text-royal-light uppercase tracking-widest">Tamanho personalizado disponível</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-10 bg-white/[0.02] backdrop-blur-xl p-10 rounded-[32px] border border-white/5 shadow-2xl">
@@ -184,11 +211,17 @@ export function CustomizationPreview() {
 
               <Button
                 size="lg"
-                className="w-full h-18 text-lg font-black uppercase tracking-widest glow-gold rounded-2xl active:scale-[0.98] transition-all"
-                disabled={!turnstileToken || isSubmitting || !athleteName.trim() || !athleteNumber.trim()}
+                className={cn(
+                  "w-full h-18 text-lg font-black uppercase tracking-widest rounded-2xl active:scale-[0.98] transition-all",
+                  eventInfo.orders_available ? "glow-gold" : "bg-slate-800 text-slate-500 cursor-not-allowed opacity-50"
+                )}
+                disabled={!eventInfo.orders_available || !turnstileToken || isSubmitting || !athleteName.trim() || !athleteNumber.trim()}
                 onClick={handleOrderSubmit}
               >
-                {isSubmitting ? "Processando..." : "Reservar Agora"}
+                {eventInfo.orders_available 
+                  ? (isSubmitting ? "Processando..." : "Reservar Agora")
+                  : "Pedidos Encerrados"
+                }
               </Button>
 
               <div className="pt-2">
