@@ -77,7 +77,7 @@ export async function verifyTurnstileToken(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        secret: secretKey,
+        secret: finalSecret,
         response: token,
         // Gerar UUID própria para Siteverify
         idempotency_key: crypto.randomUUID(),
