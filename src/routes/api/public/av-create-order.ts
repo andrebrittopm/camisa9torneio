@@ -128,6 +128,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
         const origin = request.headers.get("origin")
         const allowedOrigins = getAllowedOrigins(request)
 
+        // Log configuration state for debugging
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
@@ -136,6 +137,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
 
+        // Must check Origin existence and authorization
         if (origin && allowedOrigins.includes(origin)) {
           return new Response(null, {
             status: 204,
@@ -143,13 +145,19 @@ export const Route = createFileRoute('/api/public/av-create-order')({
               "Access-Control-Allow-Origin": origin,
               "Access-Control-Allow-Methods": "POST, OPTIONS",
               "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+              "Access-Control-Max-Age": "86400",
               "Vary": "Origin"
             },
           })
         }
+
+        // REJEIÇÃO EXPLÍCITA: Se houver Origin mas não for autorizada, ou se não houver Origin
         return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
           status: 403,
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Content-Type-Options": "nosniff"
+          },
         })
       },
       POST: async ({ request }) => {
