@@ -104,14 +104,29 @@ function isValidRpcData(value: unknown): value is {
   );
 }
 
+// Origens permitidas: lista explícita via ALLOWED_ORIGINS + a própria origem do site (same-origin).
+function getAllowedOrigins(request: Request): string[] {
+  const fromEnv = (process.env['ALLOWED_ORIGINS'] || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+  let selfOrigin = ''
+  try {
+    selfOrigin = new URL(request.url).origin
+  } catch {
+    selfOrigin = ''
+  }
+  return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
+}
+
+
 export const Route = createFileRoute('/api/public/av-create-order')({
   server: {
     handlers: {
       OPTIONS: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
 
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
@@ -140,8 +155,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       POST: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
 
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
@@ -378,8 +392,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       GET: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
@@ -391,8 +404,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       PUT: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
@@ -404,8 +416,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       PATCH: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
@@ -417,8 +428,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       DELETE: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
