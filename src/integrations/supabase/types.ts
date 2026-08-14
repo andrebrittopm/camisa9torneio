@@ -243,6 +243,36 @@ export type Database = {
           },
         ]
       }
+      av_rate_limit_buckets: {
+        Row: {
+          bucket_key_hash: string
+          created_at: string
+          expires_at: string
+          last_refill_at: string
+          scope: string
+          tokens: number
+          updated_at: string
+        }
+        Insert: {
+          bucket_key_hash: string
+          created_at?: string
+          expires_at: string
+          last_refill_at: string
+          scope: string
+          tokens: number
+          updated_at?: string
+        }
+        Update: {
+          bucket_key_hash?: string
+          created_at?: string
+          expires_at?: string
+          last_refill_at?: string
+          scope?: string
+          tokens?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       av_shirt_models: {
         Row: {
           active: boolean
@@ -310,6 +340,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      av_check_rate_limits: { Args: { p_specs: Json }; Returns: Json }
+      av_cleanup_rate_limit_buckets: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
       av_create_order: {
         Args: {
           p_customer_name: string
