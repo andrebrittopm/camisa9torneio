@@ -219,7 +219,16 @@ function Index() {
                 order={createdOrder}
                 catalog={catalog}
                 localItems={items}
+                receiptAccessToken={receiptAccessToken}
+                onStatusUpdate={(pStatus, rStatus) => {
+                  setCreatedOrder((prev: any) => ({
+                    ...prev,
+                    payment_status: pStatus,
+                    review_status: rStatus
+                  }));
+                }}
                 onNewOrder={() => {
+
                   if (confirm("Deseja iniciar um novo pedido?")) {
                     handleClearAll();
                     setCreatedOrder(null);

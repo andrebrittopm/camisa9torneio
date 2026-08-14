@@ -1,20 +1,25 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, Copy, Share2, PlusCircle, Check } from "lucide-react";
+import { CheckCircle2, Copy, Share2, PlusCircle, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import type { AvCreateOrderResponse } from "@/lib/av-order-client";
 import type { AvCatalogResponse } from "@/lib/av-catalog-client";
 import type { OrderItem } from "@/lib/order-state";
 import { OrderItemsSummary } from "./OrderItemsSummary";
 import { OrderPayment } from "./OrderPayment";
+import { ReceiptUpload } from "./ReceiptUpload";
+
 
 interface OrderSuccessProps {
   order: AvCreateOrderResponse;
   catalog: AvCatalogResponse['data'];
   localItems: OrderItem[];
   onNewOrder: () => void;
+  receiptAccessToken?: string | null;
+  onStatusUpdate?: (paymentStatus: string, reviewStatus: string) => void;
 }
+
 
 const ORDER_STATUS_MAP: Record<string, string> = {
   received: "PEDIDO RECEBIDO",
@@ -32,7 +37,7 @@ const PAYMENT_STATUS_MAP: Record<string, string> = {
   receipt_rejected: "COMPROVANTE NÃO APROVADO",
 };
 
-export function OrderSuccess({ order, catalog, localItems, onNewOrder }: OrderSuccessProps) {
+export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAccessToken, onStatusUpdate }: OrderSuccessProps) {
   const [copied, setCopied] = useState(false);
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -100,9 +105,31 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder }: OrderSu
       {/* Main Order Card */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3 space-y-12">
-          {order.payment_status === "awaiting_payment" && (
-            <OrderPayment totalAmount={order.total_amount || 0} />
+          {(order.payment_status === "awaiting_payment" || order.payment_status === "receipt_rejected") && (
+            <div className="space-y-12">
+              <OrderPayment totalAmount={order.total_amount || 0} />
+              {receiptAccessToken && order.order_id && (
+                <ReceiptUpload 
+                  orderId={order.order_id}
+                  receiptAccessToken={receiptAccessToken}
+                  currentPaymentStatus={order.payment_status}
+                  onSuccess={(pStatus, rStatus) => {
+                    onStatusUpdate?.(pStatus, rStatus);
+                  }}
+                />
+              )}
+            </div>
           )}
+
+          {order.payment_status === "receipt_submitted" && (
+             <ReceiptUpload 
+                orderId={order.order_id || ''}
+                receiptAccessToken={receiptAccessToken || ''}
+                currentPaymentStatus={order.payment_status}
+                onSuccess={() => {}}
+             />
+          )}
+
           
           <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 rounded-[48px] overflow-hidden">
             <div className="p-8 md:p-12 space-y-12">
