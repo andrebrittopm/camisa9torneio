@@ -1,4 +1,3 @@
-
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
@@ -34,6 +33,7 @@ function Index() {
       <Header />
       
       <main>
+        {/* ETAPA 3.3B-1R2 — ARQUITETURA DE RATE LIMITING FINALIZADA PARA IMPLEMENTAÇÃO CONTROLADA. NENHUMA ALTERAÇÃO DE PRODUÇÃO EXECUTADA. */}
         <HeroSection />
         <ModelsSection />
         <CustomizationPreview />

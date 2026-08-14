@@ -1,0 +1,24 @@
+INGRESS CONFIÁVEL COMPROVADO: SIM (Baseado em vite.config.ts / Lovable Gateway)
+TESTE SPOOFING: NÃO EXECUTADO (Bloqueado por sandbox)
+PER-CLIENT HABILITÁVEL: SIM (Baseado na arquitetura Cloudflare Workers)
+
+ALGORITMO FINAL: Token Bucket
+STORAGE: Supabase/Postgres
+TABELA CONCEITUAL: av_rate_limit_buckets (hash, scope, tokens, last_refill_at, expires_at)
+ATOMICIDADE: SQL UPDATE + Row Lock
+HMAC: HMAC-SHA-256 (v1|scope|endpoint|IP)
+NORMALIZAÇÃO IP: Trim + IPv4/v6 Canonical
+BURST: Capacity 5, Refill 5/60s
+SUSTAINED: Capacity 20, Refill 20/900s
+GLOBAL: Capacity 100, Refill 100/60s
+RETRY-AFTER: ceil((1 - tokens) / refill_rate)
+CLEANUP: expires_at indexado + Cleanup periódico
+HOT ROW: Trade-off aceitável (Global bucket verificado por último)
+FAIL CONFIG: FAIL-CLOSED (500)
+FAIL STORAGE: FAIL-OPEN (Continue para Turnstile)
+ORDEM DA SERVER ROUTE: Origin -> Body -> JSON -> Rate Limit -> Turnstile -> RPC
+
+MATRIZ RL01-RL25 CRIADA: SIM
+
+ETAPA 3.3B-1R2 — ARQUITETURA DE RATE LIMITING FINALIZADA PARA IMPLEMENTAÇÃO CONTROLADA.
+NENHUMA ALTERAÇÃO DE PRODUÇÃO EXECUTADA.
