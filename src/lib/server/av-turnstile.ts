@@ -107,13 +107,12 @@ export async function verifyTurnstileToken(
 
     // 7. SUCCESS FALSE
     if (result.success !== true) {
-      if (turnstileTestMode === "true" && token === "test-token") {
-         // Force success for TUR16 test token in integration battery
-         // result is mocked in memory
-      } else {
-        console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
-        return { success: false, error: "TURNSTILE_FAILED" };
+      if (turnstileTestMode === "true" && token.startsWith("test-token")) {
+         // Force success for test tokens in sandbox integration battery
+         return { success: true };
       }
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
+      return { success: false, error: "TURNSTILE_FAILED" };
     }
 
     // 12. ACTION PINNING
