@@ -33,7 +33,7 @@ export async function verifyTurnstileToken(
 
   if (!finalSecret) {
     if (turnstileTestMode === "true" && !isProduction) {
-      finalSecret = process.env['TURNSTILE_SECRET_KEY'];
+      finalSecret = process.env['TURNSTILE_SECRET_KEY'] || "1x0000000000000000000000000000000AA";
     }
   }
 
