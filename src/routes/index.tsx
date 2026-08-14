@@ -82,6 +82,7 @@ function Index() {
 
   const isContinueEnabled = customer.name.trim() !== '' && 
     customer.whatsapp.replace(/\D/g, '').length >= 10 && 
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email) &&
     items.length > 0 && 
     catalog?.event.orders_available === true;
 

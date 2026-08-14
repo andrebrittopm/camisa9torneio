@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
 import { generateReceiptAccessToken } from '@/lib/server/av-order-access.server'
+import { sendOrderConfirmationEmail } from '@/lib/server/av-email.server'
 
 
 /**
@@ -16,6 +17,7 @@ const ALLOWED_FIELDS = [
   'event_id',
   'customer_name',
   'whatsapp',
+  'customer_email',
   'notes',
   'idempotency_key',
   'items',
@@ -42,6 +44,8 @@ const ITEM_ALLOWED_FIELDS = [
   'custom_name',
   'custom_number',
   'quantity',
+  'model_name', // Adicionado para e-mail transacional
+  'shirt_type', // Adicionado para e-mail transacional
 ]
 
 const ITEM_PROHIBITED_FIELDS = [
@@ -263,7 +267,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          const { event_id, customer_name, whatsapp, notes, idempotency_key, items, turnstile_token } = payload
+          const { event_id, customer_name, whatsapp, customer_email, notes, idempotency_key, items, turnstile_token } = payload
 
           // 6. event_id UUID
           if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
@@ -279,6 +283,13 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           // 10. whatsapp
           if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          
+          // 10.1 customer_email (Etapa 4.3C)
+          const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (typeof customer_email !== "string" || !EMAIL_REGEX.test(customer_email)) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+          
           // 11. notes
           if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
 
@@ -298,7 +309,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             if (itemKeys.some(k => !ITEM_ALLOWED_FIELDS.includes(k) || ITEM_PROHIBITED_FIELDS.includes(k))) {
               return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             }
-            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
+            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity, model_name, shirt_type } = item
             // 16. shirt_model_id UUID
             if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             // 17. size_option
@@ -309,7 +320,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             }
             // 19. custom_size/custom_name/custom_number
             const validateOptionalString = (v: any) => (v === undefined || v === null || typeof v === "string")
-            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number)) {
+            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number) || !validateOptionalString(model_name) || !validateOptionalString(shirt_type)) {
               return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             }
             validatedItems.push({
@@ -318,7 +329,9 @@ export const Route = createFileRoute('/api/public/av-create-order')({
               custom_size: custom_size === undefined ? null : custom_size,
               custom_name: custom_name === undefined ? null : custom_name,
               custom_number: custom_number === undefined ? null : custom_number,
-              quantity
+              quantity,
+              model_name: model_name || 'Modelo',
+              shirt_type: shirt_type || 'tshirt'
             })
           }
 
@@ -382,8 +395,8 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           // 22. fingerprint (Excludes turnstile_token)
           const sortedItems = [...validatedItems].sort((a, b) => {
-            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
-            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
+            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity, a.model_name, a.shirt_type])
+            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity, b.model_name, b.shirt_type])
             return keyA.localeCompare(keyB)
           })
 
@@ -391,6 +404,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             event_id,
             customer_name: customer_name.trim(),
             whatsapp: whatsapp.trim(),
+            customer_email: customer_email.trim(),
             notes: notes === undefined ? null : notes,
             items: sortedItems
           }
@@ -420,10 +434,11 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             p_event_id: event_id,
             p_customer_name: customer_name.trim(),
             p_whatsapp: whatsapp.trim(),
+            p_customer_email: customer_email.trim(),
             p_notes: notes === undefined ? null : notes,
             p_idempotency_key: idempotency_key,
             p_request_fingerprint: fingerprint,
-            p_items: sortedItems as any
+            p_items: sortedItems.map(({ model_name, shirt_type, ...rest }) => rest) as any
           })
 
           if (error) {
@@ -460,6 +475,28 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           // 25. Generate Receipt Access Token (deterministically from order_id)
           const receiptAccessToken = await generateReceiptAccessToken(rpcData.order_id)
+
+          // 26. Disparar E-mail (Async Fire-and-Forget)
+          if (!rpcData.is_duplicate) {
+            const successUrl = `${origin}/?view=success&order_id=${rpcData.order_id}&token=${receiptAccessToken}`;
+            
+            sendOrderConfirmationEmail(customer_email.trim(), {
+              order_number: rpcData.display_order_number,
+              customer_name: rpcData.customer_name,
+              total_amount: rpcData.total_amount,
+              items: sortedItems.map(item => ({
+                model_name: item.model_name || 'Modelo de Camisa', // Fallback se não vier no payload
+                shirt_type: item.shirt_type || 'tshirt',
+                size_option: item.size_option,
+                custom_name: item.custom_name,
+                custom_number: item.custom_number,
+                quantity: item.quantity
+              })),
+              success_url: successUrl
+            }, correlationId).catch(err => {
+              console.error(`[AV] correlation=${correlationId} stage=email code=ASYNC_FAILED error=${err}`);
+            });
+          }
 
           return new Response(JSON.stringify({
             success: true,

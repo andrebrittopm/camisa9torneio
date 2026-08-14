@@ -35,6 +35,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
       event_id: eventInfo.id,
       customer_name: customer.name,
       whatsapp: customer.whatsapp,
+      customer_email: customer.email,
       notes: customer.notes || null,
       items: items.map(i => ({
         shirt_model_id: i.shirt_model_id,
@@ -42,7 +43,9 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
         custom_size: i.size_option === 'OUTRO' ? i.custom_size : null,
         custom_name: i.custom_name || null,
         custom_number: i.custom_number || null,
-        quantity: i.quantity
+        quantity: i.quantity,
+        model_name: i.model_name,
+        shirt_type: i.category
       }))
     };
     return JSON.stringify(essentialData);
@@ -77,6 +80,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
       event_id: eventInfo.id,
       customer_name: customer.name,
       whatsapp: customer.whatsapp,
+      customer_email: customer.email,
       notes: customer.notes || null,
       idempotency_key: currentKey,
       turnstile_token: turnstileToken,
@@ -86,7 +90,9 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
         custom_size: i.size_option === 'OUTRO' ? i.custom_size : null,
         custom_name: i.custom_name || null,
         custom_number: i.custom_number || null,
-        quantity: i.quantity
+        quantity: i.quantity,
+        model_name: i.model_name,
+        shirt_type: i.category
       }))
     };
 
@@ -162,6 +168,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
             <div className="space-y-4">
               <LabelReview label="Nome" value={customer.name} />
               <LabelReview label="WhatsApp" value={customer.whatsapp} />
+              <LabelReview label="E-mail" value={customer.email} />
               {customer.notes && (
                 <LabelReview label="Observações" value={customer.notes} />
               )}
