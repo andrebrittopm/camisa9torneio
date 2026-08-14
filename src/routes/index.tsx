@@ -1,6 +1,4 @@
-/** ETAPA 4.2C — CONFIRMAÇÃO OFICIAL DO PEDIDO + WHATSAPP */
 import { createFileRoute } from '@tanstack/react-router'
-
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
@@ -12,7 +10,7 @@ import { Footer } from '@/components/Footer'
 import { fetchAvCatalog, type AvCatalogResponse, type AvShirtModel } from '@/lib/av-catalog-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCcw, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Loader2, RefreshCcw, ArrowRight } from 'lucide-react'
 import { useOrderState } from '@/lib/order-state'
 import { OrderConfigurator } from '@/components/OrderConfigurator'
 import { CustomerDataForm } from '@/components/CustomerDataForm'
@@ -43,14 +41,12 @@ function Index() {
     removeItem,
     updateItem,
     clearOrder,
-    setItems
   } = useOrderState();
 
   const handleClearAll = useCallback(() => {
     clearOrder();
     setReceiptAccessToken(null);
   }, [clearOrder]);
-
 
   const loadCatalog = useCallback(async () => {
     setIsLoading(true)
@@ -134,7 +130,6 @@ function Index() {
                         eventInfo={catalog.event}
                         customName={editingItem?.custom_name ?? null}
                         customNumber={editingItem?.custom_number ?? null}
-
                       />
                       
                       <div className="space-y-12">
@@ -229,7 +224,6 @@ function Index() {
                   }));
                 }}
                 onNewOrder={() => {
-
                   if (confirm("Deseja iniciar um novo pedido?")) {
                     handleClearAll();
                     setCreatedOrder(null);
@@ -241,7 +235,6 @@ function Index() {
             )}
           </div>
         )}
-
       </main>
       <Footer />
     </div>
