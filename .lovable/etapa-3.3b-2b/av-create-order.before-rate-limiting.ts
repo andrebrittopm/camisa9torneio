@@ -1,10 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
-import { checkRateLimit } from '@/lib/server/av-rate-limit'
 
 /**
- * ETAPA 3.3B-2B — TANSTACK SERVER ROUTE INTEGRADA COM TURNSTILE E RATE LIMITING
+ * ETAPA 3.3A-2A — TANSTACK SERVER ROUTE INTEGRADA COM TURNSTILE
  */
 
 const MAX_BODY_BYTES = 64 * 1024 // 64 KB
@@ -309,36 +308,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          // 20. RATE LIMITING
-          try {
-            const rlResult = await checkRateLimit(request, correlationId)
-            
-            if (!rlResult.allowed) {
-              console.warn(`[AV] correlation=${correlationId} stage=rate_limit code=DENY`)
-              return new Response(JSON.stringify({ 
-                error: "RATE_LIMITED", 
-                correlation_id: correlationId 
-              }), { 
-                status: 429, 
-                headers: {
-                  ...corsHeaders,
-                  "Retry-After": rlResult.retry_after_seconds.toString()
-                } 
-              })
-            }
-          } catch (err: any) {
-            // Fail-Closed para erros de config/hardened SQLSTATE
-            console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=FAIL_CLOSED`)
-            return new Response(JSON.stringify({ 
-              error: "INTERNAL_ERROR", 
-              correlation_id: correlationId 
-            }), { 
-              status: 500, 
-              headers: corsHeaders 
-            })
-          }
-
-          // 21. TURNSTILE Siteverify (Só ocorre se permitido pelo Rate Limit ou Fail-Open)
+          // 20. SOMENTE AGORA Siteverify
           const turnstileSecret = process.env['TURNSTILE_SECRET_KEY'] || "1x0000000000000000000000000000000AA"
           const expectedHostnames = (process.env['TURNSTILE_EXPECTED_HOSTNAMES'] || '')
             .split(',')
@@ -367,7 +337,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             return new Response(JSON.stringify({ error, correlation_id: correlationId }), { status, headers: corsHeaders })
           }
 
-          // 22. fingerprint (Excludes turnstile_token)
+          // 21. fingerprint (Excludes turnstile_token)
           const sortedItems = [...validatedItems].sort((a, b) => {
             const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
             const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
@@ -389,7 +359,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             .map(b => b.toString(16).padStart(2, "0"))
             .join("")
 
-          // 23. secrets Supabase
+          // 22. secrets Supabase
           const supabaseUrl = process.env['SUPABASE_URL']
           const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
 
@@ -401,7 +371,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          // 24. RPC (Service Role)
+          // 23. RPC (Service Role)
           const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
           const { data, error } = await supabaseAdmin.rpc("av_create_order", {
             p_event_id: event_id,
