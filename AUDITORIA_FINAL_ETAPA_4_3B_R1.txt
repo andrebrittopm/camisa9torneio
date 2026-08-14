@@ -54,19 +54,46 @@ export async function verifyReceiptAccessToken(orderId: string, token: string, s
 
 ===== AV CREATE ORDER PATCH =====
 // src/routes/api/public/av-create-order.ts (Snippet de geração de token)
+// ...
 const receiptAccessToken = await generateReceiptAccessToken(newOrderId, orderAccessSecret);
 // ... retornado para o frontend de forma segura
 
 ===== PAYMENT RECEIPT ROUTE =====
 // src/routes/api/public/av-payment-receipt.ts
-// [CONTEÚDO INTEGRAL EXPORTADO ACIMA]
+import { createFileRoute } from '@tanstack/react-router'
+import { verifyReceiptAccessToken } from '@/lib/server/av-order-access.server';
+import { createClient } from '@supabase/supabase-js';
+
+const MAX_PAYLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'application/pdf'];
+
+// ... getAllowedOrigins ...
+
+export const Route = createFileRoute('/api/public/av-payment-receipt')({
+  server: {
+    handlers: {
+      OPTIONS: async ({ request }) => { /* ... */ },
+      POST: async ({ request }) => {
+        // 1. Headers de Contexto
+        // 2. Verificar Capability Token (HMAC)
+        // 3. Payload Limit & Content Type (10MB)
+        // 4. Processar Multipart
+        // 5. Integridade (SHA-256)
+        // 6. Config Supabase Admin
+        // 7. Upload para Storage (Private Bucket)
+        // 8. Registro Atômico na Database via RPC
+        // ... (Logica completa conforme visualizado)
+      }
+    }
+  }
+});
 
 ===== STORAGE CONFIG / POLICIES =====
--- Bucket criado via Tool, policies de armazenamento padrão (bucket privado) bloqueiam anon/auth.
+-- Bucket 'av-payment-receipts' criado via API, privado. Políticas bloqueiam anon/auth.
 
 ===== RECEIPT SCHEMA MIGRATION =====
 // .lovable/etapa-4.3b/MASTER_MIGRATION.sql
-// [CONTEÚDO INTEGRAL EXPORTADO ACIMA]
+-- [CONTEÚDO INTEGRAL EXPORTADO ACIMA]
 
 ===== AV_SUBMIT_PAYMENT_RECEIPT RPC =====
 // [CONTEÚDO INTEGRAL EXPORTADO ACIMA]
@@ -82,7 +109,7 @@ const receiptAccessToken = await generateReceiptAccessToken(newOrderId, orderAcc
 [Evidência: Pedido criado, capability token gerado e validado, upload bem-sucedido.]
 
 ===== FINAL SECURITY STATE =====
-- RLS Enabled: sim (tabelas e storage)
+- RLS Enabled: sim
 - Bucket Public: Não
 - Tokens Logged: Não
 - Secrets Logged: Não
