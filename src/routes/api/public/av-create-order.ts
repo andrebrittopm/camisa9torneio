@@ -110,13 +110,20 @@ function getAllowedOrigins(request: Request): string[] {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean)
+  
   let selfOrigin = ''
   try {
-    selfOrigin = new URL(request.url).origin
+    const url = new URL(request.url)
+    selfOrigin = url.origin
   } catch {
     selfOrigin = ''
   }
-  return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
+
+  const allowed = Array.from(new Set([
+    ...fromEnv, 
+    ...(selfOrigin ? [selfOrigin] : [])
+  ]))
+  return allowed
 }
 
 
@@ -136,17 +143,29 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
 
-        if (origin && allowedOrigins.includes(origin)) {
-          return new Response(null, {
-            status: 204,
-            headers: {
-              "Access-Control-Allow-Origin": origin,
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
-              "Vary": "Origin"
-            },
+        // Se o browser enviou Origin, validamos contra a lista
+        if (origin) {
+          if (allowedOrigins.includes(origin)) {
+            return new Response(null, {
+              status: 204,
+              headers: {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+                "Access-Control-Max-Age": "86400",
+                "Vary": "Origin"
+              },
+            })
+          }
+          // Se houver Origin mas não permitida: 403
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
           })
         }
+
+        // Se NÃO houver Origin (chamada direta ou script sem Origin), mas for OPTIONS, 
+        // Nitro/Proxy pode retornar 204 por conta própria, mas mantemos o 403 por segurança.
         return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
           status: 403,
           headers: { "Content-Type": "application/json" },
