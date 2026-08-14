@@ -18,7 +18,7 @@ export interface AvCreateOrderResponse {
   is_duplicate?: boolean;
   error?: string;
   code?: string;
-  retry_after?: number;
+  retry_after?: number | null;
 }
 
 /**
@@ -62,7 +62,7 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvCr
         success: false,
         error: data.message || 'Erro ao processar o pedido',
         code: data.code || 'UNKNOWN_ERROR',
-        retry_after: response.status === 429 ? parseInt(response.headers.get('Retry-After') || '0', 10) : undefined
+        retry_after: response.status === 429 ? parseInt(response.headers.get('Retry-After') || '0', 10) : null
       };
     }
 
@@ -73,6 +73,7 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvCr
       success: false,
       error: 'Não foi possível confirmar se o pedido foi registrado. Tente novamente.',
       code: 'NETWORK_ERROR',
+      retry_after: null
     };
   }
 }
