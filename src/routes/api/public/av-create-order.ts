@@ -30,8 +30,8 @@ const PROHIBITED_FIELDS = [
 ]
 
 const ITEM_ALLOWED_FIELDS = [
-  'model_id',
-  'size',
+  'shirt_model_id',
+  'size_option',
   'custom_size',
   'custom_name',
   'custom_number',
@@ -247,7 +247,6 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           // 4. Field Validations (Top-Level)
           const payloadKeys = Object.keys(payload)
           if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
-            console.warn(`[AV] correlation=${correlationId} stage=payload code=INVALID_FIELDS fields=${payloadKeys.filter(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k)).join(',')}`)
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
@@ -277,10 +276,10 @@ export const Route = createFileRoute('/api/public/av-create-order')({
               return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             }
 
-            const { model_id, size, custom_size, custom_name, custom_number, quantity } = item
+            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
 
-            if (!isValidUuid(model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            if (typeof size !== "string" || size.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            if (typeof size_option !== "string" || size_option.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
 
             if (typeof quantity !== "number" || !Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > 2147483647) {
               return new Response(JSON.stringify({ error: "INVALID_QUANTITY", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
@@ -292,8 +291,8 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             }
 
             validatedItems.push({
-              model_id,
-              size: size.trim(),
+              shirt_model_id,
+              size_option: size_option.trim(),
               custom_size: custom_size === undefined ? null : custom_size,
               custom_name: custom_name === undefined ? null : custom_name,
               custom_number: custom_number === undefined ? null : custom_number,
@@ -303,8 +302,8 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           // 6. Canonical Fingerprint Generation
           const sortedItems = [...validatedItems].sort((a, b) => {
-            const keyA = JSON.stringify([a.model_id, a.size, a.custom_size, a.custom_name, a.custom_number, a.quantity])
-            const keyB = JSON.stringify([b.model_id, b.size, b.custom_size, b.custom_name, b.custom_number, b.quantity])
+            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
+            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
             return keyA.localeCompare(keyB)
           })
 
@@ -402,7 +401,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
 
         } catch (err) {
-          console.error(`[AV] correlation=${correlationId} stage=fatal code=INTERNAL_ERROR error=${err instanceof Error ? err.message : String(err)}`)
+          console.error(`[AV] correlation=${correlationId} stage=fatal code=INTERNAL_ERROR`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
             status: 500,
             headers: corsHeaders,
