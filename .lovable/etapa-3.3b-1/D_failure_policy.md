@@ -1,20 +1,24 @@
-# FAILURE POLICY (D) — ETAPA 3.3B-1
+# FAILURE POLICY (D) — ETAPA 3.3B-1R1
 
-## 1. FAIL-OPEN VS FAIL-CLOSED
+## 1. POLÍTICA DE FALHA CRÍTICA (CONFIGURAÇÃO)
+Se `AV_RATE_LIMIT_HASH_SECRET` estiver ausente em ambiente de **PRODUÇÃO**:
+- **Ação**: **FAIL-CLOSED**.
+- **Resposta**: HTTP 500 / `INTERNAL_ERROR`.
+- **Log**: `stage=rate_limit_config`, `code=CONFIG_MISSING`.
 
-| CENÁRIO | POLÍTICA | JUSTIFICATIVA |
-|---|---|---|
-| **Falha de Conexão DB** | **FAIL-OPEN** | Não queremos impedir vendas legítimas se o banco de rate limit (mesmo sendo o principal) oscilar momentaneamente antes da lógica de negócio. |
-| **Ausência de Secret** | **FAIL-CLOSED** | Erro de configuração crítica. Bloqueia o endpoint e loga erro de sistema. |
-| **Erro de Sintaxe RPC** | **FAIL-CLOSED** | Indica bug no deploy. |
+## 2. POLÍTICA DE FALHA TRANSITÓRIA (STORAGE)
+Se o Supabase/Postgres estiver inacessível durante a verificação do limiter:
+- **Ação**: **FAIL-OPEN DO LIMITER**.
+- **Fluxo**: Logar erro -> Prosseguir para `verifyTurnstileToken()`.
+- **Garantia**: O Turnstile permanece obrigatório; a aplicação não fica vulnerável a ataques sem captcha.
 
-## 2. COMPORTAMENTO POR AMBIENTE
-- **PRODUÇÃO**: Fail-Open controlado com logs de erro de alta prioridade.
-- **DESENVOLVIMENTO**: Bypass (Skip) ou logs de aviso para não atrapalhar testes locais sem IP real.
+## 3. RATE LIMIT ANTES DO TURNSTILE
+Ordem de Precedência Obrigatória:
+1. Validação de CORS/Origin.
+2. Validação de Tamanho do Body (64KB).
+3. Parse JSON e Validações Sintáticas Baratas.
+4. **RATE LIMITING** (Consome bucket aqui).
+5. **TURNSTILE SITEVERIFY**.
+6. RPC `av_create_order`.
 
-## 3. IDENTIFICAÇÃO DE ERROS
-Em caso de falha no limiter, o sistema deve:
-1. Capturar a exceção.
-2. Logar `correlation_id` + `error_type=RATE_LIMIT_STORAGE_ERROR`.
-3. Incrementar métrica de erro (se disponível).
-4. Permitir a requisição prosseguir para o Turnstile.
+*Nota: Origin ou JSON inválidos NÃO devem consumir créditos do bucket.*
