@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
+import { generateReceiptAccessToken } from '@/lib/server/av-order-access'
+
 
 /**
  * ETAPA 3.3B-2B — TANSTACK SERVER ROUTE INTEGRADA COM TURNSTILE E RATE LIMITING
@@ -197,7 +199,18 @@ export const Route = createFileRoute('/api/public/av-create-order')({
         }
 
         try {
+          // 2.1 Validate Access Token Secret Config
+          const orderAccessSecret = process.env['AV_ORDER_ACCESS_SECRET']
+          if (!orderAccessSecret || orderAccessSecret.length < 32) {
+            console.error(`[AV] correlation=${correlationId} stage=config code=AV_ORDER_ACCESS_SECRET_INVALID`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
           // 2. Body size
+
           const contentLength = parseInt(request.headers.get("content-length") || "-1")
           if (contentLength > MAX_BODY_BYTES) {
             return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
