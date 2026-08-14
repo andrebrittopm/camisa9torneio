@@ -187,7 +187,7 @@ export function ReceiptUpload({
                     <div className="flex-1 text-center md:text-left space-y-2">
                       <p className="text-lg font-black text-white truncate max-w-xs">{file.name}</p>
                       <p className="text-[10px] font-bold text-ice/40 uppercase tracking-widest">
-                        {(file.size / (1024 * 1024)).toFixed(2)} MB • {file.type.split('/')[1].toUpperCase()}
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB • {file.type.split('/')[1]?.toUpperCase() || 'UNKNOWN'}
                       </p>
                     </div>
 
