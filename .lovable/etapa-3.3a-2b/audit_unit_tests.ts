@@ -1,4 +1,4 @@
-import { verifyTurnstileToken, TurnstileVerification } from './src/lib/server/av-turnstile';
+import { verifyTurnstileToken, TurnstileVerification } from '../../src/lib/server/av-turnstile';
 
 /**
  * ETAPA 3.3A-2B — AUDITORIA DE COMPLETUDE TUR01–TUR25
