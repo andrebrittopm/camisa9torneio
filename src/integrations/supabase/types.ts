@@ -140,10 +140,12 @@ export type Database = {
           customer_name: string
           event_id: string
           id: string
+          idempotency_key: string
           notes: string | null
           order_seq: number
           order_status: string
           payment_status: string
+          request_fingerprint: string
           subtotal: number
           total_amount: number
           updated_at: string
@@ -154,10 +156,12 @@ export type Database = {
           customer_name: string
           event_id: string
           id?: string
+          idempotency_key: string
           notes?: string | null
           order_seq?: never
           order_status?: string
           payment_status?: string
+          request_fingerprint: string
           subtotal?: number
           total_amount?: number
           updated_at?: string
@@ -168,10 +172,12 @@ export type Database = {
           customer_name?: string
           event_id?: string
           id?: string
+          idempotency_key?: string
           notes?: string | null
           order_seq?: never
           order_status?: string
           payment_status?: string
+          request_fingerprint?: string
           subtotal?: number
           total_amount?: number
           updated_at?: string
