@@ -104,6 +104,22 @@ function isValidRpcData(value: unknown): value is {
   );
 }
 
+// Origens permitidas: lista explícita via ALLOWED_ORIGINS + a própria origem do site (same-origin).
+function getAllowedOrigins(request: Request): string[] {
+  const fromEnv = (process.env['ALLOWED_ORIGINS'] || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+  let selfOrigin = ''
+  try {
+    selfOrigin = new URL(request.url).origin
+  } catch {
+    selfOrigin = ''
+  }
+  return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
+}
+
+
 export const Route = createFileRoute('/api/public/av-create-order')({
   server: {
     handlers: {
