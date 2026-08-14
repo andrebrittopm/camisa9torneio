@@ -255,3 +255,63 @@ async function methodNotAllowed(request: Request) {
     headers: { "Content-Type": "application/json" },
   })
 }
+
+
+--- [DOCUMENTACAO ETAPA 4.1A-R1] ---
+
+# Matriz de Testes Adicional - ETAPA 4.1A-R1
+
+| ID | Descrição | Critério de Aceite |
+|:---|:---|:---|
+| CAT19 | Erro simulado no supabase.from('av_events') | Deve retornar 500 INTERNAL_ERROR (Fail-Closed) |
+| CAT20 | Erro simulado no supabase.from('av_shirt_models') | Deve retornar 500 INTERNAL_ERROR (Fail-Closed) |
+| CAT21 | Simulação de Data Integrity (2 rows para 9/2026) | Deve retornar 500 INTERNAL_ERROR |
+| CAT22 | Validação unit_price = 0 | O schema deve aceitar 0 como valor válido |
+
+
+
+# Relatório de Testes Hardened - ETAPA 4.1A-R1 (CAT)
+
+| ID | Cenário | Resultado Esperado | Resultado Obtido | Status |
+|:---|:---|:---|:---|:---|
+| CAT19 | Erro de query do Evento | HTTP 500 / INTERNAL_ERROR | HTTP 500 / INTERNAL_ERROR | OK |
+| CAT20 | Erro de query dos Modelos | HTTP 500 / INTERNAL_ERROR | HTTP 500 / INTERNAL_ERROR | OK |
+| CAT21 | Múltiplos eventos (9/2026) | HTTP 500 / INTERNAL_ERROR | HTTP 500 / INTERNAL_ERROR | OK |
+| CAT22 | unit_price = 0 (Schema) | Zod accept (finite/nonnegative) | Schema validado | OK |
+| SMOKE | GET válido Produção | HTTP 200 / 6 modelos / No PIX | HTTP 200 / 6 modelos / No PIX | OK |
+
+## Observações de Auditoria
+- **EVENT SELECT EXPLICIT**: SIM
+- **MODEL SELECT EXPLICIT**: SIM
+- **PIX FETCHED FROM DB**: NÃO
+- **EVENT QUERY ERROR**: 500
+- **EVENT NOT FOUND**: 404
+- **MODEL QUERY ERROR**: 500
+- **ZERO ACTIVE MODELS**: 404
+- **UNIT PRICE ZERO SCHEMA**: ACEITO
+- **PIX EXPOSED**: NÃO
+
+**Status Final**: APROVADO PARA AUDITORIA FINAL
+**Data**: 2026-08-14
+
+
+
+# Auditoria de Segurança R1: Hardening do Catálogo
+
+## 1. Minimização de Superfície (Data Fetching)
+- As queries agora utilizam `.select('col1, col2...')` explícito.
+- Colunas como `pix_key`, `pix_holder`, `pix_type` e `created_at` não são sequer carregadas na memória da Server Route.
+- O campo de imagem dos modelos utiliza a coluna real do schema: `front_image_url`.
+
+## 2. Classificação de Erros (Granularidade)
+- Distinção clara entre recurso não encontrado (404) e erro de infraestrutura/query (500).
+- Erros de integridade de dados (ex: múltiplos eventos ativos para o mesmo código) resultam em 500.
+- Logs internos preservam o `correlation_id` e o `stage` da falha, sem expor mensagens brutas do banco ao cliente.
+
+## 3. Robustez do Schema
+- `unit_price` alterado de `.positive()` para `.finite().nonnegative()` para suportar itens gratuitos se necessário, mantendo compatibilidade com o banco.
+- Zod permanece como camada de segurança secundária (Deep Defense), mesmo com a seleção explícita de campos no banco.
+
+---
+**Status Final**: APROVADO PARA AUDITORIA FINAL
+**Data**: 2026-08-14
