@@ -7,6 +7,7 @@ import type { AvCreateOrderResponse } from "@/lib/av-order-client";
 import type { AvCatalogResponse } from "@/lib/av-catalog-client";
 import type { OrderItem } from "@/lib/order-state";
 import { OrderItemsSummary } from "./OrderItemsSummary";
+import { OrderPayment } from "./OrderPayment";
 
 interface OrderSuccessProps {
   order: AvCreateOrderResponse;
@@ -98,7 +99,11 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder }: OrderSu
 
       {/* Main Order Card */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3 space-y-8">
+        <div className="lg:col-span-3 space-y-12">
+          {order.payment_status === "awaiting_payment" && (
+            <OrderPayment totalAmount={order.total_amount || 0} />
+          )}
+          
           <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/10 rounded-[48px] overflow-hidden">
             <div className="p-8 md:p-12 space-y-12">
               {/* Protocol Section */}
