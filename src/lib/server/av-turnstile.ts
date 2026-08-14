@@ -66,6 +66,11 @@ export async function verifyTurnstileToken(
   // 5. SITEVERIFY
   const endpoint = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
   
+  if (turnstileTestMode === "true" && token.startsWith("test-token")) {
+     console.log(`[AV] correlation=${correlationId} stage=turnstile_mock code=FORCED_SUCCESS token=${token}`);
+     return { success: true };
+  }
+
   // 7. TIMEOUT (8000ms) - 4. TURNSTILE HELPER — TIMEOUT
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -107,10 +112,6 @@ export async function verifyTurnstileToken(
 
     // 7. SUCCESS FALSE
     if (result.success !== true) {
-      if (turnstileTestMode === "true" && token.startsWith("test-token")) {
-         // Force success for test tokens in sandbox integration battery
-         return { success: true };
-      }
       console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
       return { success: false, error: "TURNSTILE_FAILED" };
     }
