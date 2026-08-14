@@ -33,7 +33,6 @@ function Index() {
       <Header />
       
       <main>
-        {/* ETAPA 3.3B-1R2 — ARQUITETURA DE RATE LIMITING FINALIZADA PARA IMPLEMENTAÇÃO CONTROLADA. NENHUMA ALTERAÇÃO DE PRODUÇÃO EXECUTADA. */}
         <HeroSection />
         <ModelsSection />
         <CustomizationPreview />
