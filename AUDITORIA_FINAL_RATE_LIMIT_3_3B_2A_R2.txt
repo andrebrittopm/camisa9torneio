@@ -1,0 +1,21 @@
+# Auditoria Final Rate Limit 3.3B-2A-R2
+
+## Artefatos de Implementação
+Os arquivos de patch e testes estão localizados em `.lovable/etapa-3.3b-2a-r2/`.
+
+## Resultados dos Testes
+Todos os cenários DBRL37-DBRL40 foram validados com sucesso via RPC.
+A ordenação determinística por `bucket_key_hash` foi implementada tanto no `UPSERT` quanto no `FOR UPDATE`.
+A validação de `ttl_seconds` agora protege contra valores decimais (AV017).
+
+## Segurança
+- `anon`: Acesso negado.
+- `authenticated`: Acesso negado.
+- `service_role`: Acesso restrito a `EXECUTE`. DML direto bloqueado.
+
+## Definição Final da Função
+```sql
+-- av_check_rate_limits
+-- Verificado: AV010, AV017, v_ttl_numeric, ORDER BY bucket_key_hash
+```
+Definição completa exportada para `.lovable/etapa-3.3b-2a-r2/A_final_patch.sql`.
