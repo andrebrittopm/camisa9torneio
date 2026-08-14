@@ -1,4 +1,4 @@
-/** ARTEFATOS REAIS DA ETAPA 4.1A EXPORTADOS PARA AUDITORIA EXTERNA. NENHUMA NOVA ALTERAÇÃO EXECUTADA. */
+/** ETAPA 4.1A-R1 — CATÁLOGO PÚBLICO SERVER-SIDE HARDENED E APROVADO PARA INTEGRAÇÃO FRONTEND. */
 import { createFileRoute } from '@tanstack/react-router'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
