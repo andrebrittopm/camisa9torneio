@@ -15,8 +15,8 @@ export function CustomizationPreview({
 }: {
   selectedModel: AvShirtModel | null;
   eventInfo: AvCatalogEvent;
-  customName?: string;
-  customNumber?: string;
+  customName?: string | null;
+  customNumber?: string | null;
 }) {
   const athleteName = customName || "SEU NOME";
   const athleteNumber = customNumber || "00";
