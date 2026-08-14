@@ -1,0 +1,21 @@
+ETAPA 3.3B-2B — INTEGRAÇÃO SERVER-SIDE DO RATE LIMITING
+
+A integração do Rate Limiting foi concluída e validada na Server Route.
+
+ARTEFATOS DA ETAPA:
+- src/lib/server/av-rate-limit.ts (Helper Server-Only)
+- src/routes/api/public/av-create-order.ts (Fluxo Atualizado)
+- .lovable/etapa-3.3b-2b/ (Documentação e Auditoria)
+
+CONFIGURAÇÃO:
+- AV_RATE_LIMIT_MODE: global_only | global_and_client
+- AV_RATE_LIMIT_HASH_SECRET: [SECRET]
+
+STATUS FINAL:
+- RATE RPC CALL COUNT: 1 por request válida.
+- 429 / RETRY-AFTER: Implementado (clamp 1-86400s).
+- FAIL-CLOSED: Config/Integridade.
+- FAIL-OPEN: Storage Transitório (mantendo Turnstile).
+- TYPECHECK/BUILD: PASS.
+
+ETAPA 3.3B-2B — RATE LIMITING INTEGRADO À SERVER ROUTE E VALIDADO.
