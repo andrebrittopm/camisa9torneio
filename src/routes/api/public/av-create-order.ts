@@ -107,18 +107,12 @@ function isValidRpcData(value: unknown): value is {
 export const Route = createFileRoute('/api/public/av-create-order')({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      OPTIONS: async ({ request }) => {
         const correlationId = crypto.randomUUID()
-        const method = request.method
-        
-        // 1. CORS check (Preflight & Handlers)
         const origin = request.headers.get("origin")
         const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
         const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
-        
-        const isAllowed = origin && allowedOrigins.includes(origin)
-        
-        // Config validation early check (for CORS_ERROR vs CONFIG_MISSING)
+
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
@@ -127,46 +121,60 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
 
-        if (method === "OPTIONS") {
-          if (isAllowed) {
-            return new Response(null, {
-              status: 204,
-              headers: {
-                "Access-Control-Allow-Origin": origin!,
-                "Access-Control-Allow-Methods": "POST, OPTIONS",
-                "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
-                "Vary": "Origin"
-              },
-            })
-          }
-          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), { status: 403, headers: { "Content-Type": "application/json" } })
+        if (origin && allowedOrigins.includes(origin)) {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              "Access-Control-Allow-Origin": origin,
+              "Access-Control-Allow-Methods": "POST, OPTIONS",
+              "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+              "Vary": "Origin"
+            },
+          })
+        }
+        return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        })
+      },
+      POST: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
+        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+
+        if (allowedOrigins.length === 0) {
+          console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          })
         }
 
-        if (method !== "POST") {
-          const headers = isAllowed ? { "Access-Control-Allow-Origin": origin!, "Vary": "Origin" } : {}
-          return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers: { ...headers, "Content-Type": "application/json" } })
-        }
-
-        if (!isAllowed) {
-          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), { status: 403, headers: { "Content-Type": "application/json" } })
+        if (!origin || !allowedOrigins.includes(origin)) {
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          })
         }
 
         const corsHeaders = {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": origin!,
+          "Access-Control-Allow-Origin": origin,
           "Vary": "Origin"
         }
 
-        // 2. Body Limit & UTF-8 Stream
-        const contentLength = parseInt(request.headers.get("content-length") || "-1")
-        if (contentLength > MAX_BODY_BYTES) {
-          return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
-        }
+        try {
+          // 2. Body Limit & UTF-8 Stream
+          const contentLength = parseInt(request.headers.get("content-length") || "-1")
+          if (contentLength > MAX_BODY_BYTES) {
+            return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
+          }
 
-        const reader = request.body?.getReader()
-        if (!reader) {
-          return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-        }
+          const reader = request.body?.getReader()
+          if (!reader) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
 
           let bodyText = ""
           let bytesRead = 0
@@ -188,7 +196,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             bodyText += decoder.decode(value, { stream: true })
           }
 
-          // 5. JSON Parsing & Structure Validation
+          // 3. JSON Parsing & Structure Validation
           let payload: any
           try {
             payload = JSON.parse(bodyText)
@@ -200,19 +208,13 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           }
 
           if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
-            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), {
-              status: 400,
-              headers: corsHeaders,
-            })
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          // 6. Field Validations (Top-Level)
+          // 4. Field Validations (Top-Level)
           const payloadKeys = Object.keys(payload)
           if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
-            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), {
-              status: 400,
-              headers: corsHeaders,
-            })
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
           const { event_id, customer_name, whatsapp, notes, idempotency_key, items } = payload
@@ -226,13 +228,10 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
 
           if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEM_LINES) {
-            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), {
-              status: 400,
-              headers: corsHeaders,
-            })
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          // 7. Items Validation & Normalization
+          // 5. Items Validation & Normalization
           const validatedItems = []
           for (const item of items) {
             if (typeof item !== "object" || item === null || Array.isArray(item)) {
@@ -268,7 +267,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          // 8. Canonical Fingerprint Generation
+          // 6. Canonical Fingerprint Generation
           const sortedItems = [...validatedItems].sort((a, b) => {
             const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
             const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
@@ -290,7 +289,19 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             .map(b => b.toString(16).padStart(2, "0"))
             .join("")
 
-          // 9. RPC Call (Service Role)
+          // 7. Secrets Validation (Immediately before RPC)
+          const supabaseUrl = process.env['SUPABASE_URL']
+          const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
+
+          if (!supabaseUrl || !supabaseServiceKey) {
+            console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          // 8. RPC Call (Service Role)
           const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
           const { data, error } = await supabaseAdmin.rpc("av_create_order", {
             p_event_id: event_id,
@@ -318,7 +329,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          // 10. RPC Response Validation
+          // 9. RPC Response Validation
           if (
             !data ||
             typeof data !== "object" ||
@@ -335,7 +346,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           const rpcData = data.data
 
-          // 11. Success Response (Sanitized)
+          // 10. Success Response (Sanitized)
           return new Response(JSON.stringify({
             success: true,
             data: {
@@ -364,29 +375,57 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
       },
-      OPTIONS: async ({ request }) => {
+      GET: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
         const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr
-          .split(",")
-          .map(o => o.trim())
-          .filter(Boolean)
-
-        if (origin && allowedOrigins.includes(origin)) {
-          return new Response("ok", {
-            headers: {
-              "Access-Control-Allow-Origin": origin,
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
-              "Vary": "Origin"
-            },
-          })
+        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
         }
-        return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        })
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      },
+      PUT: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
+        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      },
+      PATCH: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
+        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      },
+      DELETE: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
+        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
       }
     }
   }
