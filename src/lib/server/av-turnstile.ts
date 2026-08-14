@@ -28,7 +28,16 @@ export async function verifyTurnstileToken(
   const isProduction = process.env['NODE_ENV'] === "production";
 
   // 4. FAIL CLOSED - Secret Ausente
-  if (!secretKey) {
+  let finalSecret = secretKey;
+  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
+
+  if (!finalSecret) {
+    if (turnstileTestMode === "true" && !isProduction) {
+      finalSecret = process.env['TURNSTILE_SECRET_KEY'];
+    }
+  }
+
+  if (!finalSecret) {
     console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
     return { success: false, error: "CONFIG_MISSING" };
   }
