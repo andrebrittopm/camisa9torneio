@@ -128,8 +128,13 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // Validar dados do evento
           let validatedEvent: EventData
           try {
+            // Debug Event
+            console.error(`[AV-CATALOG] Debug Event Row: ${JSON.stringify(eventRow)}`);
             validatedEvent = EventSchema.parse(eventRow)
           } catch (err) {
+            if (err instanceof z.ZodError) {
+              console.error(`[AV-CATALOG] ZodError Event: ${JSON.stringify(err.errors)}`);
+            }
             console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=event`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
