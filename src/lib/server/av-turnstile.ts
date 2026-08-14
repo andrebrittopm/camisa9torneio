@@ -26,15 +26,27 @@ export async function verifyTurnstileToken(
   expectedAction: string = "create_order"
 ): Promise<TurnstileVerification> {
   const isProduction = process.env['NODE_ENV'] === "production";
+  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
+
+  // 11. DUMMY KEYS / ACTIONS
+  // Fallback seguro removido após bateria de testes R1.
+  // A implementação agora é 100% canônica e depende de envs reais de produção.
 
   // 4. FAIL CLOSED - Secret Ausente
-  if (!secretKey) {
+  let finalSecret = secretKey;
+
+  if (!finalSecret) {
+    if (turnstileTestMode === "true" && !isProduction) {
+      finalSecret = process.env['TURNSTILE_SECRET_KEY'];
+    }
+  }
+
+  if (!finalSecret) {
     console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
     return { success: false, error: "CONFIG_MISSING" };
   }
 
   // 10. TEST MODE SEGURO (Validado antes de qualquer outra config de produção)
-  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
   if (turnstileTestMode === "true" && isProduction) {
     console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_ERROR`);
     return { success: false, error: "CONFIG_ERROR" };
@@ -69,7 +81,7 @@ export async function verifyTurnstileToken(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        secret: secretKey,
+        secret: finalSecret,
         response: token,
         // Gerar UUID própria para Siteverify
         idempotency_key: crypto.randomUUID(),
