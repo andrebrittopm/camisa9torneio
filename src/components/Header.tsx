@@ -101,7 +101,14 @@ export function Header() {
                 {link.label}
               </a>
             ))}
-            <Button variant="secondary" className="w-full font-bold uppercase tracking-widest">
+            <Button 
+              onClick={() => {
+                document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' });
+                setIsMobileMenuOpen(false);
+              }}
+              variant="secondary" 
+              className="w-full font-black uppercase tracking-widest py-6 rounded-xl glow-gold"
+            >
               Escolher Camisa
             </Button>
           </motion.div>
