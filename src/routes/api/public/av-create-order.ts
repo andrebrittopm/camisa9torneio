@@ -247,6 +247,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           // 4. Field Validations (Top-Level)
           const payloadKeys = Object.keys(payload)
           if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
+            console.warn(`[AV] correlation=${correlationId} stage=payload code=INVALID_FIELDS fields=${payloadKeys.filter(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k)).join(',')}`)
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
