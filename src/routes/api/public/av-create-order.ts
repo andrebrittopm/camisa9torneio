@@ -126,8 +126,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       OPTIONS: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
 
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
@@ -156,8 +155,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       POST: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
 
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
@@ -394,8 +392,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       GET: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
@@ -407,8 +404,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       PUT: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
@@ -420,8 +416,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       PATCH: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
@@ -433,8 +428,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       DELETE: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        const allowedOrigins = getAllowedOrigins(request)
         const isAllowed = origin && allowedOrigins.includes(origin)
         const headers: Record<string, string> = { "Content-Type": "application/json" }
         if (isAllowed) {
