@@ -156,28 +156,19 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // Validar dados dos modelos
           let validatedModels: ModelData[]
           try {
-            // Simplified validation to isolate the issue
-            validatedModels = modelRows.map((row: any) => ({
-              id: row.id,
-              code: row.code,
-              name: row.name,
-              category: row.category,
-              front_image_url: row.front_image_url,
-              model_3d_url: row.model_3d_url,
-              available_sizes: Array.isArray(row.available_sizes) ? row.available_sizes : [],
-              allow_custom_size: !!row.allow_custom_size,
-              sort_order: Number(row.sort_order),
-            })) as ModelData[]
-            
-            // Still run Zod to catch schema mismatches but allow it to fail silently for now to see the response
-            try {
-              ShirtModelSchema.parse(validatedModels[0])
-            } catch (zErr) {
-               console.error("ZOD_SILENT_FAILURE:", JSON.stringify(zErr));
-            }
-
+            validatedModels = modelRows.map((m: any) => ({
+              id: m.id,
+              code: m.code,
+              name: m.name,
+              category: m.category,
+              front_image_url: m.front_image_url,
+              model_3d_url: m.model_3d_url,
+              available_sizes: m.available_sizes,
+              allow_custom_size: m.allow_custom_size,
+              sort_order: m.sort_order,
+            }))
           } catch (err) {
-            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=models_manual`)
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=models_simple`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
               headers,
