@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
+import { checkRateLimit } from '@/lib/server/av-rate-limit'
 
 /**
  * ETAPA 3.3A-2A — TANSTACK SERVER ROUTE INTEGRADA COM TURNSTILE
