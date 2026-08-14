@@ -156,8 +156,13 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // Validar dados dos modelos
           let validatedModels: ModelData[]
           try {
+            console.log(`[AV-CATALOG] Debug: modelRows[0] keys = ${Object.keys(modelRows[0])}`);
+            console.log(`[AV-CATALOG] Debug: modelRows[0] = ${JSON.stringify(modelRows[0])}`);
             validatedModels = z.array(ShirtModelSchema).parse(modelRows)
           } catch (err) {
+            if (err instanceof z.ZodError) {
+              console.error(`[AV-CATALOG] ZodError: ${JSON.stringify(err.errors)}`);
+            }
             console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=models`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
