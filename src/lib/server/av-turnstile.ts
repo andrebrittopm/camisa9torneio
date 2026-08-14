@@ -30,7 +30,7 @@ export async function verifyTurnstileToken(
 
   // 11. DUMMY KEYS / ACTIONS
   if (turnstileTestMode === "true" && !isProduction && token.startsWith("test-token")) {
-    console.log(`[AV] correlation=${correlationId} stage=turnstile_mock code=FORCED_SUCCESS token=${token}`);
+    console.warn(`[AV] correlation=${correlationId} stage=turnstile_mock code=FORCED_SUCCESS token=${token}`);
     return { success: true };
   }
 
