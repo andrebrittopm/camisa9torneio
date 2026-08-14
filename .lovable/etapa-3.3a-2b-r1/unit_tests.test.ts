@@ -31,3 +31,22 @@ test("TUR21 - invalid body (malformed JSON) returns false", async () => {
   global.fetch = originalFetch;
 });
 
+test("TUR08 - Action mismatch", async () => {
+  global.fetch = async () => new Response(JSON.stringify({ success: true, action: "wrong_action", hostname: "localhost" }), { status: 200 });
+  
+  const result = await verifyTurnstileToken("dummy-token", "1x0000000000000000000000000000000AA", "test", ["localhost"], "correct_action");
+  expect(result).toEqual({ success: false, error: "TURNSTILE_FAILED" });
+  
+  global.fetch = originalFetch;
+});
+
+test("TUR09 - Hostname mismatch", async () => {
+  global.fetch = async () => new Response(JSON.stringify({ success: true, action: "test", hostname: "malicious.com" }), { status: 200 });
+  
+  const result = await verifyTurnstileToken("dummy-token", "1x0000000000000000000000000000000AA", "test", ["localhost"], "test");
+  expect(result).toEqual({ success: false, error: "TURNSTILE_FAILED" });
+  
+  global.fetch = originalFetch;
+});
+
+
