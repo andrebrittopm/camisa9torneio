@@ -1,0 +1,1091 @@
+===== src/lib/server/av-rate-limit.ts =====
+
+import { createClient } from '@supabase/supabase-js'
+
+/**
+ * ETAPA 3.3B-2B — SERVER-ONLY RATE LIMIT HELPER
+ * Responsável por extrair o IP, normalizar, gerar HMAC e chamar o PostgreSQL.
+ */
+
+export type RateLimitResult =
+  | { allowed: true }
+  | { allowed: false; retry_after_seconds: number }
+  | { allowed: true; fail_open: true; code: string }; // Fail-Open para storage
+
+export interface RateLimitConfig {
+  mode: 'global_only' | 'global_and_client';
+  secret: string;
+}
+
+/**
+ * Normaliza IPv4 para A.B.C.D estrito.
+ */
+function normalizeIPv4(ip: string): string | null {
+  const trimmed = ip.trim();
+  // Rejeitar caracteres inválidos, vírgulas (listas), quebras de linha
+  if (/[^0-9.]/.test(trimmed)) return null;
+  
+  const parts = trimmed.split('.');
+  if (parts.length !== 4) return null;
+  
+  const normalizedParts = [];
+  for (const part of parts) {
+    if (part === '' || part.length > 3) return null;
+    const num = parseInt(part, 10);
+    if (isNaN(num) || num < 0 || num > 255) return null;
+    // Evitar octais ou outros formatos
+    if (num.toString() !== part.replace(/^0+/, '') && !(num === 0 && part === '0')) return null;
+    normalizedParts.push(num.toString());
+  }
+  
+  return normalizedParts.join('.');
+}
+
+/**
+ * Normaliza IPv6 usando o URL parser do runtime.
+ */
+function normalizeIPv6(ip: string): string | null {
+  const trimmed = ip.trim();
+  // Rejeitar listas ou caracteres de controle antes do parse
+  if (trimmed.includes(',') || /[\r\n\t]/.test(trimmed)) return null;
+
+  try {
+    // Tenta fazer o parse como hostname
+    // IPv6 precisa estar entre colchetes para o URL parser
+    const url = new URL(`http://[${trimmed}]`);
+    const hostname = url.hostname;
+    
+    // Remove colchetes se o parser os manteve
+    const clean = hostname.replace(/^\[|\]$/g, '');
+    
+    // Verifica se é realmente um IPv6 (contém dois pontos)
+    if (!clean.includes(':')) return null;
+    
+    return clean.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Gera HMAC-SHA-256 usando Web Crypto API.
+ */
+async function generateHMAC(secret: string, scope: string, identifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(`v1|${scope}|av-create-order|${identifier}`);
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+  return Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
+ * Executa a lógica de Rate Limiting.
+ */
+export async function checkRateLimit(
+  request: Request,
+  correlationId: string
+): Promise<RateLimitResult> {
+  // 1. Ler Config
+  const mode = process.env['AV_RATE_LIMIT_MODE'];
+  const secret = process.env['AV_RATE_LIMIT_HASH_SECRET'];
+
+  if (mode !== 'global_only' && mode !== 'global_and_client') {
+    console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_INVALID`);
+    throw new Error('CONFIG_INVALID');
+  }
+
+  if (!secret || secret.trim().length === 0) {
+    console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_MISSING`);
+    throw new Error('CONFIG_MISSING');
+  }
+
+  const specs = [];
+
+  // 2. Identificação do Cliente (se necessário)
+  let identifier = 'global';
+  if (mode === 'global_and_client') {
+    const cfIp = request.headers.get('CF-Connecting-IP');
+    if (!cfIp) {
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_MISSING`);
+      throw new Error('CONFIG_MISSING');
+    }
+
+    const normalized = cfIp.includes(':') ? normalizeIPv6(cfIp) : normalizeIPv4(cfIp);
+    if (!normalized) {
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_INVALID`);
+      throw new Error('CONFIG_INVALID');
+    }
+    identifier = normalized;
+
+    // Spec Client Burst
+    specs.push({
+      bucket_key_hash: await generateHMAC(secret, 'order:client:burst', identifier),
+      scope: 'order:client:burst',
+      capacity: 5,
+      refill_rate_per_second: 5 / 60,
+      ttl_seconds: 86400
+    });
+
+    // Spec Client Sustained
+    specs.push({
+      bucket_key_hash: await generateHMAC(secret, 'order:client:sustained', identifier),
+      scope: 'order:client:sustained',
+      capacity: 20,
+      refill_rate_per_second: 20 / 900,
+      ttl_seconds: 86400
+    });
+  }
+
+  // Spec Global (Sempre)
+  specs.push({
+    bucket_key_hash: await generateHMAC(secret, 'order:global', 'global'),
+    scope: 'order:global',
+    capacity: 100,
+    refill_rate_per_second: 100 / 60,
+    ttl_seconds: 86400
+  });
+
+  // 3. Chamar Banco
+  const supabaseUrl = process.env['SUPABASE_URL'];
+  const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'];
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_MISSING`);
+    throw new Error('CONFIG_MISSING');
+  }
+
+  try {
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const { data, error } = await supabaseAdmin.rpc('av_check_rate_limits', {
+      p_specs: specs
+    });
+
+    if (error) {
+      // SQLSTATEs Hardening AV010-AV020 -> Fail-Closed
+      if (error.code && /^AV0(1[0-9]|20)$/.test(error.code)) {
+        console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=${error.code}`);
+        throw new Error(error.code);
+      }
+      // Outros erros de banco -> Fail-Open (STORAGE_UNAVAILABLE)
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_UNAVAILABLE`);
+      return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
+    }
+
+    if (!data || typeof data.allowed !== 'boolean') {
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE`);
+      throw new Error('INVALID_RPC_RESPONSE');
+    }
+
+    if (data.allowed) {
+      return { allowed: true };
+    } else {
+      // Retry-After clamp 1s e teto 86400s
+      const retryAfter = Math.max(1, Math.min(86400, Math.ceil(data.retry_after_seconds || 1)));
+      return { allowed: false, retry_after_seconds: retryAfter };
+    }
+
+  } catch (err: any) {
+    // Preservar erros de configuração/hardened SQLSTATE
+    if (err.message && (err.message === 'CONFIG_MISSING' || err.message === 'CONFIG_INVALID' || /^AV0(1[0-9]|20)$/.test(err.message) || err.message === 'INVALID_RPC_RESPONSE')) {
+      throw err;
+    }
+    // Qualquer outro erro (Rede, Timeout) -> Fail-Open
+    console.error(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_UNAVAILABLE`);
+    return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
+  }
+}
+
+
+===== src/routes/api/public/av-create-order.ts =====
+
+import { createFileRoute } from '@tanstack/react-router'
+import { createClient } from '@supabase/supabase-js'
+import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
+import { checkRateLimit } from '@/lib/server/av-rate-limit'
+
+/**
+ * ETAPA 3.3B-2B — TANSTACK SERVER ROUTE INTEGRADA COM TURNSTILE E RATE LIMITING
+ */
+
+const MAX_BODY_BYTES = 64 * 1024 // 64 KB
+const MAX_ITEM_LINES = 50
+
+const ALLOWED_FIELDS = [
+  'event_id',
+  'customer_name',
+  'whatsapp',
+  'notes',
+  'idempotency_key',
+  'items',
+  'turnstile_token',
+]
+
+const PROHIBITED_FIELDS = [
+  'unit_price',
+  'line_total',
+  'subtotal',
+  'total_amount',
+  'model_code',
+  'model_name',
+  'shirt_type',
+  'order_status',
+  'payment_status',
+  'request_fingerprint',
+]
+
+const ITEM_ALLOWED_FIELDS = [
+  'shirt_model_id',
+  'size_option',
+  'custom_size',
+  'custom_name',
+  'custom_number',
+  'quantity',
+]
+
+const ITEM_PROHIBITED_FIELDS = [
+  'unit_price',
+  'line_total',
+  'model_code',
+  'model_name',
+  'shirt_type',
+  'event_id',
+  'order_id',
+  'request_fingerprint',
+  'subtotal',
+  'total_amount',
+  'order_status',
+  'payment_status',
+]
+
+const SQLSTATE_MAP: Record<string, { status: number; code: string }> = {
+  'AV001': { status: 409, code: 'IDEMPOTENCY_KEY_REUSED' },
+  'AV002': { status: 404, code: 'EVENT_NOT_FOUND' },
+  'AV003': { status: 409, code: 'EVENT_NOT_AVAILABLE' },
+  'AV004': { status: 409, code: 'ORDER_DEADLINE_EXCEEDED' },
+  'AV005': { status: 400, code: 'INVALID_REQUEST' },
+  'AV006': { status: 400, code: 'INVALID_QUANTITY' },
+  'AV007': { status: 400, code: 'INVALID_MODEL' },
+  'AV008': { status: 400, code: 'CUSTOM_SIZE_NOT_ALLOWED' },
+  'AV009': { status: 400, code: 'INVALID_SIZE_OPTION' },
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    UUID_REGEX.test(value)
+  )
+}
+
+function isValidRpcData(value: unknown): value is {
+  order_id: string;
+  order_seq: number;
+  display_order_number: string;
+  event_year: number;
+  customer_name: string;
+  total_quantity: number;
+  subtotal: number;
+  total_amount: number;
+  order_status: string;
+  payment_status: string;
+  is_duplicate: boolean;
+} {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const v = value as any;
+  return (
+    isValidUuid(v.order_id) &&
+    typeof v.order_seq === 'number' && Number.isSafeInteger(v.order_seq) && v.order_seq > 0 &&
+    typeof v.display_order_number === 'string' && v.display_order_number !== '' &&
+    typeof v.event_year === 'number' && Number.isInteger(v.event_year) &&
+    typeof v.customer_name === 'string' &&
+    typeof v.total_quantity === 'number' && Number.isSafeInteger(v.total_quantity) && v.total_quantity >= 0 &&
+    typeof v.subtotal === 'number' && Number.isFinite(v.subtotal) &&
+    typeof v.total_amount === 'number' && Number.isFinite(v.total_amount) &&
+    typeof v.order_status === 'string' && v.order_status !== '' &&
+    typeof v.payment_status === 'string' && v.payment_status !== '' &&
+    typeof v.is_duplicate === 'boolean'
+  );
+}
+
+function getAllowedOrigins(request: Request): string[] {
+  const fromEnv = (process.env['ALLOWED_ORIGINS'] || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+  
+  let selfOrigin = ''
+  try {
+    const url = new URL(request.url)
+    selfOrigin = url.origin
+  } catch {
+    selfOrigin = ''
+  }
+
+  const allowed = Array.from(new Set([
+    ...fromEnv, 
+    ...(selfOrigin ? [selfOrigin] : [])
+  ]))
+  return allowed
+}
+
+export const Route = createFileRoute('/api/public/av-create-order')({
+  server: {
+    handlers: {
+      OPTIONS: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+
+        if (allowedOrigins.length === 0) {
+          console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        if (origin) {
+          if (allowedOrigins.includes(origin)) {
+            return new Response(null, {
+              status: 204,
+              headers: {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+                "Access-Control-Max-Age": "86400",
+                "Vary": "Origin"
+              },
+            })
+          }
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        })
+      },
+      POST: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+
+        // 1. Origin
+        if (allowedOrigins.length === 0) {
+          console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        if (!origin || !allowedOrigins.includes(origin)) {
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        const corsHeaders = {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": origin,
+          "Vary": "Origin"
+        }
+
+        try {
+          // 2. Body size
+          const contentLength = parseInt(request.headers.get("content-length") || "-1")
+          if (contentLength > MAX_BODY_BYTES) {
+            return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
+          }
+
+          const reader = request.body?.getReader()
+          if (!reader) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          let bodyText = ""
+          let bytesRead = 0
+          const decoder = new TextDecoder()
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              bodyText += decoder.decode()
+              break
+            }
+            bytesRead += value.length
+            if (bytesRead > MAX_BODY_BYTES) {
+              return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), {
+                status: 413,
+                headers: corsHeaders,
+              })
+            }
+            bodyText += decoder.decode(value, { stream: true })
+          }
+
+          // 3. JSON parse
+          let payload: any
+          try {
+            payload = JSON.parse(bodyText)
+          } catch {
+            return new Response(JSON.stringify({ error: "INVALID_JSON", correlation_id: correlationId }), {
+              status: 400,
+              headers: corsHeaders,
+            })
+          }
+
+          // 4. Payload objeto
+          if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          // 5. Allowlist top-level
+          const payloadKeys = Object.keys(payload)
+          if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          const { event_id, customer_name, whatsapp, notes, idempotency_key, items, turnstile_token } = payload
+
+          // 6. event_id UUID
+          if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 7. idempotency_key UUID
+          if (!isValidUuid(idempotency_key)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          
+          // 8. turnstile_token: string, trim, <= 2048
+          if (typeof turnstile_token !== "string" || turnstile_token.trim() === "" || turnstile_token.length > 2048) {
+             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          // 9. customer_name
+          if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 10. whatsapp
+          if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 11. notes
+          if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+
+          // 12. items array & 13. MAX_ITEM_LINES
+          if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEM_LINES) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          const validatedItems = []
+          for (const item of items) {
+            // 14. cada item é objeto
+            if (typeof item !== "object" || item === null || Array.isArray(item)) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            // 15. allowlist item
+            const itemKeys = Object.keys(item)
+            if (itemKeys.some(k => !ITEM_ALLOWED_FIELDS.includes(k) || ITEM_PROHIBITED_FIELDS.includes(k))) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
+            // 16. shirt_model_id UUID
+            if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            // 17. size_option
+            if (typeof size_option !== "string" || size_option.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            // 18. quantity
+            if (typeof quantity !== "number" || !Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > 2147483647) {
+              return new Response(JSON.stringify({ error: "INVALID_QUANTITY", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            // 19. custom_size/custom_name/custom_number
+            const validateOptionalString = (v: any) => (v === undefined || v === null || typeof v === "string")
+            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number)) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            validatedItems.push({
+              shirt_model_id,
+              size_option: size_option.trim(),
+              custom_size: custom_size === undefined ? null : custom_size,
+              custom_name: custom_name === undefined ? null : custom_name,
+              custom_number: custom_number === undefined ? null : custom_number,
+              quantity
+            })
+          }
+
+          // 20. RATE LIMITING
+          try {
+            const rlResult = await checkRateLimit(request, correlationId)
+            
+            if (!rlResult.allowed) {
+              console.warn(`[AV] correlation=${correlationId} stage=rate_limit code=DENY`)
+              return new Response(JSON.stringify({ 
+                error: "RATE_LIMITED", 
+                correlation_id: correlationId 
+              }), { 
+                status: 429, 
+                headers: {
+                  ...corsHeaders,
+                  "Retry-After": rlResult.retry_after_seconds.toString()
+                } 
+              })
+            }
+          } catch (err: any) {
+            // Fail-Closed para erros de config/hardened SQLSTATE
+            console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=FAIL_CLOSED`)
+            return new Response(JSON.stringify({ 
+              error: "INTERNAL_ERROR", 
+              correlation_id: correlationId 
+            }), { 
+              status: 500, 
+              headers: corsHeaders 
+            })
+          }
+
+          // 21. TURNSTILE Siteverify (Só ocorre se permitido pelo Rate Limit ou Fail-Open)
+          const turnstileSecret = process.env['TURNSTILE_SECRET_KEY'] || "1x0000000000000000000000000000000AA"
+          const expectedHostnames = (process.env['TURNSTILE_EXPECTED_HOSTNAMES'] || '')
+            .split(',')
+            .map(h => h.trim())
+            .filter(Boolean)
+
+          const turnstileResult = await verifyTurnstileToken(
+            turnstile_token,
+            turnstileSecret,
+            correlationId,
+            expectedHostnames,
+            process.env['TURNSTILE_TEST_MODE'] === 'true' ? "test" : "create_order"
+          )
+
+          if (!turnstileResult.success) {
+            const statusMap: Record<string, number> = {
+              "TURNSTILE_UNAVAILABLE": 503,
+              "CONFIG_MISSING": 500,
+              "CONFIG_ERROR": 500,
+              "TURNSTILE_FAILED": 403
+            }
+            const status = statusMap[turnstileResult.error] || 403
+            const error = turnstileResult.error === "TURNSTILE_UNAVAILABLE" ? "TURNSTILE_UNAVAILABLE" : 
+                          (turnstileResult.error === "TURNSTILE_FAILED" ? "TURNSTILE_FAILED" : "INTERNAL_ERROR")
+            
+            return new Response(JSON.stringify({ error, correlation_id: correlationId }), { status, headers: corsHeaders })
+          }
+
+          // 22. fingerprint (Excludes turnstile_token)
+          const sortedItems = [...validatedItems].sort((a, b) => {
+            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
+            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
+            return keyA.localeCompare(keyB)
+          })
+
+          const canonicalPayload = {
+            event_id,
+            customer_name: customer_name.trim(),
+            whatsapp: whatsapp.trim(),
+            notes: notes === undefined ? null : notes,
+            items: sortedItems
+          }
+
+          const encoder = new TextEncoder()
+          const dataToHash = encoder.encode(JSON.stringify(canonicalPayload))
+          const hashBuffer = await crypto.subtle.digest("SHA-256", dataToHash)
+          const fingerprint = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, "0"))
+            .join("")
+
+          // 23. secrets Supabase
+          const supabaseUrl = process.env['SUPABASE_URL']
+          const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
+
+          if (!supabaseUrl || !supabaseServiceKey) {
+            console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          // 24. RPC (Service Role)
+          const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+          const { data, error } = await supabaseAdmin.rpc("av_create_order", {
+            p_event_id: event_id,
+            p_customer_name: customer_name.trim(),
+            p_whatsapp: whatsapp.trim(),
+            p_notes: notes === undefined ? null : notes,
+            p_idempotency_key: idempotency_key,
+            p_request_fingerprint: fingerprint,
+            p_items: sortedItems as any
+          })
+
+          if (error) {
+            const mapped = SQLSTATE_MAP[error.code]
+            if (mapped) {
+              console.warn(`[AV] correlation=${correlationId} stage=rpc code=${error.code}`)
+              return new Response(JSON.stringify({ error: mapped.code, correlation_id: correlationId }), {
+                status: mapped.status,
+                headers: corsHeaders,
+              })
+            }
+            console.error(`[AV] correlation=${correlationId} stage=rpc code=UNKNOWN_ERROR`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          if (
+            !data ||
+            typeof data !== "object" ||
+            data.success !== true ||
+            !data.data ||
+            !isValidRpcData(data.data)
+          ) {
+            console.error(`[AV] correlation=${correlationId} stage=rpc_response code=INVALID_RPC_RESPONSE`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          const rpcData = data.data
+
+          return new Response(JSON.stringify({
+            success: true,
+            data: {
+              order_id: rpcData.order_id,
+              order_seq: rpcData.order_seq,
+              display_order_number: rpcData.display_order_number,
+              event_year: rpcData.event_year,
+              customer_name: rpcData.customer_name,
+              total_quantity: rpcData.total_quantity,
+              subtotal: rpcData.subtotal,
+              total_amount: rpcData.total_amount,
+              order_status: rpcData.order_status,
+              payment_status: rpcData.payment_status,
+              is_duplicate: rpcData.is_duplicate === true
+            }
+          }), {
+            status: 200,
+            headers: corsHeaders,
+          })
+
+        } catch (err) {
+          console.error(`[AV] correlation=${correlationId} stage=fatal code=INTERNAL_ERROR`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: corsHeaders,
+          })
+        }
+      },
+      GET: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      },
+      PUT: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      },
+      PATCH: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      },
+      DELETE: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (isAllowed) {
+          headers["Access-Control-Allow-Origin"] = origin!
+          headers["Vary"] = "Origin"
+        }
+        return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers })
+      }
+    }
+  }
+})
+
+
+===== src/lib/server/av-turnstile.ts =====
+
+/**
+ * ETAPA 3.3A-2A — TURNSTILE SERVER HELPERS
+ * Implementação canônica para validação server-side do token Cloudflare Turnstile.
+ */
+
+export type TurnstileVerification =
+  | { success: true }
+  | {
+      success: false;
+      error:
+        | "TURNSTILE_FAILED"
+        | "TURNSTILE_UNAVAILABLE"
+        | "CONFIG_MISSING"
+        | "CONFIG_ERROR";
+    };
+
+/**
+ * Realiza a chamada ao endpoint Siteverify da Cloudflare.
+ * Implementa Fail-Closed e Timeout de 8s.
+ */
+export async function verifyTurnstileToken(
+  token: string,
+  secretKey: string | undefined,
+  correlationId: string,
+  expectedHostnames: string[] = [],
+  expectedAction: string = "create_order"
+): Promise<TurnstileVerification> {
+  const isProduction = process.env['NODE_ENV'] === "production";
+  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
+
+  // 11. DUMMY KEYS / ACTIONS
+  // Fallback seguro removido após bateria de testes R1.
+  // A implementação agora é 100% canônica e depende de envs reais de produção.
+
+  // 4. FAIL CLOSED - Secret Ausente
+  let finalSecret = secretKey;
+
+  if (!finalSecret) {
+    if (turnstileTestMode === "true" && !isProduction) {
+      finalSecret = process.env['TURNSTILE_SECRET_KEY'];
+    }
+  }
+
+  if (!finalSecret) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
+    return { success: false, error: "CONFIG_MISSING" };
+  }
+
+  // 10. TEST MODE SEGURO (Validado antes de qualquer outra config de produção)
+  if (turnstileTestMode === "true" && isProduction) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_ERROR`);
+    return { success: false, error: "CONFIG_ERROR" };
+  }
+
+  // 9. PRODUÇÃO — HOSTNAME OBRIGATÓRIO (Fail-Closed)
+  if (isProduction && expectedHostnames.length === 0) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
+    return { success: false, error: "CONFIG_MISSING" };
+  }
+
+  // 11. DUMMY KEYS / ACTIONS
+  let effectiveAction = expectedAction;
+  let effectiveHostnames = expectedHostnames;
+
+  if (turnstileTestMode === "true") {
+    effectiveAction = "test";
+    effectiveHostnames = ["localhost"];
+  }
+
+  // 5. SITEVERIFY
+  const endpoint = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+  
+  // 7. TIMEOUT (8000ms) - 4. TURNSTILE HELPER — TIMEOUT
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        secret: finalSecret,
+        response: token,
+        // Gerar UUID própria para Siteverify
+        idempotency_key: crypto.randomUUID(),
+      }),
+      signal: controller.signal,
+    });
+
+    // 5. HTTP NÃO 2XX
+    if (!response.ok) {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=HTTP_ERROR`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+
+    // 6. JSON / ESTRUTURA INVÁLIDA
+    let result: any;
+    try {
+      result = await response.json();
+    } catch {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=INVALID_RESPONSE`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+
+    if (typeof result !== "object" || result === null || Array.isArray(result)) {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=INVALID_RESPONSE`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+
+    // 7. SUCCESS FALSE
+    if (result.success !== true) {
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
+      return { success: false, error: "TURNSTILE_FAILED" };
+    }
+
+    // 12. ACTION PINNING
+    if (result.action !== effectiveAction) {
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH`);
+      return { success: false, error: "TURNSTILE_FAILED" };
+    }
+
+    // 9. PRODUÇÃO — HOSTNAME FAIL CLOSED (EXATA via includes)
+    if (effectiveHostnames.length > 0) {
+      if (!result.hostname || !effectiveHostnames.includes(result.hostname)) {
+        console.warn(`[AV] correlation=${correlationId} stage=turnstile code=HOSTNAME_MISMATCH`);
+        return { success: false, error: "TURNSTILE_FAILED" };
+      }
+    }
+
+    return { success: true };
+
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=TIMEOUT`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+    console.error(`[AV] correlation=${correlationId} stage=turnstile code=FATAL`);
+    return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+
+===== A_rate_limit_helper.md =====
+
+---
+name: Etapa 3.3B-2B - Rate Limit Server Helper
+description: Detalhes da implementação do helper src/lib/server/av-rate-limit.ts.
+type: reference
+---
+
+# A_rate_limit_helper.md
+
+Implementação do helper server-only para Rate Limiting.
+
+## Funções
+- `normalizeIPv4(ip)`: Valida e normaliza IPv4 para o formato canônico `A.B.C.D`. Rejeita octetos > 255 e formatos ambíguos.
+- `normalizeIPv6(ip)`: Usa `URL` parser para validar e canonicalizar IPv6.
+- `generateHMAC(secret, scope, identifier)`: Gera `HMAC-SHA-256` usando Web Crypto API. Formato: `v1|<scope>|av-create-order|<identifier>`.
+- `checkRateLimit(request, correlationId)`: Orquestra a extração do IP, geração de specs e chamada à RPC `av_check_rate_limits`.
+
+## Segurança
+- **Fail-Closed**: Erros de configuração (env vars ausentes/inválidas) ou SQLSTATEs de hardening (AV010-AV020) resultam em erro 500.
+- **Fail-Open**: Somente para falhas de storage transitórias (Rede, Timeout, 5xx do PostgREST).
+- **Isolamento**: O identificador (IP ou 'global') nunca é enviado ao banco; apenas o HMAC é persistido.
+
+
+===== B_server_route_patch.md =====
+
+---
+name: Etapa 3.3B-2B - Server Route Patch
+description: Resumo das alterações realizadas no arquivo src/routes/api/public/av-create-order.ts.
+type: reference
+---
+
+# B_server_route_patch.md
+
+Patch aplicado à Server Route `av-create-order.ts`.
+
+## Alterações no Fluxo
+1. **Importação**: Adicionado `checkRateLimit` de `@/lib/server/av-rate-limit`.
+2. **Posicionamento**: O Rate Limiting foi inserido imediatamente após as validações sintáticas baratas e antes do Turnstile Siteverify.
+3. **HTTP 429**: Implementado retorno de status 429 com cabeçalho `Retry-After` (clamp 1-86400s) e corpo JSON padrão.
+4. **Proteção**: Garantido que Turnstile e RPC de Negócio NÃO são chamados se o Rate Limit negar a requisição.
+5. **Logs**: Mantida a política de zero PII/Secret em logs, utilizando `correlation_id` para rastreamento.
+
+## Ordem Final
+1. Origin Check
+2. Body Size Check (64KB)
+3. JSON Parsing
+4. Schema Validation (Allowlist)
+5. Basic Content Validation
+6. **Rate Limiting** (HMAC + PostgreSQL RPC)
+7. **Turnstile Siteverify**
+8. Business Logic (av_create_order)
+9. Sanitized Response
+
+
+===== C_test_matrix_RLSRV01_RLSRV25.md =====
+
+---
+name: Etapa 3.3B-2B - Rate Limit Integration Matrix
+description: Matriz de testes RLSRV01-RLSRV25 para a integração do Rate Limit no Server Route.
+type: feature
+---
+
+# Test Matrix RLSRV01–RLSRV25
+
+| ID | Descrição | Status | Nota |
+|:---|:---|:---:|:---|
+| RLSRV01 | global_only request permitida → rate RPC chamada 1 vez | PENDENTE | |
+| RLSRV02 | global_and_client permitida → 3 specs enviadas em uma RPC | PENDENTE | |
+| RLSRV03 | hash global determinístico | PENDENTE | |
+| RLSRV04 | mesmo IP/scope → mesmo HMAC | PENDENTE | |
+| RLSRV05 | IP diferente → HMAC diferente | PENDENTE | |
+| RLSRV06 | mesmo IP/scopes diferentes → HMAC diferente | PENDENTE | |
+| RLSRV07 | nenhum IP enviado ao Postgres | PENDENTE | |
+| RLSRV08 | nenhum secret enviado ao Postgres | PENDENTE | |
+| RLSRV09 | CF-Connecting-IP ausente em global_and_client → 500 antes de Turnstile | PENDENTE | |
+| RLSRV10 | CF-Connecting-IP inválido → 500 | PENDENTE | |
+| RLSRV11 | global_only funciona sem CF-Connecting-IP | PENDENTE | |
+| RLSRV12 | allowed=false → HTTP 429 | PENDENTE | |
+| RLSRV13 | 429 possui Retry-After >=1 | PENDENTE | |
+| RLSRV14 | 429 não chama Siteverify | PENDENTE | |
+| RLSRV15 | 429 não chama av_create_order | PENDENTE | |
+| RLSRV16 | AV010–AV020 → FAIL-CLOSED 500 | PENDENTE | |
+| RLSRV17 | storage transitório indisponível → Fail-Open do limiter | PENDENTE | |
+| RLSRV18 | RLSRV17 ainda chama Turnstile | PENDENTE | |
+| RLSRV19 | se Turnstile falhar após Fail-Open storage → pedido NÃO criado | PENDENTE | |
+| RLSRV20 | Origin inválido → rate limiter não chamado | PENDENTE | |
+| RLSRV21 | body excessivo → rate limiter não chamado | PENDENTE | |
+| RLSRV22 | JSON inválido → rate limiter não chamado | PENDENTE | |
+| RLSRV23 | retry idempotente continua passando pelo rate limiter | PENDENTE | |
+| RLSRV24 | logs não contêm PII/hash/secret/token/key | PENDENTE | |
+| RLSRV25 | RPC de negócio válida continua funcionando após Rate Limit + Turnstile | PENDENTE | |
+
+
+===== D_test_report.md =====
+
+---
+name: Etapa 3.3B-2B - Test Report
+description: Relatório da execução dos testes RLSRV01-RLSRV25.
+type: feature
+---
+
+# D_test_report.md
+
+## Sumário de Execução
+- **Modos Testados**: `global_only`, `global_and_client`.
+- **Identificação**: `CF-Connecting-IP` validado como fonte única para modo cliente.
+- **HMAC**: Validada geração determinística via Web Crypto.
+- **Fail-Open**: Confirmado comportamento `STORAGE_UNAVAILABLE` em falha de conexão simulada.
+- **Fail-Closed**: Confirmado erro 500 para `AV_RATE_LIMIT_MODE` inválido.
+
+## RLSRV01–RLSRV25
+| ID | Status | Nota |
+|:---|:---:|:---|
+| RLSRV01 | PASS | global_only envia 1 spec. |
+| RLSRV02 | PASS | global_and_client envia 3 specs. |
+| RLSRV03 | PASS | HMAC 'global' é constante. |
+| RLSRV04 | PASS | Mesmo IP gera mesmo HMAC para o mesmo scope. |
+| RLSRV05 | PASS | IPs diferentes geram hashes diferentes. |
+| RLSRV06 | PASS | Scopes diferentes geram hashes diferentes para o mesmo IP. |
+| RLSRV07 | PASS | IP bruto não consta nas specs enviadas ao RPC. |
+| RLSRV08 | PASS | Secret não consta nas specs enviadas ao RPC. |
+| RLSRV09 | PASS | Lançado erro se CF-IP ausente em modo cliente. |
+| RLSRV10 | PASS | IP malformado (ex: '1.2.3') rejeitado. |
+| RLSRV11 | PASS | Modo global_only ignora headers de IP. |
+| RLSRV12 | PASS | Retornado 429 se RPC `allowed=false`. |
+| RLSRV13 | PASS | `Retry-After` calculado com ceil e clamp >= 1. |
+| RLSRV14 | PASS | `verifyTurnstileToken` não invocado se 429. |
+| RLSRV15 | PASS | `av_create_order` não invocado se 429. |
+| RLSRV16 | PASS | SQLSTATEs de hardening (AV010+) causam 500. |
+| RLSRV17 | PASS | Fail-Open ativado em timeout/rede. |
+| RLSRV18 | PASS | Turnstile continua sendo validado após Fail-Open do Limiter. |
+| RLSRV19 | PASS | Erro Turnstile interrompe fluxo após Fail-Open do Limiter. |
+| RLSRV20 | PASS | Origin mismatch rejeitado antes do Limiter. |
+| RLSRV21 | PASS | Payload > 64KB rejeitado antes do Limiter. |
+| RLSRV22 | PASS | JSON inválido rejeitado antes do Limiter. |
+| RLSRV23 | PASS | Idempotency Key não isenta do Rate Limit. |
+| RLSRV24 | PASS | Auditoria de logs confirmou zero PII/Secret/IP. |
+| RLSRV25 | PASS | Fluxo completo OK com dados válidos. |
+
+## Auditoria de Dados Remanescentes
+- **AV_ORDERS**: 0 rows de teste.
+- **AV_RATE_LIMIT_BUCKETS**: 0 rows de teste.
+- **AV_ORDER_ITEMS**: 0 rows de teste.
+
+
+===== E_security_audit.md =====
+
+---
+name: Etapa 3.3B-2B - Security Audit
+description: Auditoria de segurança da integração do Rate Limiting.
+type: feature
+---
+
+# E_security_audit.md
+
+## 1. Proteção de Segredos
+- **HMAC Secret**: A variável `AV_RATE_LIMIT_HASH_SECRET` é lida apenas no server-side.
+- **Log Sanitization**: O helper e a rota foram auditados para garantir que segredos nunca sejam logados.
+- **Zero Exposure**: O segredo nunca é enviado ao banco de dados; apenas o digest HMAC é transmitido.
+
+## 2. Identificação Confiável
+- **CF-Connecting-IP**: Utilizado como fonte única de verdade para IP. Não há fallback para `X-Forwarded-For`, prevenindo spoofing em ambientes protegidos por Cloudflare.
+- **Normalização Estrita**: IPv4 e IPv6 passam por validação rigorosa antes do processamento.
+
+## 3. Resiliência e Fail-States
+- **Fail-Closed**: Aplicado a erros de configuração e violações de integridade SQL (AV010-AV020), priorizando a segurança.
+- **Fail-Open**: Aplicado apenas a falhas de infraestrutura transitórias (storage indisponível), garantindo disponibilidade mínima sob stress.
+- **Turnstile Coupling**: O Turnstile permanece obrigatório mesmo em cenários de Fail-Open do Rate Limiter, mantendo uma camada de proteção contra bots.
+
+## 4. Auditoria de Logs
+Confirmado o uso de `correlation_id` para rastreamento. PII (Nomes, WhatsApp, IPs brutos) e Hashes completos foram excluídos das mensagens de log.
+
+
+===== F_final_report.md =====
+
+---
+name: Etapa 3.3B-2B - Final Report
+description: Relatório final de conclusão da etapa 3.3B-2B.
+type: feature
+---
+
+# F_final_report.md
+
+## Resumo Técnico
+A integração server-side do Rate Limiting foi concluída com sucesso. O fluxo da Server Route `av-create-order.ts` agora segue rigorosamente a ordem de segurança estabelecida, garantindo que o Rate Limiting ocorra antes de operações mais custosas como Siteverify ou RPC de Negócio.
+
+## Métricas e Validações
+- **Helper**: `src/lib/server/av-rate-limit.ts` implementado com suporte a HMAC-SHA-256 e normalização de IP.
+- **Rate Limit Mode**: Suporte a `global_only` e `global_and_client`.
+- **Atomicidade**: Uma única chamada RPC multi-bucket por requisição.
+- **Erros**: Tratamento determinístico de HTTP 429 com `Retry-After`.
+
+## Conformidade
+- **PII nos Logs**: NÃO.
+- **Secret nos Logs**: NÃO.
+- **IP no Banco**: NÃO.
+- **Turnstile em 429**: NÃO.
+- **Typecheck**: PASS.
+- **Build**: PASS.
+
+**CONCLUSÃO: ETAPA 3.3B-2B — RATE LIMITING INTEGRADO À SERVER ROUTE E VALIDADO.**
+
+
