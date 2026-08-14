@@ -137,15 +137,6 @@ export const Route = createFileRoute('/api/public/av-create-order')({
       OPTIONS: async ({ request }) => {
         const correlationId = crypto.randomUUID()
         const origin = request.headers.get("origin")
-        
-        // FORÇA REJEIÇÃO SE FOR EVIL (TESTE)
-        if (origin === "https://evil.example.com") {
-          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          })
-        }
-
         const allowedOrigins = getAllowedOrigins(request)
 
         if (allowedOrigins.length === 0) {
@@ -156,18 +147,29 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
 
-        if (origin && allowedOrigins.includes(origin)) {
-          return new Response(null, {
-            status: 204,
-            headers: {
-              "Access-Control-Allow-Origin": origin,
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
-              "Access-Control-Max-Age": "86400",
-              "Vary": "Origin"
-            },
+        // Se o browser enviou Origin, validamos contra a lista
+        if (origin) {
+          if (allowedOrigins.includes(origin)) {
+            return new Response(null, {
+              status: 204,
+              headers: {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+                "Access-Control-Max-Age": "86400",
+                "Vary": "Origin"
+              },
+            })
+          }
+          // Se houver Origin mas não permitida: 403
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
           })
         }
+
+        // Se NÃO houver Origin (chamada direta ou script sem Origin), mas for OPTIONS, 
+        // Nitro/Proxy pode retornar 204 por conta própria, mas mantemos o 403 por segurança.
         return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
           status: 403,
           headers: { "Content-Type": "application/json" },
