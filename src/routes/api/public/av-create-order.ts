@@ -111,21 +111,22 @@ function getAllowedOrigins(request: Request): string[] {
     .map((o) => o.trim())
     .filter(Boolean)
   
-  // LOG PARA AUDITORIA (Será removido após confirmação)
-  const originHeader = request.headers.get("origin")
-  const requestUrl = request.url
-  console.log(`[AV_DEBUG] Origin Header: ${originHeader}, Request URL: ${requestUrl}`)
-
   let selfOrigin = ''
   try {
-    const url = new URL(requestUrl)
+    const url = new URL(request.url)
     selfOrigin = url.origin
   } catch {
     selfOrigin = ''
   }
+
+  // Fallback para o domínio de preview conhecido em caso de falha de detecção no proxy
+  const previewOrigin = "https://65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovableproject.com"
   
-  const allowed = Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
-  console.log(`[AV_DEBUG] Final Allowed Origins: ${JSON.stringify(allowed)}`)
+  const allowed = Array.from(new Set([
+    ...fromEnv, 
+    ...(selfOrigin ? [selfOrigin] : []),
+    previewOrigin
+  ]))
   return allowed
 }
 
