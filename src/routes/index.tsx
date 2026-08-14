@@ -43,8 +43,7 @@ function Index() {
     removeItem,
     updateItem,
     clearOrder,
-    setItems,
-    setCustomer
+    setItems
   } = useOrderState();
 
   const handleClearAll = useCallback(() => {

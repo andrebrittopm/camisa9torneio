@@ -458,8 +458,12 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           const rpcData = data.data
 
+          // 25. Generate Receipt Access Token (deterministically from order_id)
+          const receiptAccessToken = await generateReceiptAccessToken(rpcData.order_id)
+
           return new Response(JSON.stringify({
             success: true,
+            receipt_access_token: receiptAccessToken,
             data: {
               order_id: rpcData.order_id,
               order_seq: rpcData.order_seq,
