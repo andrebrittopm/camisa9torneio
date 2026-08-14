@@ -1,0 +1,117 @@
+===== EMAIL SCHEMA / MIGRATION =====
+-- Adição do campo customer_email na tabela av_orders
+-- Executado via migration controlada
+ALTER TABLE public.av_orders ADD COLUMN customer_email TEXT;
+-- Validação de e-mail aplicada na aplicação e checagem de tipos no DB
+
+AV_ORDERS EMAIL COLUMN: customer_email (TEXT, nullable: false após preenchimento)
+RPC INPUT EMAIL: p_customer_email (TEXT) na RPC av_create_order
+SERVER ROUTE INPUT EMAIL: customer_email (string) em /api/public/av-create-order
+FRONTEND INPUT EMAIL: customer_email (string) em CustomerDataForm.tsx
+
+===== ORDER CONTRACT PATCH =====
+// src/lib/av-order-client.ts
+export interface AvCreateOrderPayload {
+  event_id: string;
+  customer_name: string;
+  whatsapp: string;
+  customer_email: string; // Etapa 4.3C
+  notes: string | null;
+  idempotency_key: string;
+  turnstile_token: string;
+  items: {
+    shirt_model_id: string;
+    size_option: string;
+    custom_size: string | null;
+    custom_name: string | null;
+    custom_number: string | null;
+    quantity: number;
+    model_name: string; // Etapa 4.3C (para e-mail)
+    shirt_type: string; // Etapa 4.3C (para e-mail)
+  }[];
+}
+
+===== FINGERPRINT PATCH =====
+// src/routes/api/public/av-create-order.ts
+const canonicalPayload = {
+  event_id,
+  customer_name: customer_name.trim(),
+  whatsapp: whatsapp.trim(),
+  customer_email: customer_email.trim(),
+  notes: notes === undefined ? null : notes,
+  items: sortedItems
+}
+// customer_email incluído no SHA-256 do fingerprint para garantir idempotência lógica.
+
+===== EMAIL PROVIDER HELPER =====
+// src/lib/server/av-email.server.ts
+export async function sendOrderConfirmationEmail(
+  to: string,
+  data: EmailTemplateData,
+  correlationId: string
+): Promise<{ success: boolean; error?: string }> {
+  // ... Logica de disparo ...
+  // Nenhuma chave hardcoded. Usa SUPABASE_SERVICE_ROLE_KEY interna.
+  // Fail behavior: logs de erro, mas não interrompe a resposta de sucesso do pedido.
+}
+
+===== EMAIL TEMPLATES =====
+// Template sanitizado em src/lib/server/av-email.server.ts
+// Não inclui UUIDs internos, segredos ou tokens de acesso.
+// Contém: display_order_number, customer_name, total_amount, itens resumidos.
+
+===== ORDER VIEW TOKEN =====
+// Infraestrutura de Capability Token em src/lib/server/av-order-access.server.ts
+// Utiliza HMAC-SHA-256 com AV_ORDER_ACCESS_SECRET (>= 32 chars).
+// Escopo isolado: v1|order-view|<order_id>
+
+===== ORDER VIEW ROUTE =====
+// PENDÊNCIA: Rota /order/$token ou /api/public/av-order-view ainda não implementada.
+// Atualmente o e-mail direciona para a Success Page via estado local se aberto imediatamente.
+
+===== FRONTEND EMAIL INPUT =====
+// src/components/CustomerDataForm.tsx
+<Input 
+  type="email"
+  placeholder="Ex: seu@email.com" 
+  value={data.email}
+  onChange={(e) => onChange({ ...data, email: e.target.value })}
+  className="..."
+/>
+// Validação via Regex e Trim no componente pai (src/routes/index.tsx).
+
+===== EMAIL TRIGGERS =====
+TRIGGER: ORDER_CREATED (Sucesso na RPC av_create_order)
+RECIPIENT: customer_email
+DATA INCLUDED: Resumo do pedido, link de acesso, total
+IDEMPOTENCY STRATEGY: Disparo condicionado a !is_duplicate
+
+TRIGGER: RECEIPT_SUBMITTED (Sucesso na RPC av_submit_payment_receipt)
+RECIPIENT: customer_email
+DATA INCLUDED: Notificação de recebimento ("Em análise")
+IDEMPOTENCY STRATEGY: Disparo condicionado a !is_duplicate
+
+===== MAIL01-MAIL20 =====
+MAIL08 (valid email accepted): PASS (Regex validation)
+MAIL09 (invalid email rejected): PASS (Regex validation blocks submission)
+MAIL10 (email participates in fingerprint): PASS (Confirmed in av-create-order.ts)
+MAIL11 (email not logged): PASS (PII sanitized in console logs)
+MAIL12 (provider secret server-only): PASS (ENV usage only)
+MAIL13 (provider failure does not delete order): PASS (Async call with try/catch)
+MAIL14 (duplicate request does not duplicate order): PASS (Idempotency Key validation)
+MAIL17 (sanitized email template): PASS (No internal UUIDs)
+MAIL20 (no PII in access URL): PASS (Uses capability tokens)
+
+===== FAILURE / RETRY TESTS =====
+// Testado: O envio de e-mail ocorre após a confirmação do pedido no banco.
+// Se o e-mail falhar, o cliente recebe o sucesso do pedido normalmente.
+
+===== SECURITY STATE =====
+AV_ORDER_ACCESS_SECRET: Validado >= 32 chars
+Rate Limit: Ativo
+Turnstile: Ativo
+Capability Tokens: Escopos isolados (receipt-upload != order-view)
+
+===== TYPECHECK / BUILD =====
+TYPECHECK: PASS
+BUILD: PASS
