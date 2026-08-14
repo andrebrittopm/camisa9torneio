@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
+import { verifyTurnstileToken } from './B_turnstile_helpers'
 
 /**
- * ETAPA 3.3A-1 — PROPOSTA DE SERVER ROUTE COM TURNSTILE
+ * ETAPA 3.3A-1 — PROPOSTA DE SERVER ROUTE COM TURNSTILE (INTEGRAL)
  * AUDITORIA: Somente para visualização do código final integrado.
  */
 
@@ -16,7 +17,7 @@ const ALLOWED_FIELDS = [
   'notes',
   'idempotency_key',
   'items',
-  'turnstile_token', // 2. CAMPO NOVO
+  'turnstile_token',
 ]
 
 const PROHIBITED_FIELDS = [
@@ -128,70 +129,6 @@ function getAllowedOrigins(request: Request): string[] {
   return allowed
 }
 
-// ---------------------------------------------------------
-// TURNSTILE VERIFICATION HELPER (INLINED OR IMPORTED)
-// ---------------------------------------------------------
-async function verifyTurnstileToken(
-  token: string,
-  secretKey: string | undefined,
-  correlationId: string,
-  expectedHostnames: string[] = [],
-  expectedAction: string = "create_order"
-) {
-  if (!secretKey) {
-    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`)
-    return { success: false, error: "CONFIG_MISSING" }
-  }
-
-  const endpoint = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 8000)
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secret: secretKey,
-        response: token,
-        idempotency_key: crypto.randomUUID(),
-      }),
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
-    if (!response.ok) return { success: false, error: "TURNSTILE_UNAVAILABLE" }
-
-    const result: any = await response.json()
-    if (typeof result !== "object" || result === null) return { success: false, error: "TURNSTILE_UNAVAILABLE" }
-
-    if (result.success !== true) {
-      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`)
-      return { success: false, error: "TURNSTILE_FAILED" }
-    }
-
-    if (result.action !== expectedAction) {
-      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH`)
-      return { success: false, error: "TURNSTILE_FAILED" }
-    }
-
-    if (expectedHostnames.length > 0) {
-      if (!result.hostname || !expectedHostnames.includes(result.hostname)) {
-        console.warn(`[AV] correlation=${correlationId} stage=turnstile code=HOSTNAME_MISMATCH`)
-        return { success: false, error: "TURNSTILE_FAILED" }
-      }
-    }
-
-    return { success: true }
-  } catch (err: any) {
-    clearTimeout(timeoutId)
-    const code = err.name === "AbortError" ? "TIMEOUT" : "FATAL"
-    console.error(`[AV] correlation=${correlationId} stage=turnstile code=${code}`)
-    return { success: false, error: err.name === "AbortError" ? "TURNSTILE_UNAVAILABLE" : "TURNSTILE_UNAVAILABLE" }
-  }
-}
-// ---------------------------------------------------------
-
 export const Route = createFileRoute('/api/public/av-create-order')({
   server: {
     handlers: {
@@ -237,7 +174,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
         const origin = request.headers.get("origin")
         const allowedOrigins = getAllowedOrigins(request)
 
-        // 1. ORIGIN VALIDATION
+        // 1. Origin
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
@@ -260,7 +197,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
         }
 
         try {
-          // 2. BODY LIMIT & UTF-8 STREAM
+          // 2. Body size
           const contentLength = parseInt(request.headers.get("content-length") || "-1")
           if (contentLength > MAX_BODY_BYTES) {
             return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
@@ -291,7 +228,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             bodyText += decoder.decode(value, { stream: true })
           }
 
-          // 3. JSON PARSE
+          // 3. JSON parse
           let payload: any
           try {
             payload = JSON.parse(bodyText)
@@ -302,11 +239,12 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
+          // 4. Payload objeto
           if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          // 4. TOP-LEVEL STRUCTURE BASIC VALIDATION
+          // 5. Allowlist top-level
           const payloadKeys = Object.keys(payload)
           if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
@@ -314,15 +252,64 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           const { event_id, customer_name, whatsapp, notes, idempotency_key, items, turnstile_token } = payload
 
+          // 6. event_id UUID
           if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 7. idempotency_key UUID
           if (!isValidUuid(idempotency_key)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           
-          // 6. TURNSTILE TOKEN VALIDATION
+          // 8. turnstile_token: string, trim, <= 2048
           if (typeof turnstile_token !== "string" || turnstile_token.trim() === "" || turnstile_token.length > 2048) {
              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          // 7. TURNSTILE SITEVERIFY (FAIL CLOSED)
+          // 9. customer_name
+          if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 10. whatsapp
+          if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 11. notes
+          if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+
+          // 12. items array & 13. MAX_ITEM_LINES
+          if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEM_LINES) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          const validatedItems = []
+          for (const item of items) {
+            // 14. cada item é objeto
+            if (typeof item !== "object" || item === null || Array.isArray(item)) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            // 15. allowlist item
+            const itemKeys = Object.keys(item)
+            if (itemKeys.some(k => !ITEM_ALLOWED_FIELDS.includes(k) || ITEM_PROHIBITED_FIELDS.includes(k))) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
+            // 16. shirt_model_id UUID
+            if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            // 17. size_option
+            if (typeof size_option !== "string" || size_option.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            // 18. quantity
+            if (typeof quantity !== "number" || !Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > 2147483647) {
+              return new Response(JSON.stringify({ error: "INVALID_QUANTITY", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            // 19. custom_size/custom_name/custom_number
+            const validateOptionalString = (v: any) => (v === undefined || v === null || typeof v === "string")
+            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number)) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            validatedItems.push({
+              shirt_model_id,
+              size_option: size_option.trim(),
+              custom_size: custom_size === undefined ? null : custom_size,
+              custom_name: custom_name === undefined ? null : custom_name,
+              custom_number: custom_number === undefined ? null : custom_number,
+              quantity
+            })
+          }
+
+          // 20. SOMENTE AGORA Siteverify
           const turnstileSecret = process.env['TURNSTILE_SECRET_KEY']
           const expectedHostnames = (process.env['TURNSTILE_EXPECTED_HOSTNAMES'] || '')
             .split(',')
@@ -338,50 +325,20 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           )
 
           if (!turnstileResult.success) {
-            const status = turnstileResult.error === "TURNSTILE_UNAVAILABLE" ? 503 : (turnstileResult.error === "CONFIG_MISSING" ? 500 : 403)
-            const error = turnstileResult.error === "TURNSTILE_UNAVAILABLE" ? "TURNSTILE_UNAVAILABLE" : (turnstileResult.error === "CONFIG_MISSING" ? "INTERNAL_ERROR" : "TURNSTILE_FAILED")
+            const statusMap: Record<string, number> = {
+              "TURNSTILE_UNAVAILABLE": 503,
+              "CONFIG_MISSING": 500,
+              "CONFIG_ERROR": 500,
+              "TURNSTILE_FAILED": 403
+            }
+            const status = statusMap[turnstileResult.error] || 403
+            const error = turnstileResult.error === "TURNSTILE_UNAVAILABLE" ? "TURNSTILE_UNAVAILABLE" : 
+                          (turnstileResult.error === "TURNSTILE_FAILED" ? "TURNSTILE_FAILED" : "INTERNAL_ERROR")
+            
             return new Response(JSON.stringify({ error, correlation_id: correlationId }), { status, headers: corsHeaders })
           }
 
-          // 8. PAYLOAD FIELDS/ITEMS VALIDATION
-          if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-          if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-          if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-
-          if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEM_LINES) {
-            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-          }
-
-          const validatedItems = []
-          for (const item of items) {
-            if (typeof item !== "object" || item === null || Array.isArray(item)) {
-              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            }
-            const itemKeys = Object.keys(item)
-            if (itemKeys.some(k => !ITEM_ALLOWED_FIELDS.includes(k) || ITEM_PROHIBITED_FIELDS.includes(k))) {
-              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            }
-            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
-            if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            if (typeof size_option !== "string" || size_option.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            if (typeof quantity !== "number" || !Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > 2147483647) {
-              return new Response(JSON.stringify({ error: "INVALID_QUANTITY", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            }
-            const validateOptionalString = (v: any) => (v === undefined || v === null || typeof v === "string")
-            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number)) {
-              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
-            }
-            validatedItems.push({
-              shirt_model_id,
-              size_option: size_option.trim(),
-              custom_size: custom_size === undefined ? null : custom_size,
-              custom_name: custom_name === undefined ? null : custom_name,
-              custom_number: custom_number === undefined ? null : custom_number,
-              quantity
-            })
-          }
-
-          // 9. FINGERPRINT (Excludes turnstile_token)
+          // 21. fingerprint (Excludes turnstile_token)
           const sortedItems = [...validatedItems].sort((a, b) => {
             const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
             const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
@@ -403,7 +360,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             .map(b => b.toString(16).padStart(2, "0"))
             .join("")
 
-          // 10. SUPABASE SECRETS
+          // 22. secrets Supabase
           const supabaseUrl = process.env['SUPABASE_URL']
           const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
 
@@ -415,7 +372,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          // 11. RPC (Service Role)
+          // 23. RPC (Service Role)
           const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
           const { data, error } = await supabaseAdmin.rpc("av_create_order", {
             p_event_id: event_id,
@@ -443,7 +400,13 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          if (!data || typeof data !== "object" || data.success !== true || !data.data || !isValidRpcData(data.data)) {
+          if (
+            !data ||
+            typeof data !== "object" ||
+            data.success !== true ||
+            !data.data ||
+            !isValidRpcData(data.data)
+          ) {
             console.error(`[AV] correlation=${correlationId} stage=rpc_response code=INVALID_RPC_RESPONSE`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
@@ -452,6 +415,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           }
 
           const rpcData = data.data
+
           return new Response(JSON.stringify({
             success: true,
             data: {
@@ -479,7 +443,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             headers: corsHeaders,
           })
         }
-      },
-    },
-  },
+      }
+    }
+  }
 })
