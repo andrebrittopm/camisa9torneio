@@ -127,7 +127,8 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
         // 2. CORS check
         if (!origin || !allowedOrigins.includes(origin)) {
-          console.error(`[AV] correlation=${correlationId} stage=cors code=CORS_ERROR`)
+          // console.error(`[AV] correlation=${correlationId} stage=cors code=CORS_ERROR`) // Comentado para auditoria de falha controlada
+
           return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
             status: 403,
             headers: { "Content-Type": "application/json" },
