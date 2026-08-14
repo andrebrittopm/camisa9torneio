@@ -28,7 +28,8 @@ function Index() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<AvShirtModel | null>(null)
-  const [view, setView] = useState<'config' | 'review'>('config')
+  const [view, setView] = useState<'config' | 'review' | 'success'>('config')
+  const [createdOrder, setCreatedOrder] = useState<any>(null)
 
   const {
     items,
