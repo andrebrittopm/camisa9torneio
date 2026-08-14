@@ -156,15 +156,27 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // Validar dados dos modelos
           let validatedModels: ModelData[]
           try {
-            // Log detalhado para entender a falha de validação
-            console.error(`[AV-CATALOG] Debug: modelRows[0] keys = ${Object.keys(modelRows[0] || {})}`);
-            console.error(`[AV-CATALOG] Debug: modelRows[0] = ${JSON.stringify(modelRows[0] || {})}`);
+            // Log forçado usando throw para garantir visibilidade no log se o console.error estiver sendo suprimido
+            // validatedModels = z.array(ShirtModelSchema).parse(modelRows)
             
-            validatedModels = z.array(ShirtModelSchema).parse(modelRows)
-          } catch (err) {
-            if (err instanceof z.ZodError) {
-              console.error(`[AV-CATALOG] ZodError: ${JSON.stringify(err.errors)}`);
+            // Debug alternativo:
+            const debugInfo = {
+               keys: Object.keys(modelRows[0] || {}),
+               firstRow: modelRows[0]
+            };
+            
+            // Re-throw de erro com info de debug se a validação falhar
+            try {
+               validatedModels = z.array(ShirtModelSchema).parse(modelRows)
+            } catch (zErr) {
+               console.error("ZOD_FAILURE_DATA:", JSON.stringify(debugInfo));
+               if (zErr instanceof z.ZodError) {
+                  console.error("ZOD_ERRORS:", JSON.stringify(zErr.errors));
+               }
+               throw zErr;
             }
+
+          } catch (err) {
             console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=models`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
