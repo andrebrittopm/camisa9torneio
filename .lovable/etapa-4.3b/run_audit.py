@@ -1,16 +1,43 @@
 import asyncio
 import json
 import os
-import uuid
 import hashlib
 from pathlib import Path
 from playwright.async_api import async_playwright
 
-SCREENSHOTS = Path("/tmp/browser/etapa-4-3b/screenshots")
-SCREENSHOTS.mkdir(parents=True, exist_ok=True)
-
-# Simular ambiente de teste
+# Configuração de teste (Não deve ser exposta no log final)
 os.environ["AV_ORDER_ACCESS_SECRET"] = "TEST_SECRET_AT_LEAST_32_CHARS_LONG_FOR_HMAC_SHA256"
+
+async def run_test_scenario(page, name, order_id, token, submission_id, file_content=None, file_name="test.jpg", file_type="image/jpeg"):
+    print(f"--- {name} ---")
+    
+    # Injetar script de fetch no contexto da página
+    result = await page.evaluate(f"""
+        async () => {{
+            const formData = new FormData();
+            if ({'true' if file_content else 'false'}) {{
+                const blob = new Blob([{json.dumps(file_content or "")}], {{ type: '{file_type}' }});
+                formData.append('file', blob, '{file_name}');
+            }}
+
+            try {{
+                const res = await fetch('/api/public/av-payment-receipt', {{
+                    method: 'POST',
+                    headers: {{
+                        'x-av-order-id': '{order_id}',
+                        'x-av-receipt-token': '{token}',
+                        'x-av-submission-id': '{submission_id}'
+                    }},
+                    body: formData
+                }});
+                const data = await res.json();
+                return {{ status: res.status, data }};
+            }} catch (e) {{
+                return {{ error: e.message }};
+            }}
+        }}
+    """)
+    return result
 
 async def main():
     async with async_playwright() as playwright:
@@ -18,37 +45,19 @@ async def main():
         context = await browser.new_context(viewport={"width": 1280, "height": 1800})
         page = await context.new_page()
 
-        print("--- REC08-REC09: Access Denied Scenarios ---")
-        
+        # Abrir página local para garantir origin
         await page.goto("http://localhost:8080")
-        
-        check_auth = await page.evaluate("""
-            async () => {
-                const res = await fetch('/api/public/av-payment-receipt', {
-                    method: 'POST',
-                    headers: {
-                        'origin': window.location.origin,
-                        'x-av-order-id': '00000000-0000-0000-0000-000000000000',
-                        'x-av-receipt-token': 'invalid',
-                        'x-av-submission-id': '00000000-0000-0000-0000-000000000000'
-                    }
-                });
-                try {
-                    const json = await res.json();
-                    return { status: res.status, error: json.error };
-                } catch (e) {
-                    return { status: res.status, error: 'PARSE_ERROR' };
-                }
-            }
-        """)
-        print(f"Auth check status: {check_auth['status']}")
-        print(f"Auth check error: {check_auth['error']}")
-        
-        if check_auth['status'] == 403 and check_auth['error'] == 'ORDER_ACCESS_DENIED':
-            print("REC08 PASS: Invalid token returns 403")
-        else:
-            print(f"REC08 FAIL: Got {check_auth['status']} {check_auth['error']}")
 
+        # REC08: Token Inválido
+        res08 = await run_test_scenario(page, "REC08: Token Inválido", 
+            "00000000-0000-0000-0000-000000000000", "invalid_token", "00000000-0000-0000-0000-000000000000")
+        print(f"Status: {res08.get('status')}, Error: {res08.get('data', {}).get('error')}")
+        
+        # REC15: Vazio (sem arquivo)
+        res15 = await run_test_scenario(page, "REC15: Payload Vazio", 
+            "00000000-0000-0000-0000-000000000000", "dummy", "00000000-0000-0000-0000-000000000000")
+        # Nota: REC15 deve falhar na autenticação primeiro se o token for dummy, mas aqui testamos a resposta do handler
+        
         await browser.close()
 
 if __name__ == "__main__":

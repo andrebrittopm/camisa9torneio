@@ -357,6 +357,17 @@ export type Database = {
         }
         Returns: Json
       }
+      av_submit_payment_receipt: {
+        Args: {
+          p_file_sha256: string
+          p_mime_type: string
+          p_order_id: string
+          p_size_bytes: number
+          p_storage_path: string
+          p_submission_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
