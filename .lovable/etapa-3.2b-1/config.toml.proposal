@@ -1,0 +1,6 @@
+# ALTERAÇÃO PROPOSTA PARA supabase/config.toml (NÃO APLICADA)
+
+project_id = "qokatdsdqbwpfcmtocgq"
+
+[functions.av-create-order]
+verify_jwt = false
