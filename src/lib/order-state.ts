@@ -36,6 +36,12 @@ export const useOrderState = () => {
     setItems(prev => prev.map(i => i.local_id === local_id ? { ...item, local_id } : i));
   };
 
+  const clearOrder = () => {
+    setItems([]);
+    setCustomer({ name: '', whatsapp: '', notes: '' });
+    setEditingItemId(null);
+  };
+
   return {
     items,
     setItems,
@@ -45,6 +51,7 @@ export const useOrderState = () => {
     setEditingItemId,
     addItem,
     removeItem,
-    updateItem
+    updateItem,
+    clearOrder
   };
 };
