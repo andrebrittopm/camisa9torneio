@@ -112,11 +112,16 @@ function getAllowedOrigins(request: Request): string[] {
     .filter(Boolean)
   let selfOrigin = ''
   try {
-    selfOrigin = new URL(request.url).origin
+    const url = new URL(request.url)
+    selfOrigin = url.origin
+    // Em alguns ambientes de dev/proxy, url.origin pode não ser o que o browser vê.
+    // O requisito é clear: same-origin do próprio endpoint.
   } catch {
     selfOrigin = ''
   }
-  return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
+  
+  const allowed = Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
+  return allowed
 }
 
 
