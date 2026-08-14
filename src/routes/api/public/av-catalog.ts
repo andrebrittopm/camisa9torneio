@@ -156,8 +156,10 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // Validar dados dos modelos
           let validatedModels: ModelData[]
           try {
-            console.log(`[AV-CATALOG] Debug: modelRows[0] keys = ${Object.keys(modelRows[0])}`);
-            console.log(`[AV-CATALOG] Debug: modelRows[0] = ${JSON.stringify(modelRows[0])}`);
+            // Log detalhado para entender a falha de validação
+            console.error(`[AV-CATALOG] Debug: modelRows[0] keys = ${Object.keys(modelRows[0] || {})}`);
+            console.error(`[AV-CATALOG] Debug: modelRows[0] = ${JSON.stringify(modelRows[0] || {})}`);
+            
             validatedModels = z.array(ShirtModelSchema).parse(modelRows)
           } catch (err) {
             if (err instanceof z.ZodError) {
