@@ -118,8 +118,9 @@ function Index() {
                       <CustomizationPreview 
                         selectedModel={selectedModel}
                         eventInfo={catalog.event}
-                        customName={editingItem?.custom_name || undefined}
-                        customNumber={editingItem?.custom_number || undefined}
+                        customName={editingItem?.custom_name ?? null}
+                        customNumber={editingItem?.custom_number ?? null}
+
                       />
                       
                       <div className="space-y-12">
