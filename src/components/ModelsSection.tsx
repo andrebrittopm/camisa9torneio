@@ -1,14 +1,26 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { shirtModels } from "@/lib/constants";
+import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
 
-export function ModelCard({ model, isSelected, onSelect }: { 
-  model: typeof shirtModels[0]; 
+export function ModelCard({ 
+  model, 
+  isSelected, 
+  onSelect,
+  eventInfo
+}: { 
+  model: AvShirtModel; 
   isSelected: boolean;
   onSelect: () => void;
+  eventInfo: AvCatalogEvent;
 }) {
+  const formattedPrice = useMemo(() => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(eventInfo.unit_price);
+  }, [eventInfo.unit_price]);
   return (
     <motion.div
       layout
@@ -27,22 +39,32 @@ export function ModelCard({ model, isSelected, onSelect }: {
         
         {/* Placeholder Image Area - Larger & Prepared for images */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center border border-dashed border-ice/10 rounded-2xl group-hover:border-gold/20 transition-all duration-500 bg-white/[0.01]">
-          <div className="w-32 h-44 md:w-40 md:h-56 relative flex items-center justify-center">
-            {/* Tech markers */}
-            <div className="absolute -top-2 -left-2 w-4 h-4 border-t border-l border-gold/30" />
-            <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b border-r border-gold/30" />
-            
-            <svg viewBox="0 0 60 100" className="w-full h-full text-ice/10 fill-current drop-shadow-2xl">
-              <path d="M30 0C10 0 0 10 0 30V80H10V95H50V80H60V30C60 10 50 0 30 0Z" />
-            </svg>
-          </div>
-          <div className="mt-4 flex flex-col items-center">
-            <span className="text-[10px] text-ice/30 uppercase tracking-[0.2em] font-black">Modelo Tech</span>
-            <div className="mt-1 flex gap-1">
-              <div className="w-1 h-1 rounded-full bg-gold/20" />
-              <div className="w-1 h-1 rounded-full bg-gold/20" />
+          {model.image_url ? (
+            <img 
+              src={model.image_url} 
+              alt={model.name}
+              className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
+            />
+          ) : (
+            <div className="w-32 h-44 md:w-40 md:h-56 relative flex items-center justify-center">
+              {/* Tech markers */}
+              <div className="absolute -top-2 -left-2 w-4 h-4 border-t border-l border-gold/30" />
+              <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b border-r border-gold/30" />
+              
+              <svg viewBox="0 0 60 100" className="w-full h-full text-ice/10 fill-current drop-shadow-2xl">
+                <path d="M30 0C10 0 0 10 0 30V80H10V95H50V80H60V30C60 10 50 0 30 0Z" />
+              </svg>
             </div>
-          </div>
+          )}
+          {!model.image_url && (
+            <div className="mt-4 flex flex-col items-center">
+              <span className="text-[10px] text-ice/30 uppercase tracking-[0.2em] font-black">Modelo oficial em breve</span>
+              <div className="mt-1 flex gap-1">
+                <div className="w-1 h-1 rounded-full bg-gold/20" />
+                <div className="w-1 h-1 rounded-full bg-gold/20" />
+              </div>
+            </div>
+          )}
         </div>
 
         {isSelected && (
@@ -63,9 +85,10 @@ export function ModelCard({ model, isSelected, onSelect }: {
               {model.category === 'tshirt' ? 'Camiseta' : 'Regata'}
             </span>
             <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">{model.name}</h3>
+            <div className="text-gold font-black text-lg mt-1">{formattedPrice}</div>
           </div>
           <div className="text-[10px] font-black text-ice/20 uppercase tracking-widest">
-            ACS • 2026
+            {eventInfo.event_year}
           </div>
         </div>
         <Button 
@@ -83,11 +106,36 @@ export function ModelCard({ model, isSelected, onSelect }: {
   );
 }
 
-export function ModelsSection() {
+export function ModelsSection({
+  models,
+  selectedModelId,
+  onSelectModel,
+  eventInfo
+}: {
+  models: AvShirtModel[];
+  selectedModelId: string | null;
+  onSelectModel: (model: AvShirtModel) => void;
+  eventInfo: AvCatalogEvent;
+}) {
   const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>('tshirt');
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
 
-  const filteredModels = shirtModels.filter(m => m.category === activeTab);
+  const filteredModels = useMemo(() => models.filter(m => m.category === activeTab), [models, activeTab]);
+
+  const counts = useMemo(() => ({
+    tshirt: models.filter(m => m.category === 'tshirt').length,
+    tank: models.filter(m => m.category === 'tank').length
+  }), [models]);
+
+  useEffect(() => {
+    // Se trocar de aba e o modelo selecionado não for da aba ativa, seleciona o primeiro da aba
+    const currentModel = models.find(m => m.id === selectedModelId);
+    if (currentModel && currentModel.category !== activeTab) {
+      const firstInTab = filteredModels[0];
+      if (firstInTab) {
+        onSelectModel(firstInTab);
+      }
+    }
+  }, [activeTab, models, selectedModelId, filteredModels, onSelectModel]);
 
   return (
     <section id="camisas" className="py-24 relative overflow-hidden">
@@ -122,7 +170,7 @@ export function ModelsSection() {
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
-                {tab === 'tshirt' ? 'Camiseta' : 'Regata'}
+                {tab === 'tshirt' ? `Camiseta (${counts.tshirt})` : `Regata (${counts.tank})`}
               </button>
             ))}
           </div>
@@ -145,7 +193,8 @@ export function ModelsSection() {
                 <ModelCard 
                   model={model} 
                   isSelected={selectedModelId === model.id}
-                  onSelect={() => setSelectedModelId(model.id)}
+                  onSelect={() => onSelectModel(model)}
+                  eventInfo={eventInfo}
                 />
               </motion.div>
             ))}
