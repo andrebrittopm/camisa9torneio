@@ -38,6 +38,7 @@ export interface AvCreateOrderPayload {
   event_id: string;
   customer_name: string;
   whatsapp: string;
+  customer_email: string; // Etapa 4.3C
   notes: string | null;
   idempotency_key: string;
   turnstile_token: string;

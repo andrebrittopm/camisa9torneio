@@ -46,6 +46,18 @@ export function CustomerDataForm({ data, onChange, disabled }: CustomerDataFormP
       </div>
 
       <div>
+        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">E-mail (para confirmação)</Label>
+        <Input 
+          type="email"
+          placeholder="Ex: seu@email.com" 
+          value={data.email}
+          disabled={disabled}
+          onChange={(e) => onChange({ ...data, email: e.target.value })}
+          className="h-16 bg-white/[0.02] border-white/10 rounded-xl font-black text-lg placeholder:text-ice/10 focus:border-gold/50 transition-all"
+        />
+      </div>
+
+      <div>
         <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">Observações (Opcional)</Label>
         <Textarea 
           placeholder="Ex: Gostaria de retirar no ginásio..."

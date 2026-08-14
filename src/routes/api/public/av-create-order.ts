@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
 import { generateReceiptAccessToken } from '@/lib/server/av-order-access.server'
+import { sendOrderConfirmationEmail } from '@/lib/server/av-email.server'
 
 
 /**
@@ -16,6 +17,7 @@ const ALLOWED_FIELDS = [
   'event_id',
   'customer_name',
   'whatsapp',
+  'customer_email',
   'notes',
   'idempotency_key',
   'items',
@@ -263,7 +265,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          const { event_id, customer_name, whatsapp, notes, idempotency_key, items, turnstile_token } = payload
+          const { event_id, customer_name, whatsapp, customer_email, notes, idempotency_key, items, turnstile_token } = payload
 
           // 6. event_id UUID
           if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
@@ -279,6 +281,13 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           // 10. whatsapp
           if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          
+          // 10.1 customer_email (Etapa 4.3C)
+          const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (typeof customer_email !== "string" || !EMAIL_REGEX.test(customer_email)) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+          
           // 11. notes
           if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
 
@@ -391,6 +400,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             event_id,
             customer_name: customer_name.trim(),
             whatsapp: whatsapp.trim(),
+            customer_email: customer_email.trim(),
             notes: notes === undefined ? null : notes,
             items: sortedItems
           }
@@ -420,6 +430,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             p_event_id: event_id,
             p_customer_name: customer_name.trim(),
             p_whatsapp: whatsapp.trim(),
+            p_customer_email: customer_email.trim(),
             p_notes: notes === undefined ? null : notes,
             p_idempotency_key: idempotency_key,
             p_request_fingerprint: fingerprint,
@@ -460,6 +471,28 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           // 25. Generate Receipt Access Token (deterministically from order_id)
           const receiptAccessToken = await generateReceiptAccessToken(rpcData.order_id)
+
+          // 26. Disparar E-mail (Async Fire-and-Forget)
+          if (!rpcData.is_duplicate) {
+            const successUrl = `${origin}/?view=success&order_id=${rpcData.order_id}&token=${receiptAccessToken}`;
+            
+            sendOrderConfirmationEmail(customer_email.trim(), {
+              order_number: rpcData.display_order_number,
+              customer_name: rpcData.customer_name,
+              total_amount: rpcData.total_amount,
+              items: sortedItems.map(item => ({
+                model_name: item.model_name || 'Modelo de Camisa', // Fallback se não vier no payload
+                shirt_type: item.shirt_type || 'tshirt',
+                size_option: item.size_option,
+                custom_name: item.custom_name,
+                custom_number: item.custom_number,
+                quantity: item.quantity
+              })),
+              success_url: successUrl
+            }, correlationId).catch(err => {
+              console.error(`[AV] correlation=${correlationId} stage=email code=ASYNC_FAILED error=${err}`);
+            });
+          }
 
           return new Response(JSON.stringify({
             success: true,

@@ -16,12 +16,13 @@ export type OrderItem = {
 export type CustomerData = {
   name: string;
   whatsapp: string;
+  email: string; // Adicionado na Etapa 4.3C
   notes: string;
 };
 
 export const useOrderState = () => {
   const [items, setItems] = useState<OrderItem[]>([]);
-  const [customer, setCustomer] = useState<CustomerData>({ name: '', whatsapp: '', notes: '' });
+  const [customer, setCustomer] = useState<CustomerData>({ name: '', whatsapp: '', email: '', notes: '' });
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
   const addItem = (item: Omit<OrderItem, 'local_id'>) => {
@@ -38,7 +39,7 @@ export const useOrderState = () => {
 
   const clearOrder = () => {
     setItems([]);
-    setCustomer({ name: '', whatsapp: '', notes: '' });
+    setCustomer({ name: '', whatsapp: '', email: '', notes: '' });
     setEditingItemId(null);
   };
 

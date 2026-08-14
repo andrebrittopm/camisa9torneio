@@ -77,6 +77,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
       event_id: eventInfo.id,
       customer_name: customer.name,
       whatsapp: customer.whatsapp,
+      customer_email: customer.email,
       notes: customer.notes || null,
       idempotency_key: currentKey,
       turnstile_token: turnstileToken,

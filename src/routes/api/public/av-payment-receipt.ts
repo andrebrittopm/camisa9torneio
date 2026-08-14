@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { verifyReceiptAccessToken } from '@/lib/server/av-order-access.server';
+import { sendReceiptConfirmationEmail } from '@/lib/server/av-email.server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
@@ -183,6 +184,26 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
               code: rpcError.code,
               correlation_id: correlationId 
             }), { status, headers: corsHeaders });
+          }
+
+          // 10. Disparar E-mail de Recebimento (Async)
+          if (rpcResult && !rpcResult.is_duplicate) {
+            // Buscar e-mail do cliente para notificação
+            supabase.from('av_orders')
+              .select('customer_email, customer_name, order_seq, event_year')
+              .eq('id', orderId)
+              .single()
+              .then(({ data: orderData }) => {
+                if (orderData?.customer_email) {
+                  const displayNum = `AV-${orderData.event_year}-${String(orderData.order_seq).padStart(4, '0')}`;
+                  sendReceiptConfirmationEmail(
+                    orderData.customer_email, 
+                    orderData.customer_name, 
+                    displayNum, 
+                    correlationId
+                  ).catch(err => console.error(`[AV] correlation=${correlationId} stage=email_receipt code=ASYNC_FAILED error=${err}`));
+                }
+              });
           }
 
           return new Response(JSON.stringify({
