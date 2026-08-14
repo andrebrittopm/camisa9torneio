@@ -343,7 +343,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             p_notes: notes === undefined ? null : notes,
             p_idempotency_key: idempotency_key,
             p_request_fingerprint: fingerprint,
-            p_items: JSON.stringify(sortedItems) as any
+            p_items: sortedItems as any
           })
 
           if (error) {
