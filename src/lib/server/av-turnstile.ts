@@ -29,18 +29,15 @@ export async function verifyTurnstileToken(
   const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
 
   // 11. DUMMY KEYS / ACTIONS
-  // No Sandbox o dev server não herda envs do terminal de teste.
-  // Usamos fallback explícito para test-token.* quando TURNSTILE_TEST_MODE não é propagado.
-  if (!isProduction && token.startsWith("test-token")) {
-     return { success: true };
-  }
+  // Fallback seguro removido após bateria de testes R1.
+  // A implementação agora é 100% canônica e depende de envs reais de produção.
 
   // 4. FAIL CLOSED - Secret Ausente
   let finalSecret = secretKey;
 
   if (!finalSecret) {
     if (turnstileTestMode === "true" && !isProduction) {
-      finalSecret = process.env['TURNSTILE_SECRET_KEY'] || "1x0000000000000000000000000000000AA";
+      finalSecret = process.env['TURNSTILE_SECRET_KEY'];
     }
   }
 
