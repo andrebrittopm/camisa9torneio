@@ -1,4 +1,4 @@
-/** ETAPA 4.2A — CONFIGURADOR E MONTAGEM LOCAL DO PEDIDO IMPLEMENTADOS E VALIDADOS. */
+/** ETAPA 4.2B — SUBMISSÃO REAL DO PEDIDO + TURNSTILE + IDEMPOTÊNCIA */
 import { createFileRoute } from '@tanstack/react-router'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
