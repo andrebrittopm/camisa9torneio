@@ -18,7 +18,7 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { label: "Início", href: "#" },
+    { label: "Início", href: "#inicio" },
     { label: "Camisas", href: "#camisas" },
     { label: "Como funciona", href: "#como-funciona" },
     { label: "Pedido", href: "#pedido" },

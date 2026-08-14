@@ -18,13 +18,18 @@ export function Footer() {
 
           <div className="flex flex-col md:items-end gap-6 w-full md:w-auto">
             <div className="flex flex-wrap gap-8">
-              {['Início', 'Camisas', 'Como funciona', 'Pedido'].map((item) => (
+              {[
+                { label: 'Início', href: '#inicio' },
+                { label: 'Camisas', href: '#camisas' },
+                { label: 'Como funciona', href: '#como-funciona' },
+                { label: 'Pedido', href: '#pedido' }
+              ].map((item) => (
                 <a 
-                  key={item} 
-                  href={`#${item.toLowerCase().replace(' ', '-')}`}
+                  key={item.label} 
+                  href={item.href}
                   className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 hover:text-gold transition-colors"
                 >
-                  {item}
+                  {item.label}
                 </a>
               ))}
             </div>
