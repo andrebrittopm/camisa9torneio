@@ -1,4 +1,4 @@
-/** ETAPA 4.2A — CONFIGURADOR E MONTAGEM LOCAL DO PEDIDO IMPLEMENTADOS E VALIDADOS. */
+/** ETAPA 4.2B — SUBMISSÃO REAL DO PEDIDO + TURNSTILE + IDEMPOTÊNCIA */
 import { createFileRoute } from '@tanstack/react-router'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
@@ -12,7 +12,7 @@ import { Footer } from '@/components/Footer'
 import { fetchAvCatalog, type AvCatalogResponse, type AvShirtModel } from '@/lib/av-catalog-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCcw, ArrowRight } from 'lucide-react'
+import { Loader2, RefreshCcw, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { useOrderState } from '@/lib/order-state'
 import { OrderConfigurator } from '@/components/OrderConfigurator'
 import { CustomerDataForm } from '@/components/CustomerDataForm'
@@ -28,7 +28,8 @@ function Index() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedModel, setSelectedModel] = useState<AvShirtModel | null>(null)
-  const [view, setView] = useState<'config' | 'review'>('config')
+  const [view, setView] = useState<'config' | 'review' | 'success'>('config')
+  const [createdOrder, setCreatedOrder] = useState<any>(null)
 
   const {
     items,
@@ -184,7 +185,7 @@ function Index() {
             <HowItWorks />
             <FinalCTA />
           </>
-        ) : (
+        ) : view === 'review' ? (
           <div className="py-24">
             {catalog && (
               <OrderReview 
@@ -192,11 +193,56 @@ function Index() {
                 items={items}
                 eventInfo={catalog.event}
                 onBack={() => setView('config')}
-                onConfirm={() => {}} // No-op for this stage
+                onSuccess={(order) => {
+                  setCreatedOrder(order);
+                  setView('success');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               />
             )}
           </div>
+        ) : (
+          <div className="py-24 container mx-auto px-6 text-center">
+             <div className="max-w-2xl mx-auto bg-white/[0.02] backdrop-blur-xl p-12 rounded-[48px] border border-white/10 space-y-8">
+               <div className="w-24 h-24 bg-gold rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(255,215,0,0.3)]">
+                 <CheckCircle2 className="w-12 h-12 text-slate-950" />
+               </div>
+               
+               <div className="space-y-4">
+                 <h2 className="text-4xl md:text-5xl font-heading font-black uppercase tracking-tighter">Pedido Registrado com Sucesso</h2>
+                 <p className="text-gold font-black uppercase tracking-[0.3em] text-xs">Anote o número do seu pedido</p>
+               </div>
+
+               <div className="bg-slate-950/50 p-8 rounded-3xl border border-white/5 space-y-2">
+                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-ice/30">Protocolo Oficial</span>
+                 <p className="text-4xl font-black text-white tracking-widest">{createdOrder?.display_order_number}</p>
+               </div>
+
+               <div className="grid grid-cols-3 gap-4 pt-8 border-t border-white/5">
+                 <div className="space-y-1">
+                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-ice/20">Itens</span>
+                   <p className="text-lg font-bold text-ice">{createdOrder?.total_quantity}</p>
+                 </div>
+                 <div className="space-y-1">
+                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-ice/20">Subtotal</span>
+                   <p className="text-lg font-bold text-ice">R$ {createdOrder?.subtotal?.toFixed(2)}</p>
+                 </div>
+                 <div className="space-y-1">
+                   <span className="text-[8px] font-black uppercase tracking-[0.2em] text-ice/20">Total</span>
+                   <p className="text-lg font-bold text-gold">R$ {createdOrder?.total_amount?.toFixed(2)}</p>
+                 </div>
+               </div>
+
+               <div className="pt-8">
+                 <p className="text-sm text-ice/60 leading-relaxed">
+                   Seu pedido foi recebido pela arena. <br/>
+                   Aguarde as próximas instruções para pagamento via PIX.
+                 </p>
+               </div>
+             </div>
+          </div>
         )}
+
       </main>
       <Footer />
     </div>
