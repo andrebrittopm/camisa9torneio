@@ -1,9 +1,11 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { verifyReceiptAccessToken } from '@/lib/server/av-order-access.server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
  * ETAPA 4.3B — SERVER ROUTE PARA UPLOAD PRIVADO DE COMPROVANTE
  */
+
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_REQUEST_SIZE = 11 * 1024 * 1024; // 11 MB (overhead multipart)
@@ -40,7 +42,7 @@ function getAllowedOrigins(request: Request): string[] {
   return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]));
 }
 
-export const Route = {
+export const Route = createFileRoute('/api/public/av-payment-receipt')({
   server: {
     handlers: {
       OPTIONS: async ({ request }: { request: Request }) => {
