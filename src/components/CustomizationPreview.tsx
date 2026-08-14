@@ -24,6 +24,12 @@ export function CustomizationPreview({
   const [athleteNumber, setAthleteNumber] = useState("10");
   const [selectedSize, setSelectedSize] = useState("M");
   
+  // Estado Turnstile
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  
   const formattedPrice = useMemo(() => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
