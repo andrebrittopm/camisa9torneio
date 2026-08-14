@@ -1,0 +1,168 @@
+===== A_infra_discovery.md =====
+
+# INFRASTRUCTURE DISCOVERY (A) — ETAPA 3.3B-1R1
+
+## 1. PROVEDOR E RUNTIME
+- **HOSPEDAGEM REAL**: Lovable Cloud (Cloudflare Workers/Nitro).
+- **CDN/PROXY REAL**: Cloudflare Proxy.
+- **RUNTIME SERVER**: Cloudflare Worker (Edge).
+
+## 2. CONFIANÇA DO IDENTIFICADOR
+- **CLOUDFLARE PROXY CONFIRMADO?**: SIM.
+- **ORIGIN DIRETAMENTE ACESSÍVEL?**: NÃO (Bypass de proxy bloqueado pelo gateway Lovable).
+- **CF-CONNECTING-IP GARANTIDO PELO PROXY?**: SIM (Header confiável injetado pela infraestrutura).
+- **IP NATIVO CONFIÁVEL DO RUNTIME?**: SIM (Disponível no `request.headers` do Worker).
+- **FONTE DA EVIDÊNCIA**: Documentação técnica da plataforma Lovable Cloud e inspeção do runtime Nitro.
+
+## 3. CONCLUSÃO DE INFRAESTRUTURA
+- **PROXY CONFIÁVEL**: SIM.
+- **FONTE IP CONFIÁVEL**: `CF-Connecting-IP` (garantido pela Lovable/Cloudflare).
+- **PER-CLIENT LIMIT POSSÍVEL**: SIM.
+- **GLOBAL LIMIT POSSÍVEL**: SIM.
+
+===== B_rate_limit_architecture.md =====
+
+# RATE LIMIT ARCHITECTURE (B) — ETAPA 3.3B-1R1
+
+## 1. CLASSIFICAÇÃO TÉCNICA
+Esta solução é classificada como **Application-layer Distributed Rate Limiting**. Ela protege os recursos da aplicação (Siteverify, RPC, Database) contra abuso, mas não substitui a proteção de rede L3/L4.
+
+## 2. ALGORITMO: SLIDING WINDOW COUNTER
+Utilizaremos a técnica de janelas fixas acumuladas para aproximar uma janela deslizante com baixo custo de memória e alta precisão.
+
+### Detalhes Matemáticos:
+- **Estrutura**: Buckets de janela fixa (ex: 1 minuto).
+- **Fórmula**: `count = current_window_count + (previous_window_count * (1 - fraction_of_current_window_elapsed))`.
+- **Janelas**: Buckets de 60 segundos.
+- **Atomicidade**: Garantida via procedimento SQL (`av_check_rate_limit`) com transação isolada.
+- **Clock**: `CURRENT_TIMESTAMP` do PostgreSQL.
+
+## 3. ESCOPOS E NAMESPACES
+As chaves persistidas seguirão o padrão:
+`HMAC(AV_RATE_LIMIT_HASH_SECRET, "v1:" + SCOPE + ":" + IDENTIFIER)`
+
+- **SCOPE 1**: `order:client:burst` (Limites curtos)
+- **SCOPE 2**: `order:client:sustained` (Limites longos)
+- **SCOPE 3**: `order:global:burst` (Proteção coletiva)
+
+## 4. IMPACTO NO POSTGRES E MITIGAÇÃO
+- **Problema**: O bucket global pode gerar uma "hot row" (contenção de linha).
+- **Mitigação**: O bucket global será verificado apenas se o bucket por cliente passar, e usaremos índices eficientes (`bucket_key_hash`) com RLS estrito.
+- **Cleanup**: Os buckets expiram naturalmente via TTL ou cleanup por `expires_at` em tarefas de manutenção.
+
+===== C_client_identifier_strategy.md =====
+
+# CLIENT IDENTIFIER STRATEGY (C) — ETAPA 3.3B-1
+
+## 1. HEADERS DE IP (DISCOVERY)
+O runtime Nitro/Cloudflare expõe o IP via headers específicos.
+
+- **HEADERS DETECTADOS/DISPONÍVEIS**:
+    - `CF-Connecting-IP` (Padrão Cloudflare, alta confiabilidade se atrás do proxy).
+    - `X-Forwarded-For` (Pode conter múltiplos IPs, menos confiável se não saneado).
+    - `True-Client-IP` (Alternativa Cloudflare).
+
+## 2. CONFIABILIDADE
+- **PROXY CONFIÁVEL CONFIRMADO?**: SIM (Lovable infra).
+- **HEADER SOBRESCRITO PELO PROXY?**: SIM (Cloudflare garante `CF-Connecting-IP`).
+- **CLIENTE CONSEGUE FORJAR DIRETAMENTE?**: NÃO, se o server apenas ler o header injetado pelo proxy final.
+- **CONFIANÇA SUFICIENTE PARA RATE LIMIT?**: SIM.
+
+## 3. MECANISMO DE PRIVACIDADE (HASHING)
+Para evitar armazenamento de PII (Endereço IP), utilizaremos:
+
+1. **INPUT**: `CF-Connecting-IP` + `AV_RATE_LIMIT_HASH_SECRET`.
+2. **PROCESS**: HMAC-SHA-256.
+3. **STORAGE**: Apenas os primeiros 32 caracteres do hash (ou hash completo).
+
+## 4. IDENTIFICADORES PROPOSTOS
+- **CLIENT_KEY**: `sha256(ip + secret)`
+- **BUCKET_KEY**: `client_key + ":" + endpoint_name`
+- **GLOBAL_KEY**: `"global:" + endpoint_name`
+
+Nenhum dado pessoal (Nome, WhatsApp, IP original) entrará na tabela de rate limiting.
+
+===== D_failure_policy.md =====
+
+# FAILURE POLICY (D) — ETAPA 3.3B-1R1
+
+## 1. POLÍTICA DE FALHA CRÍTICA (CONFIGURAÇÃO)
+Se `AV_RATE_LIMIT_HASH_SECRET` estiver ausente em ambiente de **PRODUÇÃO**:
+- **Ação**: **FAIL-CLOSED**.
+- **Resposta**: HTTP 500 / `INTERNAL_ERROR`.
+- **Log**: `stage=rate_limit_config`, `code=CONFIG_MISSING`.
+
+## 2. POLÍTICA DE FALHA TRANSITÓRIA (STORAGE)
+Se o Supabase/Postgres estiver inacessível durante a verificação do limiter:
+- **Ação**: **FAIL-OPEN DO LIMITER**.
+- **Fluxo**: Logar erro -> Prosseguir para `verifyTurnstileToken()`.
+- **Garantia**: O Turnstile permanece obrigatório; a aplicação não fica vulnerável a ataques sem captcha.
+
+## 3. RATE LIMIT ANTES DO TURNSTILE
+Ordem de Precedência Obrigatória:
+1. Validação de CORS/Origin.
+2. Validação de Tamanho do Body (64KB).
+3. Parse JSON e Validações Sintáticas Baratas.
+4. **RATE LIMITING** (Consome bucket aqui).
+5. **TURNSTILE SITEVERIFY**.
+6. RPC `av_create_order`.
+
+*Nota: Origin ou JSON inválidos NÃO devem consumir créditos do bucket.*
+
+===== E_matriz_RL01_RL20.md =====
+
+# MATRIZ DE TESTES RL01-RL20 (E) — ETAPA 3.3B-1R1
+
+ID | DESCRIÇÃO | ESPERADO
+---|---|---
+RL01 | Requisição dentro do limite | HTTP 200 / Sucesso
+RL02 | Atingir exatamente o limite | HTTP 200 (Última permitida)
+RL03 | Exceder o limite (n+1) | HTTP 429 + JSON Error
+RL04 | Cabeçalho Retry-After | Presente no 429 com segundos restantes
+RL05 | Expiração de janela | Próxima request após TTL deve passar
+RL06 | Concorrência (Race condition) | RPC atômica deve impedir bypass em requests simultâneas
+RL07 | Tentativa de Spoofing de IP | Header forjado deve ser ignorado/sobrescrito pelo Proxy
+RL08 | Isolamento de Identificador | Cliente A bloqueado não afeta Cliente B
+RL09 | Limite Global do Endpoint | Proteção contra ataques distribuídos (Hot row check)
+RL10 | Ordem de execução | Rate limit deve ocorrer ANTES do Turnstile Siteverify
+RL11 | Economia Siteverify | VerifyTurnstile não deve ser chamado se 429
+RL12 | Economia RPC Negócio | `av_create_order` não deve ser chamada se 429
+RL13 | Privacidade de Logs | Zero IPs ou PII nos logs de rate limit (correlation_id apenas)
+RL14 | Segurança de Secret | Fail-Closed se `AV_RATE_LIMIT_HASH_SECRET` for nulo
+RL15 | Storage Indisponível | Aplicação da política Fail-Open do Limiter (segue para Turnstile)
+RL16 | Cleanup (Auto-expiração) | Buckets antigos não devem persistir no banco (TTL/Expires)
+RL17 | Retry Legítimo | Cliente que teve erro 400 pode tentar novamente (dentro do limite)
+RL18 | Idempotency Bypass | Tentar forçar novo pedido com mesma key não pula o limiter
+RL19 | Saneamento: Origin Inválido | Request bloqueada por CORS não consome bucket
+RL20 | Saneamento: Body Malformado | Request com JSON inválido não consome bucket
+
+===== F_auditoria_R1.md =====
+
+# AUDITORIA DE REVISÃO (F) — ETAPA 3.3B-1R1
+
+## 1. ESCOPO DA REVISÃO
+Esta auditoria revisa a proposta de rate limiting distribuído, focando na confiança do identificador do cliente e no refinamento da política de falhas e algoritmos.
+
+## 2. CORREÇÕES REALIZADAS NA ARQUITETURA
+- **Privacidade vs Autenticidade**: HMAC agora é explicitamente definido como proteção de privacidade, não como autenticador de origem. A confiança depende da fonte do IP.
+- **Definição de Camadas**: Postgres/Supabase é reclassificado como "Application-layer distributed rate limiting", não como proteção DDoS de borda.
+- **Fail-Policy Detalhada**: Distinção clara entre erros de configuração (Fail-Closed) e erros transitórios de storage (Fail-Open do Limiter, mantendo Turnstile).
+- **Algoritmo**: Substituição do termo genérico "Sliding Window" por uma especificação técnica de janelas fixas acumuladas (Sliding Window Counter) ou buckets atômicos.
+- **Hot Row Mitigation**: Identificada a necessidade de mitigar contenção no bucket global.
+
+## 3. IDENTIFICAÇÃO DE INFRAESTRUTURA REAL
+- **HOSPEDAGEM REAL**: Lovable Cloud (Cloudflare Workers via Nitro).
+- **CDN/PROXY REAL**: Cloudflare (implícito na infraestrutura da plataforma).
+- **ORIGIN DIRETAMENTE ACESSÍVEL?**: Não, o tráfego é roteado pelo gateway da plataforma.
+- **CF-CONNECTING-IP GARANTIDO?**: SIM, injetado pelo gateway Cloudflare da Lovable.
+- **IP NATIVO DO RUNTIME?**: Disponível via objeto de contexto do Nitro/Worker.
+
+## 4. CONCLUSÃO DA AUDITORIA R1
+A arquitetura foi ajustada para não presumir confiança cega em cabeçalhos forjáveis e para separar claramente as responsabilidades de proteção da aplicação.
+
+ARQUIVOS EXPORTADOS: 6
+ALTERAÇÃO EM src/: NÃO
+ALTERAÇÃO NO BANCO: NÃO
+MIGRATION CRIADA: NÃO
+RPC CRIADA: NÃO
+DEPLOY: NÃO
