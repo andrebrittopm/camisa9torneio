@@ -44,7 +44,7 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto">
               <Button 
                 onClick={scrollToSelection}
-                size="xl" 
+                size="lg" 
                 variant="secondary" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
               >
@@ -52,7 +52,7 @@ export function HeroSection() {
               </Button>
               <Button 
                 onClick={scrollToSelection}
-                size="xl" 
+                size="lg" 
                 variant="outline" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest border-ice/10 hover:bg-ice/5 hover:border-gold/30 active:scale-95 transition-all duration-300 backdrop-blur-sm"
               >
