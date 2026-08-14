@@ -1,0 +1,1 @@
+DELETE FROM public.av_order_items WHERE event_id = 'ba5036d2-eb2d-4a1a-96f6-8c586eeede10'; DELETE FROM public.av_orders WHERE event_id = 'ba5036d2-eb2d-4a1a-96f6-8c586eeede10'; SELECT setval(pg_get_serial_sequence('public.av_orders', 'order_seq'), 1, false);
