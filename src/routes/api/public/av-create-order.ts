@@ -109,14 +109,16 @@ export const Route = createFileRoute('/api/public/av-create-order')({
     handlers: {
       POST: async ({ request }) => {
         const correlationId = crypto.randomUUID()
+        const method = request.method
+        
+        // 1. CORS check (Preflight & Handlers)
         const origin = request.headers.get("origin")
         const allowedOriginsStr = process.env['ALLOWED_ORIGINS'] || ""
-        const allowedOrigins = allowedOriginsStr
-          .split(",")
-          .map(o => o.trim())
-          .filter(Boolean)
-
-        // 1. Config Validation
+        const allowedOrigins = allowedOriginsStr.split(",").map(o => o.trim()).filter(Boolean)
+        
+        const isAllowed = origin && allowedOrigins.includes(origin)
+        
+        // Config validation early check (for CORS_ERROR vs CONFIG_MISSING)
         if (allowedOrigins.length === 0) {
           console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
@@ -125,51 +127,46 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           })
         }
 
-        // 2. CORS check
-        if (!origin || !allowedOrigins.includes(origin)) {
-          // console.error(`[AV] correlation=${correlationId} stage=cors code=CORS_ERROR`) // Comentado para auditoria de falha controlada
+        if (method === "OPTIONS") {
+          if (isAllowed) {
+            return new Response(null, {
+              status: 204,
+              headers: {
+                "Access-Control-Allow-Origin": origin!,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+                "Vary": "Origin"
+              },
+            })
+          }
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), { status: 403, headers: { "Content-Type": "application/json" } })
+        }
 
-          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          })
+        if (method !== "POST") {
+          const headers = isAllowed ? { "Access-Control-Allow-Origin": origin!, "Vary": "Origin" } : {}
+          return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), { status: 405, headers: { ...headers, "Content-Type": "application/json" } })
+        }
+
+        if (!isAllowed) {
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), { status: 403, headers: { "Content-Type": "application/json" } })
         }
 
         const corsHeaders = {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": origin,
+          "Access-Control-Allow-Origin": origin!,
           "Vary": "Origin"
         }
 
-        try {
-          // 3. Secrets Validation
-          const supabaseUrl = process.env['SUPABASE_URL']
-          const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
+        // 2. Body Limit & UTF-8 Stream
+        const contentLength = parseInt(request.headers.get("content-length") || "-1")
+        if (contentLength > MAX_BODY_BYTES) {
+          return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
+        }
 
-          if (!supabaseUrl || !supabaseServiceKey) {
-            console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
-            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
-              status: 500,
-              headers: corsHeaders,
-            })
-          }
-
-          // 4. Body Limit & UTF-8 Stream
-          const contentLength = parseInt(request.headers.get("content-length") || "-1")
-          if (contentLength > MAX_BODY_BYTES) {
-            return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), {
-              status: 413,
-              headers: corsHeaders,
-            })
-          }
-
-          const reader = request.body?.getReader()
-          if (!reader) {
-            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), {
-              status: 400,
-              headers: corsHeaders,
-            })
-          }
+        const reader = request.body?.getReader()
+        if (!reader) {
+          return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+        }
 
           let bodyText = ""
           let bytesRead = 0
