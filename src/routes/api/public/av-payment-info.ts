@@ -116,12 +116,19 @@ export const Route = createFileRoute('/api/public/av-payment-info')({
           }
 
           const eventRow = eventRows[0]
+          if (!eventRow) {
+            console.error(`[AV-PAYMENT-INFO] correlation=${correlationId} stage=query code=NOT_FOUND`)
+            return new Response(JSON.stringify({ error: "PAYMENT_NOT_AVAILABLE", correlation_id: correlationId }), {
+              status: 404,
+              headers,
+            })
+          }
 
           // Validação rigorosa dos dados PIX
           try {
             PaymentInfoResponseSchema.parse(eventRow)
             // Validação secundária do pix_type
-            PixInfoSchema.shape.type.parse(eventRow.pix_type)
+            PixInfoSchema.shape.type.parse((eventRow as any).pix_type)
           } catch (err) {
             console.error(`[AV-PAYMENT-INFO] correlation=${correlationId} stage=validation code=INVALID_PIX_CONFIG`)
             return new Response(JSON.stringify({ error: "PAYMENT_NOT_AVAILABLE", correlation_id: correlationId }), {
@@ -133,11 +140,11 @@ export const Route = createFileRoute('/api/public/av-payment-info')({
           const response = {
             success: true,
             data: {
-              event_name: eventRow.event_name,
+              event_name: (eventRow as any).event_name,
               pix: {
-                type: eventRow.pix_type,
-                key: eventRow.pix_key,
-                holder: eventRow.pix_holder
+                type: (eventRow as any).pix_type,
+                key: (eventRow as any).pix_key,
+                holder: (eventRow as any).pix_holder
               }
             }
           }
