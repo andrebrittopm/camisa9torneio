@@ -32,7 +32,9 @@ function normalizeIPv4(ip: string): string | null {
     const num = parseInt(part, 10);
     if (isNaN(num) || num < 0 || num > 255) return null;
     // Evitar octais ou outros formatos
-    if (num.toString() !== part.replace(/^0+/, '') && !(num === 0 && part === '0')) return null;
+    // Cada octeto deve ser '0' ou [1-9][0-9]{0,2}
+    if (part !== '0' && !/^[1-9][0-9]{0,2}$/.test(part)) return null;
+    if (num > 255) return null;
     normalizedParts.push(num.toString());
   }
   
@@ -163,24 +165,51 @@ export async function checkRateLimit(
     throw new Error('CONFIG_MISSING');
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
   try {
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const { data, error } = await supabaseAdmin.rpc('av_check_rate_limits', {
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      global: {
+        fetch: (url, options) => fetch(url, { ...options, signal: controller.signal })
+      }
+    });
+
+    const { data, error, status } = await supabaseAdmin.rpc('av_check_rate_limits', {
       p_specs: specs
     });
 
     if (error) {
-      // SQLSTATEs Hardening AV010-AV020 -> Fail-Closed
+      // 401/403 -> FAIL-CLOSED
+      if (status === 401 || status === 403) {
+        console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=AUTH_ERROR status=${status}`);
+        throw new Error('AUTH_ERROR');
+      }
+
+      // 404/RPC inexistente -> FAIL-CLOSED
+      if (status === 404) {
+        console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=RPC_NOT_FOUND`);
+        throw new Error('RPC_NOT_FOUND');
+      }
+
+      // SQLSTATEs Hardening AV010-AV020 -> FAIL-CLOSED
       if (error.code && /^AV0(1[0-9]|20)$/.test(error.code)) {
         console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=${error.code}`);
         throw new Error(error.code);
       }
-      // Outros erros de banco -> Fail-Open (STORAGE_UNAVAILABLE)
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_UNAVAILABLE`);
-      return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
+
+      // Erros transitórios conhecidos -> FAIL-OPEN
+      if (status === 502 || status === 503 || status === 504) {
+        console.warn(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_TRANSIENT status=${status}`);
+        return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
+      }
+
+      // unknown = closed
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=UNKNOWN_DB_ERROR status=${status}`);
+      throw new Error('UNKNOWN_DB_ERROR');
     }
 
-    if (!data || typeof data.allowed !== 'boolean') {
+    if (!data || typeof data !== 'object' || typeof data.allowed !== 'boolean') {
       console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE`);
       throw new Error('INVALID_RPC_RESPONSE');
     }
@@ -188,18 +217,31 @@ export async function checkRateLimit(
     if (data.allowed) {
       return { allowed: true };
     } else {
+      const retryAfter = data.retry_after_seconds;
+      if (!Number.isFinite(retryAfter) || retryAfter <= 0) {
+        console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE`);
+        throw new Error('INVALID_RPC_RESPONSE');
+      }
       // Retry-After clamp 1s e teto 86400s
-      const retryAfter = Math.max(1, Math.min(86400, Math.ceil(data.retry_after_seconds || 1)));
-      return { allowed: false, retry_after_seconds: retryAfter };
+      const clampedRetry = Math.max(1, Math.min(86400, Math.ceil(retryAfter)));
+      return { allowed: false, retry_after_seconds: clampedRetry };
     }
 
   } catch (err: any) {
-    // Preservar erros de configuração/hardened SQLSTATE
-    if (err.message && (err.message === 'CONFIG_MISSING' || err.message === 'CONFIG_INVALID' || /^AV0(1[0-9]|20)$/.test(err.message) || err.message === 'INVALID_RPC_RESPONSE')) {
-      throw err;
+    if (err.name === 'AbortError') {
+      console.warn(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_TIMEOUT`);
+      return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
     }
-    // Qualquer outro erro (Rede, Timeout) -> Fail-Open
-    console.error(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_UNAVAILABLE`);
-    return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
+
+    // Erros de rede/fetch reais (que não sejam Abort) -> FAIL-OPEN
+    if (err.message === 'Failed to fetch' || err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') {
+      console.warn(`[AV] correlation=${correlationId} stage=rate_limit code=STORAGE_NETWORK_ERROR`);
+      return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
+    }
+
+    // Preservar erros de configuração/FAIL-CLOSED
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

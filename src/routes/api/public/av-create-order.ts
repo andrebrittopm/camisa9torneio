@@ -339,7 +339,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           }
 
           // 21. TURNSTILE Siteverify (Só ocorre se permitido pelo Rate Limit ou Fail-Open)
-          const turnstileSecret = process.env['TURNSTILE_SECRET_KEY'] || "1x0000000000000000000000000000000AA"
+          const turnstileSecret = process.env['TURNSTILE_SECRET_KEY']
           const expectedHostnames = (process.env['TURNSTILE_EXPECTED_HOSTNAMES'] || '')
             .split(',')
             .map(h => h.trim())
