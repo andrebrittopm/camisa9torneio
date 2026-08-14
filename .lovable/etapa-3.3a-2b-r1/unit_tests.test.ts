@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { verifyTurnstileToken } from "../../lib/server/av-turnstile";
+import { verifyTurnstileToken } from "../../src/lib/server/av-turnstile";
 
 // Mock global fetch
 const originalFetch = global.fetch;
