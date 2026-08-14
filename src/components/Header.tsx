@@ -89,13 +89,13 @@ export function Header() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 glass border-b p-6 flex flex-col gap-4 md:hidden"
+            className="absolute top-full left-0 right-0 bg-navy/95 backdrop-blur-2xl border-b border-white/10 p-8 flex flex-col gap-6 md:hidden shadow-2xl"
           >
             {navLinks.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
-                className="text-lg font-medium py-2 uppercase tracking-widest"
+                className="text-lg font-black py-3 uppercase tracking-[0.2em] border-b border-white/5 hover:text-gold transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.label}
