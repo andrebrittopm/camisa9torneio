@@ -18,20 +18,9 @@ async def main():
         context = await browser.new_context(viewport={"width": 1280, "height": 1800})
         page = await context.new_page()
 
-        print("--- REC01-REC05: Storage Policy Verification ---")
-        # Nota: Não podemos testar diretamente storage.buckets via browser sem auth, 
-        # mas podemos verificar se a rota de upload responde 403 sem token (REC08)
+        print("--- REC08-REC09: Access Denied Scenarios ---")
         
         await page.goto("http://localhost:8080")
-        await page.screenshot(path=str(SCREENSHOTS / "1_homepage.png"))
-        
-        print("--- REC06-REC07: Order Creation Capability ---")
-        # Para testar isso, precisaríamos simular um pedido.
-        # Vamos pular para a auditoria de segurança da rota de upload.
-
-        print("--- REC08-REC09: Access Denied Scenarios ---")
-        # Testar POST direto para a rota sem headers válidos
-        # Usaremos fetch no browser context
         
         check_auth = await page.evaluate("""
             async () => {
@@ -44,20 +33,22 @@ async def main():
                         'x-av-submission-id': '00000000-0000-0000-0000-000000000000'
                     }
                 });
-                return { status: res.status, json: await res.json() };
+                try {
+                    const json = await res.json();
+                    return { status: res.status, error: json.error };
+                } catch (e) {
+                    return { status: res.status, error: 'PARSE_ERROR' };
+                }
             }
         """)
         print(f"Auth check status: {check_auth['status']}")
-        print(f"Auth check error: {check_auth['json']['error']}")
+        print(f"Auth check error: {check_auth['error']}")
         
-        if check_auth['status'] == 403 and check_auth['json']['error'] == 'ORDER_ACCESS_DENIED':
+        if check_auth['status'] == 403 and check_auth['error'] == 'ORDER_ACCESS_DENIED':
             print("REC08 PASS: Invalid token returns 403")
         else:
-            print("REC08 FAIL")
+            print(f"REC08 FAIL: Got {check_auth['status']} {check_auth['error']}")
 
-        print("--- Build Check ---")
-        # Build check via shell no sandbox é melhor
-        
         await browser.close()
 
 if __name__ == "__main__":
