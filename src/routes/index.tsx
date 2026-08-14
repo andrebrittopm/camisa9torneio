@@ -1,3 +1,4 @@
+{/* ETAPA 3.2B-2B — TESTES REAIS DE INTEGRAÇÃO SERVER ROUTE → RPC... [30-point test requirement document] */}
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
