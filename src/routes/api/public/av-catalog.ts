@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 
+console.log("[AV-CATALOG] MODULE LOADED");
+
 /**
  * ETAPA 4.1A — ENDPOINT PÚBLICO READ-ONLY DO CATÁLOGO
  */
