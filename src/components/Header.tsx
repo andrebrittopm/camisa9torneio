@@ -34,27 +34,41 @@ export function Header() {
       )}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gold rounded-full flex items-center justify-center font-bold text-navy">
+        <Link 
+          to="/" 
+          className="flex items-center gap-3 group"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          <div className="w-12 h-12 bg-gold rounded-2xl flex items-center justify-center font-black text-navy shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
             AV
           </div>
-          <span className="font-heading font-bold text-xl tracking-tighter uppercase hidden sm:block">
-            Amigos do Vôlei
-          </span>
+          <div className="flex flex-col">
+            <span className="font-heading font-black text-lg md:text-xl tracking-tighter uppercase leading-none">
+              Amigos do Vôlei
+            </span>
+            <span className="text-[10px] font-black text-gold uppercase tracking-[0.3em] leading-none mt-1 opacity-80">
+              9º Torneio • ACS
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-10">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
-              className="text-sm font-medium hover:text-gold transition-colors uppercase tracking-widest"
+              className="text-[11px] font-black hover:text-gold transition-all duration-300 uppercase tracking-[0.2em] relative group py-2"
             >
               {link.label}
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gold transition-all duration-300 group-hover:w-full" />
             </a>
           ))}
-          <Button variant="secondary" className="font-bold uppercase tracking-widest">
+          <Button 
+            onClick={() => document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' })}
+            variant="secondary" 
+            className="font-black uppercase tracking-[0.15em] px-6 py-5 rounded-xl glow-gold hover:scale-105 active:scale-95 transition-all duration-300 text-[11px]"
+          >
             Escolher Camisa
           </Button>
         </nav>
