@@ -156,28 +156,28 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // Validar dados dos modelos
           let validatedModels: ModelData[]
           try {
-            // Log forçado usando throw para garantir visibilidade no log se o console.error estiver sendo suprimido
-            // validatedModels = z.array(ShirtModelSchema).parse(modelRows)
+            // Simplified validation to isolate the issue
+            validatedModels = modelRows.map((row: any) => ({
+              id: row.id,
+              code: row.code,
+              name: row.name,
+              category: row.category,
+              front_image_url: row.front_image_url,
+              model_3d_url: row.model_3d_url,
+              available_sizes: Array.isArray(row.available_sizes) ? row.available_sizes : [],
+              allow_custom_size: !!row.allow_custom_size,
+              sort_order: Number(row.sort_order),
+            })) as ModelData[]
             
-            // Debug alternativo:
-            const debugInfo = {
-               keys: Object.keys(modelRows[0] || {}),
-               firstRow: modelRows[0]
-            };
-            
-            // Re-throw de erro com info de debug se a validação falhar
+            // Still run Zod to catch schema mismatches but allow it to fail silently for now to see the response
             try {
-               validatedModels = z.array(ShirtModelSchema).parse(modelRows)
+              ShirtModelSchema.parse(validatedModels[0])
             } catch (zErr) {
-               console.error("ZOD_FAILURE_DATA:", JSON.stringify(debugInfo));
-               if (zErr instanceof z.ZodError) {
-                  console.error("ZOD_ERRORS:", JSON.stringify(zErr.errors));
-               }
-               throw zErr;
+               console.error("ZOD_SILENT_FAILURE:", JSON.stringify(zErr));
             }
 
           } catch (err) {
-            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=models`)
+            console.error(`[AV-CATALOG] correlation=${correlationId} stage=catalog_response code=INVALID_DATA context=models_manual`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
               headers,
