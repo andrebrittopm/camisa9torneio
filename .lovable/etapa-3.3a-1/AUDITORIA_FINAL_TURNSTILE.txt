@@ -1,0 +1,787 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { createClient } from '@supabase/supabase-js'
+import { verifyTurnstileToken } from './B_turnstile_helpers'
+
+/**
+ * ETAPA 3.3A-1 — PROPOSTA DE SERVER ROUTE COM TURNSTILE (INTEGRAL)
+ * AUDITORIA: Somente para visualização do código final integrado.
+ */
+
+const MAX_BODY_BYTES = 64 * 1024 // 64 KB
+const MAX_ITEM_LINES = 50
+
+const ALLOWED_FIELDS = [
+  'event_id',
+  'customer_name',
+  'whatsapp',
+  'notes',
+  'idempotency_key',
+  'items',
+  'turnstile_token',
+]
+
+const PROHIBITED_FIELDS = [
+  'unit_price',
+  'line_total',
+  'subtotal',
+  'total_amount',
+  'model_code',
+  'model_name',
+  'shirt_type',
+  'order_status',
+  'payment_status',
+  'request_fingerprint',
+]
+
+const ITEM_ALLOWED_FIELDS = [
+  'shirt_model_id',
+  'size_option',
+  'custom_size',
+  'custom_name',
+  'custom_number',
+  'quantity',
+]
+
+const ITEM_PROHIBITED_FIELDS = [
+  'unit_price',
+  'line_total',
+  'model_code',
+  'model_name',
+  'shirt_type',
+  'event_id',
+  'order_id',
+  'request_fingerprint',
+  'subtotal',
+  'total_amount',
+  'order_status',
+  'payment_status',
+]
+
+const SQLSTATE_MAP: Record<string, { status: number; code: string }> = {
+  'AV001': { status: 409, code: 'IDEMPOTENCY_KEY_REUSED' },
+  'AV002': { status: 404, code: 'EVENT_NOT_FOUND' },
+  'AV003': { status: 409, code: 'EVENT_NOT_AVAILABLE' },
+  'AV004': { status: 409, code: 'ORDER_DEADLINE_EXCEEDED' },
+  'AV005': { status: 400, code: 'INVALID_REQUEST' },
+  'AV006': { status: 400, code: 'INVALID_QUANTITY' },
+  'AV007': { status: 400, code: 'INVALID_MODEL' },
+  'AV008': { status: 400, code: 'CUSTOM_SIZE_NOT_ALLOWED' },
+  'AV009': { status: 400, code: 'INVALID_SIZE_OPTION' },
+}
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    UUID_REGEX.test(value)
+  )
+}
+
+function isValidRpcData(value: unknown): value is {
+  order_id: string;
+  order_seq: number;
+  display_order_number: string;
+  event_year: number;
+  customer_name: string;
+  total_quantity: number;
+  subtotal: number;
+  total_amount: number;
+  order_status: string;
+  payment_status: string;
+  is_duplicate: boolean;
+} {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const v = value as any;
+  return (
+    isValidUuid(v.order_id) &&
+    typeof v.order_seq === 'number' && Number.isSafeInteger(v.order_seq) && v.order_seq > 0 &&
+    typeof v.display_order_number === 'string' && v.display_order_number !== '' &&
+    typeof v.event_year === 'number' && Number.isInteger(v.event_year) &&
+    typeof v.customer_name === 'string' &&
+    typeof v.total_quantity === 'number' && Number.isSafeInteger(v.total_quantity) && v.total_quantity >= 0 &&
+    typeof v.subtotal === 'number' && Number.isFinite(v.subtotal) &&
+    typeof v.total_amount === 'number' && Number.isFinite(v.total_amount) &&
+    typeof v.order_status === 'string' && v.order_status !== '' &&
+    typeof v.payment_status === 'string' && v.payment_status !== '' &&
+    typeof v.is_duplicate === 'boolean'
+  );
+}
+
+function getAllowedOrigins(request: Request): string[] {
+  const fromEnv = (process.env['ALLOWED_ORIGINS'] || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
+  
+  let selfOrigin = ''
+  try {
+    const url = new URL(request.url)
+    selfOrigin = url.origin
+  } catch {
+    selfOrigin = ''
+  }
+
+  const allowed = Array.from(new Set([
+    ...fromEnv, 
+    ...(selfOrigin ? [selfOrigin] : [])
+  ]))
+  return allowed
+}
+
+export const Route = createFileRoute('/api/public/av-create-order')({
+  server: {
+    handlers: {
+      OPTIONS: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+
+        if (allowedOrigins.length === 0) {
+          console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        if (origin) {
+          if (allowedOrigins.includes(origin)) {
+            return new Response(null, {
+              status: 204,
+              headers: {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "content-type, authorization, apikey, x-client-info",
+                "Access-Control-Max-Age": "86400",
+                "Vary": "Origin"
+              },
+            })
+          }
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        })
+      },
+      POST: async ({ request }) => {
+        const correlationId = crypto.randomUUID()
+        const origin = request.headers.get("origin")
+        const allowedOrigins = getAllowedOrigins(request)
+
+        // 1. Origin
+        if (allowedOrigins.length === 0) {
+          console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        if (!origin || !allowedOrigins.includes(origin)) {
+          return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          })
+        }
+
+        const corsHeaders = {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": origin,
+          "Vary": "Origin"
+        }
+
+        try {
+          // 2. Body size
+          const contentLength = parseInt(request.headers.get("content-length") || "-1")
+          if (contentLength > MAX_BODY_BYTES) {
+            return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), { status: 413, headers: corsHeaders })
+          }
+
+          const reader = request.body?.getReader()
+          if (!reader) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          let bodyText = ""
+          let bytesRead = 0
+          const decoder = new TextDecoder()
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) {
+              bodyText += decoder.decode()
+              break
+            }
+            bytesRead += value.length
+            if (bytesRead > MAX_BODY_BYTES) {
+              return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), {
+                status: 413,
+                headers: corsHeaders,
+              })
+            }
+            bodyText += decoder.decode(value, { stream: true })
+          }
+
+          // 3. JSON parse
+          let payload: any
+          try {
+            payload = JSON.parse(bodyText)
+          } catch {
+            return new Response(JSON.stringify({ error: "INVALID_JSON", correlation_id: correlationId }), {
+              status: 400,
+              headers: corsHeaders,
+            })
+          }
+
+          // 4. Payload objeto
+          if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          // 5. Allowlist top-level
+          const payloadKeys = Object.keys(payload)
+          if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          const { event_id, customer_name, whatsapp, notes, idempotency_key, items, turnstile_token } = payload
+
+          // 6. event_id UUID
+          if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 7. idempotency_key UUID
+          if (!isValidUuid(idempotency_key)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          
+          // 8. turnstile_token: string, trim, <= 2048
+          if (typeof turnstile_token !== "string" || turnstile_token.trim() === "" || turnstile_token.length > 2048) {
+             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          // 9. customer_name
+          if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 10. whatsapp
+          if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          // 11. notes
+          if (notes !== undefined && notes !== null && typeof notes !== "string") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+
+          // 12. items array & 13. MAX_ITEM_LINES
+          if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEM_LINES) {
+            return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          const validatedItems = []
+          for (const item of items) {
+            // 14. cada item é objeto
+            if (typeof item !== "object" || item === null || Array.isArray(item)) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            // 15. allowlist item
+            const itemKeys = Object.keys(item)
+            if (itemKeys.some(k => !ITEM_ALLOWED_FIELDS.includes(k) || ITEM_PROHIBITED_FIELDS.includes(k))) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
+            // 16. shirt_model_id UUID
+            if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            // 17. size_option
+            if (typeof size_option !== "string" || size_option.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            // 18. quantity
+            if (typeof quantity !== "number" || !Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > 2147483647) {
+              return new Response(JSON.stringify({ error: "INVALID_QUANTITY", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            // 19. custom_size/custom_name/custom_number
+            const validateOptionalString = (v: any) => (v === undefined || v === null || typeof v === "string")
+            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number)) {
+              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+            }
+            validatedItems.push({
+              shirt_model_id,
+              size_option: size_option.trim(),
+              custom_size: custom_size === undefined ? null : custom_size,
+              custom_name: custom_name === undefined ? null : custom_name,
+              custom_number: custom_number === undefined ? null : custom_number,
+              quantity
+            })
+          }
+
+          // 20. SOMENTE AGORA Siteverify
+          const turnstileSecret = process.env['TURNSTILE_SECRET_KEY']
+          const expectedHostnames = (process.env['TURNSTILE_EXPECTED_HOSTNAMES'] || '')
+            .split(',')
+            .map(h => h.trim())
+            .filter(Boolean)
+
+          const turnstileResult = await verifyTurnstileToken(
+            turnstile_token,
+            turnstileSecret,
+            correlationId,
+            expectedHostnames,
+            "create_order"
+          )
+
+          if (!turnstileResult.success) {
+            const statusMap: Record<string, number> = {
+              "TURNSTILE_UNAVAILABLE": 503,
+              "CONFIG_MISSING": 500,
+              "CONFIG_ERROR": 500,
+              "TURNSTILE_FAILED": 403
+            }
+            const status = statusMap[turnstileResult.error] || 403
+            const error = turnstileResult.error === "TURNSTILE_UNAVAILABLE" ? "TURNSTILE_UNAVAILABLE" : 
+                          (turnstileResult.error === "TURNSTILE_FAILED" ? "TURNSTILE_FAILED" : "INTERNAL_ERROR")
+            
+            return new Response(JSON.stringify({ error, correlation_id: correlationId }), { status, headers: corsHeaders })
+          }
+
+          // 21. fingerprint (Excludes turnstile_token)
+          const sortedItems = [...validatedItems].sort((a, b) => {
+            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
+            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
+            return keyA.localeCompare(keyB)
+          })
+
+          const canonicalPayload = {
+            event_id,
+            customer_name: customer_name.trim(),
+            whatsapp: whatsapp.trim(),
+            notes: notes === undefined ? null : notes,
+            items: sortedItems
+          }
+
+          const encoder = new TextEncoder()
+          const dataToHash = encoder.encode(JSON.stringify(canonicalPayload))
+          const hashBuffer = await crypto.subtle.digest("SHA-256", dataToHash)
+          const fingerprint = Array.from(new Uint8Array(hashBuffer))
+            .map(b => b.toString(16).padStart(2, "0"))
+            .join("")
+
+          // 22. secrets Supabase
+          const supabaseUrl = process.env['SUPABASE_URL']
+          const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
+
+          if (!supabaseUrl || !supabaseServiceKey) {
+            console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          // 23. RPC (Service Role)
+          const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+          const { data, error } = await supabaseAdmin.rpc("av_create_order", {
+            p_event_id: event_id,
+            p_customer_name: customer_name.trim(),
+            p_whatsapp: whatsapp.trim(),
+            p_notes: notes === undefined ? null : notes,
+            p_idempotency_key: idempotency_key,
+            p_request_fingerprint: fingerprint,
+            p_items: sortedItems as any
+          })
+
+          if (error) {
+            const mapped = SQLSTATE_MAP[error.code]
+            if (mapped) {
+              console.warn(`[AV] correlation=${correlationId} stage=rpc code=${error.code}`)
+              return new Response(JSON.stringify({ error: mapped.code, correlation_id: correlationId }), {
+                status: mapped.status,
+                headers: corsHeaders,
+              })
+            }
+            console.error(`[AV] correlation=${correlationId} stage=rpc code=UNKNOWN_ERROR`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          if (
+            !data ||
+            typeof data !== "object" ||
+            data.success !== true ||
+            !data.data ||
+            !isValidRpcData(data.data)
+          ) {
+            console.error(`[AV] correlation=${correlationId} stage=rpc_response code=INVALID_RPC_RESPONSE`)
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+              status: 500,
+              headers: corsHeaders,
+            })
+          }
+
+          const rpcData = data.data
+
+          return new Response(JSON.stringify({
+            success: true,
+            data: {
+              order_id: rpcData.order_id,
+              order_seq: rpcData.order_seq,
+              display_order_number: rpcData.display_order_number,
+              event_year: rpcData.event_year,
+              customer_name: rpcData.customer_name,
+              total_quantity: rpcData.total_quantity,
+              subtotal: rpcData.subtotal,
+              total_amount: rpcData.total_amount,
+              order_status: rpcData.order_status,
+              payment_status: rpcData.payment_status,
+              is_duplicate: rpcData.is_duplicate === true
+            }
+          }), {
+            status: 200,
+            headers: corsHeaders,
+          })
+
+        } catch (err) {
+          console.error(`[AV] correlation=${correlationId} stage=fatal code=INTERNAL_ERROR`)
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+            status: 500,
+            headers: corsHeaders,
+          })
+        }
+      }
+    }
+  }
+})
+
+
+==================================================
+ARQUIVO 2
+==================================================
+
+/**
+ * ETAPA 3.3A-1 — TURNSTILE SERVER HELPERS
+ * Implementação canônica para validação server-side do token Cloudflare Turnstile.
+ */
+
+export type TurnstileVerification =
+  | { success: true }
+  | {
+      success: false;
+      error:
+        | "TURNSTILE_FAILED"
+        | "TURNSTILE_UNAVAILABLE"
+        | "CONFIG_MISSING"
+        | "CONFIG_ERROR";
+    };
+
+/**
+ * Realiza a chamada ao endpoint Siteverify da Cloudflare.
+ * Implementa Fail-Closed e Timeout de 8s.
+ */
+export async function verifyTurnstileToken(
+  token: string,
+  secretKey: string | undefined,
+  correlationId: string,
+  expectedHostnames: string[] = [],
+  expectedAction: string = "create_order"
+): Promise<TurnstileVerification> {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  // 4. FAIL CLOSED - Secret Ausente
+  if (!secretKey) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
+    return { success: false, error: "CONFIG_MISSING" };
+  }
+
+  // 9. PRODUÇÃO — HOSTNAME OBRIGATÓRIO (Fail-Closed)
+  if (isProduction && expectedHostnames.length === 0) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
+    return { success: false, error: "CONFIG_MISSING" };
+  }
+
+  // 10. TEST MODE SEGURO
+  const turnstileTestMode = process.env.TURNSTILE_TEST_MODE;
+  if (turnstileTestMode === "true" && isProduction) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_ERROR`);
+    return { success: false, error: "CONFIG_ERROR" };
+  }
+
+  // 11. DUMMY KEYS / ACTIONS
+  let effectiveAction = expectedAction;
+  let effectiveHostnames = expectedHostnames;
+
+  if (turnstileTestMode === "true") {
+    effectiveAction = "test";
+    effectiveHostnames = ["localhost"];
+  }
+
+  // 5. SITEVERIFY
+  const endpoint = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+  
+  // 7. TIMEOUT (8000ms) - 4. TURNSTILE HELPER — TIMEOUT
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        secret: secretKey,
+        response: token,
+        // Gerar UUID própria para Siteverify
+        idempotency_key: crypto.randomUUID(),
+      }),
+      signal: controller.signal,
+    });
+
+    // 5. HTTP NÃO 2XX
+    if (!response.ok) {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=HTTP_ERROR`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+
+    // 6. JSON / ESTRUTURA INVÁLIDA
+    let result: any;
+    try {
+      result = await response.json();
+    } catch {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=INVALID_RESPONSE`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+
+    if (typeof result !== "object" || result === null || Array.isArray(result)) {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=INVALID_RESPONSE`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+
+    // 7. SUCCESS FALSE
+    if (result.success !== true) {
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
+      return { success: false, error: "TURNSTILE_FAILED" };
+    }
+
+    // 12. ACTION PINNING
+    if (result.action !== effectiveAction) {
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH`);
+      return { success: false, error: "TURNSTILE_FAILED" };
+    }
+
+    // 9. PRODUÇÃO — HOSTNAME FAIL CLOSED (EXATA via includes)
+    if (effectiveHostnames.length > 0) {
+      if (!result.hostname || !effectiveHostnames.includes(result.hostname)) {
+        console.warn(`[AV] correlation=${correlationId} stage=turnstile code=HOSTNAME_MISMATCH`);
+        return { success: false, error: "TURNSTILE_FAILED" };
+      }
+    }
+
+    return { success: true };
+
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      console.error(`[AV] correlation=${correlationId} stage=turnstile code=TIMEOUT`);
+      return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+    }
+    console.error(`[AV] correlation=${correlationId} stage=turnstile code=FATAL`);
+    return { success: false, error: "TURNSTILE_UNAVAILABLE" };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+
+==================================================
+ARQUIVO 3
+==================================================
+
+/**
+ * ETAPA 3.3A-1 — PROPOSTA DE COMPONENTE FRONTEND (TURNSTILE)
+ * AUDITORIA: Somente para visualização da proposta de integração no React.
+ */
+
+import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+
+// Declarar globalmente o objeto Turnstile da Cloudflare
+declare global {
+  interface Window {
+    turnstile: {
+      render: (container: string | HTMLElement, options: any) => string;
+      reset: (widgetId: string) => void;
+      getResponse: (widgetId: string) => string | undefined;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
+
+export interface TurnstileWidgetHandle {
+  reset(): void;
+}
+
+interface TurnstileWidgetProps {
+  onTokenChange: (token: string | null) => void;
+  onTimeout?: () => void;
+  onError?: () => void;
+}
+
+/**
+ * 18. SCRIPT LOADER SPA (Singleton Promise)
+ */
+let scriptLoadingPromise: Promise<void> | null = null;
+const loadTurnstileScript = (): Promise<void> => {
+  if (window.turnstile) return Promise.resolve();
+  if (scriptLoadingPromise) return scriptLoadingPromise;
+
+  scriptLoadingPromise = new Promise((resolve, reject) => {
+    const existingScript = document.getElementById('cloudflare-turnstile-script');
+    if (existingScript) {
+      // Script já existe mas window.turnstile ainda não está pronto
+      const checkInterval = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 50);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'cloudflare-turnstile-script';
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve();
+    script.onerror = () => {
+      scriptLoadingPromise = null;
+      reject(new Error("Turnstile script load failed"));
+    };
+    document.body.appendChild(script);
+  });
+
+  return scriptLoadingPromise;
+};
+
+export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(({ 
+  onTokenChange, 
+  onTimeout,
+  onError
+}, ref) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
+  
+  // 19. REACT EFFECT (Refs para callbacks para evitar re-render)
+  const callbacksRef = useRef({ onTokenChange, onTimeout, onError });
+  useEffect(() => {
+    callbacksRef.current = { onTokenChange, onTimeout, onError };
+  }, [onTokenChange, onTimeout, onError]);
+
+  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  // 16. FRONTEND — RESET REAL
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      if (widgetIdRef.current && window.turnstile) {
+        callbacksRef.current.onTokenChange(null);
+        window.turnstile.reset(widgetIdRef.current);
+      }
+    }
+  }));
+
+  useEffect(() => {
+    if (!siteKey) return;
+
+    let isMounted = true;
+
+    loadTurnstileScript().then(() => {
+      if (!isMounted || !containerRef.current || !window.turnstile) return;
+
+      // 14. RENDERING EXPLÍCITO
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey,
+        action: "create_order", // 12. ACTION FIXA
+        theme: 'dark',
+        callback: (token: string) => {
+          // 15. FRONTEND — TOKEN STATE
+          callbacksRef.current.onTokenChange(token);
+        },
+        'expired-callback': () => {
+          callbacksRef.current.onTokenChange(null);
+        },
+        'error-callback': () => {
+          callbacksRef.current.onTokenChange(null);
+          if (callbacksRef.current.onError) callbacksRef.current.onError();
+        },
+        'timeout-callback': () => {
+          // 14. FRONTEND — TIMEOUT CALLBACK
+          callbacksRef.current.onTokenChange(null);
+          if (callbacksRef.current.onTimeout) callbacksRef.current.onTimeout();
+        }
+      });
+    }).catch(() => {
+      if (isMounted && callbacksRef.current.onError) callbacksRef.current.onError();
+    });
+
+    return () => {
+      isMounted = false;
+      if (widgetIdRef.current && window.turnstile) {
+        // 16. No unmount: turnstile.remove()
+        window.turnstile.remove(widgetIdRef.current);
+        widgetIdRef.current = null;
+      }
+    };
+  }, [siteKey]);
+
+  if (!siteKey) {
+    return (
+      <div className="p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-sm text-red-200">
+        Proteção anti-bot indisponível.
+      </div>
+    );
+  }
+
+  return <div ref={containerRef} className="min-h-[65px]" />;
+});
+
+TurnstileWidget.displayName = 'TurnstileWidget';
+
+
+==================================================
+ARQUIVO 4
+==================================================
+
+---
+name: ETAPA 3.3A-1 — MATRIZ DE TESTES TURNSTILE
+description: Definição dos cenários de teste para validação da proteção anti-bot.
+type: feature
+---
+
+| ID | CENÁRIO | INPUT | EXPECTED STATUS | EXPECTED ERROR | STAGE/CODE (LOG) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **TUR01** | Token ausente | `{ ... }` (sem turnstile_token) | 400 | INVALID_REQUEST | N/A |
+| **TUR02** | Token não string | `turnstile_token: 123` | 400 | INVALID_REQUEST | N/A |
+| **TUR03** | Token vazio | `turnstile_token: ""` | 400 | INVALID_REQUEST | N/A |
+| **TUR04** | Token >2048 | `turnstile_token: "A" * 2049` | 400 | INVALID_REQUEST | N/A |
+| **TUR05** | Secret ausente | `TURNSTILE_SECRET_KEY` unset | 500 | INTERNAL_ERROR | turnstile_config / CONFIG_MISSING |
+| **TUR06** | success=false | `success: false` | 403 | TURNSTILE_FAILED | turnstile / FAILED |
+| **TUR07** | Token válido | Chave oficial de teste (Pass) | 200/Fluxo | N/A | turnstile (Success) |
+| **TUR08** | Action incorreta | `action: "wrong_action"` | 403 | TURNSTILE_FAILED | turnstile / ACTION_MISMATCH |
+| **TUR09** | Hostname incorreto | Hostname não listado | 403 | TURNSTILE_FAILED | turnstile / HOSTNAME_MISMATCH |
+| **TUR10** | Timeout | Siteverify > 8s | 503 | TURNSTILE_UNAVAILABLE | turnstile / TIMEOUT |
+| **TUR11** | JSON inválido | Resposta corrompida CF | 503 | TURNSTILE_UNAVAILABLE | turnstile / INVALID_RESPONSE |
+| **TUR12** | Replay | Token já consumido | 403 | TURNSTILE_FAILED | turnstile / FAILED |
+| **TUR13** | Token não aparece logs | Inspeção de logs | N/A | N/A | Token omitido nos logs |
+| **TUR14** | Secret não aparece logs | Inspeção de logs | N/A | N/A | Secret omitido nos logs |
+| **TUR15** | Turnstile bloqueado | Siteverify falhou | 403 | TURNSTILE_FAILED | RPC NÃO chamada |
+| **TUR16** | Token válido + Pedido | Sucesso completo | 200 | N/A | RPC chamada exatamente 1 vez |
+| **TUR17** | Retry | Mesmo ID + Novo Token | 200 | N/A | Mesma order idempotency_key |
+| **TUR18** | Payload inválido | event_id inválido | 400 | INVALID_REQUEST | Siteverify NÃO chamada |
+| **TUR19** | HTTP Siteverify 500 | Erro 500 Cloudflare | 503 | TURNSTILE_UNAVAILABLE | turnstile / HTTP_ERROR |
+| **TUR20** | JSON malformado | JSON quebrado Siteverify | 503 | TURNSTILE_UNAVAILABLE | turnstile / INVALID_RESPONSE |
+| **TUR21** | Array/null | Siteverify retorna array | 503 | TURNSTILE_UNAVAILABLE | turnstile / INVALID_RESPONSE |
+| **TUR22** | Prod sem hostnames | Config ausente em Prod | 500 | INTERNAL_ERROR | turnstile_config / CONFIG_MISSING |
+| **TUR23** | Test mode em Prod | TEST_MODE=true em Prod | 500 | INTERNAL_ERROR | turnstile_config / CONFIG_ERROR |
+| **TUR24** | Submit consumido | Tentativa enviada | N/A | N/A | Widget resetado via useImperativeHandle |
+| **TUR25** | Retry | Reenvio após reset | 200 | N/A | Novo Token + Mesma chave pedido |
+
+**ESTADO DAS VARIÁVEIS:**
+
+1. `TURNSTILE_SECRET_KEY`: Server-side Secret.
+2. `TURNSTILE_EXPECTED_HOSTNAMES`: Server-side, Obrigatório em Prod.
+3. `TURNSTILE_TEST_MODE`: "true" para habilitar bypass localhost em Dev.
+4. `VITE_TURNSTILE_SITE_KEY`: Frontend Public.
