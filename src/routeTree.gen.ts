@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 import { Route as ApiPublicAvPaymentInfoRouteImport } from './routes/api/public/av-payment-info'
+import { Route as ApiPublicAvPaymentReceiptRouteImport } from './routes/api/public/av-payment-receipt'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,26 @@ const ApiPublicAvPaymentInfoRoute = ApiPublicAvPaymentInfoRouteImport.update({
   path: '/api/public/av-payment-info',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAvPaymentReceiptRoute =
+  ApiPublicAvPaymentReceiptRouteImport.update({
+    id: '/api/public/av-payment-receipt',
+    path: '/api/public/av-payment-receipt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
+  '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
+  '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,6 +62,7 @@ export interface FileRoutesById {
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
+  '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -61,18 +71,21 @@ export interface FileRouteTypes {
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-payment-info'
+    | '/api/public/av-payment-receipt'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-payment-info'
+    | '/api/public/av-payment-receipt'
   id:
     | '__root__'
     | '/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-payment-info'
+    | '/api/public/av-payment-receipt'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -80,6 +93,7 @@ export interface RootRouteChildren {
   ApiPublicAvCatalogRoute: typeof ApiPublicAvCatalogRoute
   ApiPublicAvCreateOrderRoute: typeof ApiPublicAvCreateOrderRoute
   ApiPublicAvPaymentInfoRoute: typeof ApiPublicAvPaymentInfoRoute
+  ApiPublicAvPaymentReceiptRoute: typeof ApiPublicAvPaymentReceiptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -112,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAvPaymentInfoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/av-payment-receipt': {
+      id: '/api/public/av-payment-receipt'
+      path: '/api/public/av-payment-receipt'
+      fullPath: '/api/public/av-payment-receipt'
+      preLoaderRoute: typeof ApiPublicAvPaymentReceiptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -120,6 +141,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAvCatalogRoute: ApiPublicAvCatalogRoute,
   ApiPublicAvCreateOrderRoute: ApiPublicAvCreateOrderRoute,
   ApiPublicAvPaymentInfoRoute: ApiPublicAvPaymentInfoRoute,
+  ApiPublicAvPaymentReceiptRoute: ApiPublicAvPaymentReceiptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

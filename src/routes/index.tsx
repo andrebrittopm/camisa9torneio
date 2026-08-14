@@ -31,6 +31,7 @@ function Index() {
   const [selectedModel, setSelectedModel] = useState<AvShirtModel | null>(null)
   const [view, setView] = useState<'config' | 'review' | 'success'>('config')
   const [createdOrder, setCreatedOrder] = useState<any>(null)
+  const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null)
 
   const {
     items,
@@ -41,8 +42,15 @@ function Index() {
     addItem,
     removeItem,
     updateItem,
-    clearOrder
+    clearOrder,
+    setItems
   } = useOrderState();
+
+  const handleClearAll = useCallback(() => {
+    clearOrder();
+    setReceiptAccessToken(null);
+  }, [clearOrder]);
+
 
   const loadCatalog = useCallback(async () => {
     setIsLoading(true)
@@ -195,8 +203,9 @@ function Index() {
                 items={items}
                 eventInfo={catalog.event}
                 onBack={() => setView('config')}
-                onSuccess={(order) => {
+                onSuccess={(order, token) => {
                   setCreatedOrder(order);
+                  setReceiptAccessToken(token);
                   setView('success');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
@@ -210,9 +219,18 @@ function Index() {
                 order={createdOrder}
                 catalog={catalog}
                 localItems={items}
+                receiptAccessToken={receiptAccessToken}
+                onStatusUpdate={(pStatus, rStatus) => {
+                  setCreatedOrder((prev: any) => ({
+                    ...prev,
+                    payment_status: pStatus,
+                    review_status: rStatus
+                  }));
+                }}
                 onNewOrder={() => {
+
                   if (confirm("Deseja iniciar um novo pedido?")) {
-                    clearOrder();
+                    handleClearAll();
                     setCreatedOrder(null);
                     setView('config');
                     window.scrollTo({ top: 0, behavior: 'smooth' });

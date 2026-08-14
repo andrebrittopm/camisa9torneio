@@ -1,0 +1,39 @@
+ETAPA 4.3B — UPLOAD PRIVADO E IDEMPOTENTE DE COMPROVANTE PIX
+------------------------------------------------------------
+Status: CONCLUÍDO E HARDENED
+
+1. INFRAESTRUTURA DE STORAGE
+- Bucket 'av-payment-receipts' configurado como privado.
+- Limite de 10MB e MIME types restritos (JPEG, PNG, PDF).
+- GRANT restrito a service_role (anon e auth REVOKED).
+
+2. SEGURANÇA E ACESSO (CAPABILITY TOKENS)
+- Implementação de Tokens de Acesso determinísticos via HMAC-SHA-256.
+- Verificação constant-time no lado do servidor.
+- Tokens gerados apenas após criação de pedido válida.
+
+3. HARDENING DO BANCO DE DADOS
+- Tabela av_payment_receipts estendida com submission_id (UUID UNIQUE) e file_sha256.
+- RPC transacional av_submit_payment_receipt com isolamento de search_path.
+- Lógica de idempotência atômica e prevenção de deadlocks (FOR UPDATE).
+
+4. SERVER ROUTE (AV-PAYMENT-RECEIPT)
+- Sniffing de magic bytes para validação de tipo de arquivo.
+- Verificação de integridade SHA-256 obrigatória.
+- Compensação de erros: remoção de objetos órfãos no storage em caso de falha no DB.
+- Hardening de CORS e limites de payload (64KB headers, 10MB body).
+
+5. INTEGRAÇÃO FRONTEND
+- Componente ReceiptUpload com validação local e feedback visual.
+- Gestão de estado isolada para tokens de acesso.
+- Mapeamento amigável de erros técnicos (VR001-VR005).
+
+6. AUDITORIA TÉCNICA
+- Build de produção validado (TanStack Start Bridge OK).
+- Bateria de testes REC08-REC09 validada com 403 Forbidden para tokens inválidos.
+- Proteção de importação TanStack satisfeita via sufixo .server.ts.
+
+CÓDIGO FONTE CONSOLIDADO (FRAGMENTOS):
+- src/lib/server/av-order-access.server.ts (Security Core)
+- src/routes/api/public/av-payment-receipt.ts (Endpoint)
+- .lovable/etapa-4.3b/MASTER_MIGRATION.sql (DB Schema)

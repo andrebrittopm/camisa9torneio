@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AvShirtModel } from './av-catalog-client';
 
 /**
  * Interface de resposta do servidor (Sanitizada)
@@ -19,6 +20,15 @@ export interface AvCreateOrderResponse {
   error?: string;
   code?: string;
   retry_after?: number | null;
+  receipt_access_token?: string; // ETAPA 4.3B
+}
+
+/**
+ * Resposta completa do helper (Separa o token do objeto oficial)
+ */
+export interface AvOrderSubmissionResult {
+  order: AvCreateOrderResponse;
+  receiptAccessToken: string | null;
 }
 
 /**
@@ -44,7 +54,7 @@ export interface AvCreateOrderPayload {
 /**
  * Helper para submissão de pedido ao endpoint /api/public/av-create-order
  */
-export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvCreateOrderResponse> {
+export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOrderSubmissionResult> {
   try {
     const response = await fetch('/api/public/av-create-order', {
       method: 'POST',
@@ -57,23 +67,33 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvCr
     const data = await response.json();
 
     if (!response.ok) {
-      // Normalização de erros baseada no contrato do backend
       return {
-        success: false,
-        error: data.message || 'Erro ao processar o pedido',
-        code: data.code || 'UNKNOWN_ERROR',
-        retry_after: response.status === 429 ? parseInt(response.headers.get('Retry-After') || '0', 10) : null
+        order: {
+          success: false,
+          error: data.error || 'Erro ao processar o pedido',
+          code: data.code || 'UNKNOWN_ERROR',
+          retry_after: response.status === 429 ? parseInt(response.headers.get('Retry-After') || '0', 10) : null
+        },
+        receiptAccessToken: null
       };
     }
 
-    return data;
+    const { receipt_access_token, ...orderData } = data;
+
+    return {
+      order: orderData,
+      receiptAccessToken: receipt_access_token || null
+    };
   } catch (error) {
     console.error('[AV-ORDER-CLIENT] Network error:', error);
     return {
-      success: false,
-      error: 'Não foi possível confirmar se o pedido foi registrado. Tente novamente.',
-      code: 'NETWORK_ERROR',
-      retry_after: null
+      order: {
+        success: false,
+        error: 'Não foi possível confirmar se o pedido foi registrado. Tente novamente.',
+        code: 'NETWORK_ERROR',
+        retry_after: null
+      },
+      receiptAccessToken: null
     };
   }
 }
