@@ -26,10 +26,16 @@ export async function verifyTurnstileToken(
   expectedAction: string = "create_order"
 ): Promise<TurnstileVerification> {
   const isProduction = process.env['NODE_ENV'] === "production";
+  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
+
+  // 11. DUMMY KEYS / ACTIONS
+  if (turnstileTestMode === "true" && !isProduction && token.startsWith("test-token")) {
+    console.log(`[AV] correlation=${correlationId} stage=turnstile_mock code=FORCED_SUCCESS token=${token}`);
+    return { success: true };
+  }
 
   // 4. FAIL CLOSED - Secret Ausente
   let finalSecret = secretKey;
-  const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
 
   if (!finalSecret) {
     if (turnstileTestMode === "true" && !isProduction) {
@@ -66,11 +72,6 @@ export async function verifyTurnstileToken(
   // 5. SITEVERIFY
   const endpoint = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
   
-  if (turnstileTestMode === "true" && token.startsWith("test-token")) {
-     console.log(`[AV] correlation=${correlationId} stage=turnstile_mock code=FORCED_SUCCESS token=${token}`);
-     return { success: true };
-  }
-
   // 7. TIMEOUT (8000ms) - 4. TURNSTILE HELPER — TIMEOUT
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 8000);
