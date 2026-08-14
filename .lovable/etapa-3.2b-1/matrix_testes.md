@@ -10,9 +10,10 @@
 | **JSON** | JSON malformado | 400 INVALID_JSON |
 | **JSON** | Body é Array ou Null | 400 INVALID_REQUEST |
 | **CONFIG** | SUPABASE_URL ausente | 500 INTERNAL_ERROR + Log CONFIG_MISSING |
+| **CONFIG** | ALLOWED_ORIGINS ausente/vazio | 500 INTERNAL_ERROR + Log CONFIG_MISSING |
 | **CAMPOS** | Campo desconhecido top-level | 400 INVALID_REQUEST |
 | **CAMPOS** | Campo financeiro proibido (unit_price) | 400 INVALID_REQUEST |
-| **EVENT** | event_id inválido (não UUID) | 400 INVALID_REQUEST |
+| **EVENT** | event_id inválido (não UUID ou não string) | 400 INVALID_REQUEST |
 | **IDEM** | idempotency_key inválida | 400 INVALID_REQUEST |
 | **ITEMS** | items ausente ou vazio | 400 INVALID_REQUEST |
 | **ITEMS** | items > 50 linhas | 400 INVALID_REQUEST |
@@ -23,4 +24,6 @@
 | **RPC** | SQLSTATE AV001 | 409 IDEMPOTENCY_KEY_REUSED |
 | **RPC** | SQLSTATE AV007 | 400 INVALID_MODEL |
 | **RPC** | Erro genérico do banco | 500 INTERNAL_ERROR (Sanitizado) |
+| **RPC_RES** | RPC retorna success:true com data.data | Edge deve retornar valores de data.data |
+| **RPC_RES** | RPC retorna objeto inesperado/malformado | 500 INTERNAL_ERROR (Sanitizado) |
 | **SUCESSO** | Ordem Válida | 200 OK + Payload Sanitizado |

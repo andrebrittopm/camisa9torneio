@@ -66,13 +66,31 @@ const SQLSTATE_MAP: Record<string, { status: number; code: string }> = {
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+function isValidUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    UUID_REGEX.test(value)
+  )
+}
+
 Deno.serve(async (req: Request) => {
   const correlationId = crypto.randomUUID()
 
-  // 1. CORS Preflight
+  // 1. CORS Preflight & Origins Validation
   const origin = req.headers.get("origin")
   const allowedOriginsStr = Deno.env.get("ALLOWED_ORIGINS") || ""
-  const allowedOrigins = allowedOriginsStr.split(",").filter(Boolean)
+  const allowedOrigins = allowedOriginsStr
+    .split(",")
+    .map(o => o.trim())
+    .filter(Boolean)
+
+  if (allowedOrigins.length === 0) {
+    console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+    return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
 
   if (req.method === "OPTIONS") {
     if (origin && allowedOrigins.includes(origin)) {
@@ -90,16 +108,15 @@ Deno.serve(async (req: Request) => {
     })
   }
 
-  // 2. CORS & Origin Validation
   if (!origin || !allowedOrigins.includes(origin)) {
-    console.error(`[AV] correlation=${correlationId} stage=cors code=CORS_ERROR origin=${origin}`)
+    console.error(`[AV] correlation=${correlationId} stage=cors code=CORS_ERROR`)
     return new Response(JSON.stringify({ error: "CORS_ERROR", correlation_id: correlationId }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
     })
   }
 
-  // 3. Method Validation
+  // 2. Method Validation
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED", correlation_id: correlationId }), {
       status: 405,
@@ -111,7 +128,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // 4. Secrets Validation
+    // 3. Secrets Validation
     const supabaseUrl = Deno.env.get("SUPABASE_URL")
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -126,7 +143,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // 5. Body Limit & UTF-8 Stream
+    // 4. Body Limit & UTF-8 Stream
     const contentLength = parseInt(req.headers.get("content-length") || "-1")
     if (contentLength > MAX_BODY_BYTES) {
       return new Response(JSON.stringify({ error: "PAYLOAD_TOO_LARGE", correlation_id: correlationId }), {
@@ -172,7 +189,7 @@ Deno.serve(async (req: Request) => {
       bodyText += decoder.decode(value, { stream: true })
     }
 
-    // 6. JSON Parsing & Structure Validation
+    // 5. JSON Parsing & Structure Validation
     let payload: any
     try {
       payload = JSON.parse(bodyText)
@@ -196,7 +213,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // 7. Field Validations (Top-Level)
+    // 6. Field Validations (Top-Level)
     const payloadKeys = Object.keys(payload)
     if (payloadKeys.some(k => !ALLOWED_FIELDS.includes(k) || PROHIBITED_FIELDS.includes(k))) {
       return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), {
@@ -216,8 +233,8 @@ Deno.serve(async (req: Request) => {
 
     const { event_id, customer_name, whatsapp, notes, idempotency_key, items } = payload
 
-    if (!event_id || !UUID_REGEX.test(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
-    if (!idempotency_key || !UUID_REGEX.test(idempotency_key)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
+    if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
+    if (!isValidUuid(idempotency_key)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
     
     if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
     if (typeof whatsapp !== "string" || whatsapp.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
@@ -234,7 +251,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // 8. Items Validation & Normalization
+    // 7. Items Validation & Normalization
     const validatedItems = []
     for (const item of items) {
       if (typeof item !== "object" || item === null || Array.isArray(item)) {
@@ -248,7 +265,7 @@ Deno.serve(async (req: Request) => {
 
       const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
 
-      if (!shirt_model_id || !UUID_REGEX.test(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
+      if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
       if (typeof size_option !== "string" || size_option.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin } })
 
       if (typeof quantity !== "number" || !Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > 2147483647) {
@@ -270,7 +287,7 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // 9. Canonical Fingerprint Generation
+    // 8. Canonical Fingerprint Generation
     const sortedItems = [...validatedItems].sort((a, b) => {
       const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
       const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
@@ -292,7 +309,7 @@ Deno.serve(async (req: Request) => {
       .map(b => b.toString(16).padStart(2, "0"))
       .join("")
 
-    // 10. RPC Call (Service Role)
+    // 9. RPC Call (Service Role)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
     const { data, error } = await supabaseAdmin.rpc("av_create_order", {
       p_event_id: event_id,
@@ -326,21 +343,42 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    // 10. RPC Response Validation
+    if (
+      !data ||
+      typeof data !== "object" ||
+      data.success !== true ||
+      !data.data ||
+      typeof data.data !== "object" ||
+      Array.isArray(data.data)
+    ) {
+      console.error(`[AV] correlation=${correlationId} stage=rpc_response code=INVALID_RPC_RESPONSE`)
+      return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
+        status: 500,
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": origin 
+        },
+      })
+    }
+
+    const rpcData = data.data
+
     // 11. Success Response (Sanitized)
     return new Response(JSON.stringify({
       success: true,
       data: {
-        order_id: data.order_id,
-        order_seq: data.order_seq,
-        display_order_number: data.display_order_number,
-        event_year: data.event_year,
-        customer_name: data.customer_name,
-        total_quantity: data.total_quantity,
-        subtotal: data.subtotal,
-        total_amount: data.total_amount,
-        order_status: data.order_status,
-        payment_status: data.payment_status,
-        is_duplicate: data.is_duplicate || false
+        order_id: rpcData.order_id,
+        order_seq: rpcData.order_seq,
+        display_order_number: rpcData.display_order_number,
+        event_year: rpcData.event_year,
+        customer_name: rpcData.customer_name,
+        total_quantity: rpcData.total_quantity,
+        subtotal: rpcData.subtotal,
+        total_amount: rpcData.total_amount,
+        order_status: rpcData.order_status,
+        payment_status: rpcData.payment_status,
+        is_duplicate: rpcData.is_duplicate === true
       }
     }), {
       status: 200,
