@@ -119,13 +119,9 @@ function getAllowedOrigins(request: Request): string[] {
     selfOrigin = ''
   }
 
-  // Fallback para o domínio de preview conhecido em caso de falha de detecção no proxy
-  const previewOrigin = "https://65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovableproject.com"
-  
   const allowed = Array.from(new Set([
     ...fromEnv, 
-    ...(selfOrigin ? [selfOrigin] : []),
-    previewOrigin
+    ...(selfOrigin ? [selfOrigin] : [])
   ]))
   return allowed
 }
