@@ -110,17 +110,22 @@ function getAllowedOrigins(request: Request): string[] {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean)
+  
+  // LOG PARA AUDITORIA (Será removido após confirmação)
+  const originHeader = request.headers.get("origin")
+  const requestUrl = request.url
+  console.log(`[AV_DEBUG] Origin Header: ${originHeader}, Request URL: ${requestUrl}`)
+
   let selfOrigin = ''
   try {
-    const url = new URL(request.url)
+    const url = new URL(requestUrl)
     selfOrigin = url.origin
-    // Em alguns ambientes de dev/proxy, url.origin pode não ser o que o browser vê.
-    // O requisito é clear: same-origin do próprio endpoint.
   } catch {
     selfOrigin = ''
   }
   
   const allowed = Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]))
+  console.log(`[AV_DEBUG] Final Allowed Origins: ${JSON.stringify(allowed)}`)
   return allowed
 }
 
