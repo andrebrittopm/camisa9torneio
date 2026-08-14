@@ -33,17 +33,17 @@ export async function verifyTurnstileToken(
     return { success: false, error: "CONFIG_MISSING" };
   }
 
-  // 9. PRODUÇÃO — HOSTNAME OBRIGATÓRIO (Fail-Closed)
-  if (isProduction && expectedHostnames.length === 0) {
-    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
-    return { success: false, error: "CONFIG_MISSING" };
-  }
-
-  // 10. TEST MODE SEGURO
+  // 10. TEST MODE SEGURO (Validado antes de qualquer outra config de produção)
   const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
   if (turnstileTestMode === "true" && isProduction) {
     console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_ERROR`);
     return { success: false, error: "CONFIG_ERROR" };
+  }
+
+  // 9. PRODUÇÃO — HOSTNAME OBRIGATÓRIO (Fail-Closed)
+  if (isProduction && expectedHostnames.length === 0) {
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
+    return { success: false, error: "CONFIG_MISSING" };
   }
 
   // 11. DUMMY KEYS / ACTIONS
