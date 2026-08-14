@@ -13,7 +13,7 @@ interface OrderReviewProps {
   items: OrderItem[];
   eventInfo: AvCatalogEvent;
   onBack: () => void;
-  onSuccess: (order: AvCreateOrderResponse) => void;
+  onSuccess: (order: AvCreateOrderResponse, token: string | null) => void;
 }
 
 type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
@@ -90,21 +90,21 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
       }))
     };
 
-    const result = await submitAvOrder(payload);
+    const { order: orderResult, receiptAccessToken } = await submitAvOrder(payload);
 
     // Resetar Turnstile após qualquer tentativa (Single Use)
     setTurnstileToken(null);
     if (turnstileRef.current) turnstileRef.current.reset();
 
-    if (result.success) {
+    if (orderResult.success) {
       setStatus('success');
-      onSuccess(result);
+      onSuccess(orderResult, receiptAccessToken);
     } else {
       setStatus('error');
-      setLastErrorCode(result.code || null);
+      setLastErrorCode(orderResult.code || null);
       
       // Mapeamento de Erros Amigáveis
-      switch (result.code) {
+      switch (orderResult.code) {
         case 'INVALID_QUANTITY':
           setErrorMsg("Verifique a quantidade informada.");
           break;
@@ -128,7 +128,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
           break;
         case 'RATE_LIMITED':
           setErrorMsg("Muitas tentativas em pouco tempo. Aguarde alguns instantes.");
-          if (result.retry_after) setRetryAfter(result.retry_after);
+          if (orderResult.retry_after) setRetryAfter(orderResult.retry_after);
           break;
         case 'TURNSTILE_FAILED':
           setErrorMsg("Não foi possível validar a verificação de segurança. Tente novamente.");
@@ -137,7 +137,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
           setErrorMsg("A verificação de segurança está temporariamente indisponível.");
           break;
         default:
-          setErrorMsg(result.error || "Não foi possível concluir o pedido agora. Tente novamente.");
+          setErrorMsg(orderResult.error || "Não foi possível concluir o pedido agora. Tente novamente.");
       }
     }
   };
