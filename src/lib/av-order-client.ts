@@ -49,6 +49,8 @@ export interface AvCreateOrderPayload {
     custom_name: string | null;
     custom_number: string | null;
     quantity: number;
+    model_name: string; // Etapa 4.3C (para e-mail)
+    shirt_type: string; // Etapa 4.3C (para e-mail)
   }[];
 }
 
