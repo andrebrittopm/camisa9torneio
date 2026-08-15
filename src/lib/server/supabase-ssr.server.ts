@@ -18,7 +18,7 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
     cookies: {
       getAll() {
         const cookieHeader = request.headers.get('Cookie') ?? ''
-        return cookieHeader.split(';').map((c) => {
+        return cookieHeader.split(';').filter(Boolean).map((c) => {
           const [name, ...value] = c.split('=')
           return { name: name.trim(), value: value.join('=').trim() }
         })
