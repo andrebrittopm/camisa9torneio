@@ -50,6 +50,7 @@ export type Database = {
       av_admin_profiles: {
         Row: {
           active: boolean
+          bootstrap_completed_at: string | null
           created_at: string
           display_name: string
           role: string
@@ -58,6 +59,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          bootstrap_completed_at?: string | null
           created_at?: string
           display_name: string
           role: string
@@ -66,6 +68,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          bootstrap_completed_at?: string | null
           created_at?: string
           display_name?: string
           role?: string
