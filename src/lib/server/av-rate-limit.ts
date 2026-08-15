@@ -10,7 +10,7 @@ export type RateLimitResult =
   | { allowed: false; retry_after_seconds: number }
   | { allowed: true; fail_open: true; code: string }; // Fail-Open para storage
 
-export type RateLimitScope = 'order' | 'admin-login';
+export type RateLimitScope = 'order' | 'admin-login' | 'admin-auth';
 
 export interface RateLimitConfig {
   mode: 'global_only' | 'global_and_client';
@@ -137,22 +137,27 @@ export async function checkRateLimit(
   }
 
   // 3. Gerar Specs Baseadas no Escopo
-  const endpoint = scope === 'admin-login' ? 'av-admin-login' : 'av-create-order';
+  const endpointMap: Record<RateLimitScope, string> = {
+    'order': 'av-create-order',
+    'admin-login': 'av-admin-login',
+    'admin-auth': 'av-admin-auth'
+  };
+  const endpoint = endpointMap[scope];
 
-  if (scope === 'admin-login') {
-    // Escopo Administrativo: admin-login:account e admin-login:global
-    // Bucket por conta (usar identifier se disponível, ou global)
+  if (scope === 'admin-login' || scope === 'admin-auth') {
+    // Escopo Administrativo: login/auth
+    const scopePrefix = scope;
     specs.push({
-      bucket_key_hash: await generateHMAC(secret, 'admin-login:account', identifier, endpoint),
-      scope: 'admin-login:account',
+      bucket_key_hash: await generateHMAC(secret, `${scopePrefix}:account`, identifier, endpoint),
+      scope: `${scopePrefix}:account`,
       capacity: 5,
       refill_rate_per_second: 5 / 900, // 5 a cada 15m
       ttl_seconds: 3600
     });
 
     specs.push({
-      bucket_key_hash: await generateHMAC(secret, 'admin-login:global', 'global', endpoint),
-      scope: 'admin-login:global',
+      bucket_key_hash: await generateHMAC(secret, `${scopePrefix}:global`, 'global', endpoint),
+      scope: `${scopePrefix}:global`,
       capacity: 100,
       refill_rate_per_second: 100 / 900,
       ttl_seconds: 3600
@@ -235,13 +240,13 @@ export async function checkRateLimit(
         return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
       }
 
-      // unknown = closed
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=UNKNOWN_DB_ERROR status=${status}`);
+      // 400 Bad Request (possivelmente erro de validação/assinatura na RPC) -> closed
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=DB_ERROR_400 status=${status} message=${error.message}`);
       throw new Error('UNKNOWN_DB_ERROR');
     }
 
     if (!data || typeof data !== 'object' || typeof data.allowed !== 'boolean') {
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE`);
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE data=${JSON.stringify(data)}`);
       throw new Error('INVALID_RPC_RESPONSE');
     }
 

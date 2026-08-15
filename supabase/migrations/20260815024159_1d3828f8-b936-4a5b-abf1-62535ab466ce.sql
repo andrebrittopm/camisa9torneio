@@ -1,0 +1,114 @@
+-- 1. Atualizar constraint de escopos permitidos
+ALTER TABLE public.av_rate_limit_buckets DROP CONSTRAINT IF EXISTS scope_allowlist;
+ALTER TABLE public.av_rate_limit_buckets ADD CONSTRAINT scope_allowlist 
+    CHECK (scope IN (
+        'order:create', 
+        'catalog:view', 
+        'payment:info', 
+        'payment:receipt', 
+        'order:view', 
+        'admin-login:account', 
+        'admin-login:global',
+        'admin-auth:account',
+        'admin-auth:global',
+        'order:client:burst'
+    ));
+
+-- 2. Atualizar função de verificação (whitelist interna)
+-- Mantendo o nome original do parâmetro 'p_specs' para evitar erro de assinatura
+CREATE OR REPLACE FUNCTION public.av_check_rate_limits(p_specs JSONB)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+    v_check JSONB;
+    v_scope TEXT;
+    v_key TEXT;
+    v_capacity INT;
+    v_refill_rate FLOAT;
+    v_now TIMESTAMPTZ := clock_timestamp();
+    v_result JSONB := '[]'::JSONB;
+    v_allowed BOOLEAN := TRUE;
+    v_wait_time INT := 0;
+    v_current_tokens FLOAT;
+    v_last_refill TIMESTAMPTZ;
+    v_new_tokens FLOAT;
+    v_whitelist TEXT[] := ARRAY[
+        'order:create', 
+        'catalog:view', 
+        'payment:info', 
+        'payment:receipt', 
+        'order:view', 
+        'admin-login:account', 
+        'admin-login:global',
+        'admin-auth:account',
+        'admin-auth:global',
+        'order:client:burst'
+    ];
+BEGIN
+    FOR v_check IN SELECT * FROM jsonb_array_elements(p_specs)
+    LOOP
+        v_scope := v_check->>'scope';
+        v_key := v_check->>'key';
+        v_capacity := (v_check->>'capacity')::INT;
+        v_refill_rate := (v_check->>'refill_rate')::FLOAT;
+
+        IF NOT (v_scope = ANY(v_whitelist)) THEN
+            v_result := v_result || jsonb_build_object(
+                'scope', v_scope,
+                'allowed', false,
+                'error', 'AV014'
+            );
+            v_allowed := false;
+            CONTINUE;
+        END IF;
+
+        IF v_capacity > 1000 THEN v_capacity := 1000; END IF;
+
+        INSERT INTO public.av_rate_limit_buckets (scope, key, tokens, last_refill)
+        VALUES (v_scope, v_key, v_capacity, v_now)
+        ON CONFLICT (scope, key) DO UPDATE
+        SET tokens = public.av_rate_limit_buckets.tokens 
+        RETURNING tokens, last_refill INTO v_current_tokens, v_last_refill;
+
+        SELECT tokens, last_refill INTO v_current_tokens, v_last_refill
+        FROM public.av_rate_limit_buckets
+        WHERE scope = v_scope AND key = v_key
+        FOR UPDATE;
+
+        v_new_tokens := LEAST(v_capacity::FLOAT, v_current_tokens + (v_refill_rate * EXTRACT(EPOCH FROM (v_now - v_last_refill))));
+
+        IF v_new_tokens >= 1 THEN
+            UPDATE public.av_rate_limit_buckets
+            SET tokens = v_new_tokens - 1,
+                last_refill = v_now,
+                updated_at = v_now
+            WHERE scope = v_scope AND key = v_key;
+
+            v_result := v_result || jsonb_build_object(
+                'scope', v_scope,
+                'allowed', true,
+                'tokens_left', floor(v_new_tokens - 1)
+            );
+        ELSE
+            v_wait_time := ceil((1 - v_new_tokens) / v_refill_rate);
+            v_result := v_result || jsonb_build_object(
+                'scope', v_scope,
+                'allowed', false,
+                'wait_time', v_wait_time
+            );
+            v_allowed := false;
+        END IF;
+    END LOOP;
+
+    RETURN jsonb_build_object(
+        'allowed', v_allowed,
+        'results', v_result
+    );
+END;
+$$;
+
+-- 3. Garantir permissões
+GRANT EXECUTE ON FUNCTION public.av_check_rate_limits(JSONB) TO service_role;
