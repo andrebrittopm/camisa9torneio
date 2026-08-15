@@ -16,12 +16,12 @@ const checkAdminAuth = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
-    // Não redirecionar se já estivermos na página de login para evitar loop
-    if (location.pathname === '/admin/login') {
+    // 1. Não proteger a página de login para evitar loop de redirecionamento
+    if (location.pathname.startsWith('/admin/login')) {
       return;
     }
 
-    // PROTEÇÃO ATRAVÉS DE SERVER FUNCTION
+    // 2. PROTEÇÃO ATRAVÉS DE SERVER FUNCTION
     const context = await checkAdminAuth()
     
     if (!context.authenticated || !context.active) {
