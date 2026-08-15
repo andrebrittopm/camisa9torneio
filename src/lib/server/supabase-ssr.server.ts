@@ -23,6 +23,7 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
           const cookieStr = serialize(name, value, options)
+          console.log(`[AV-SSR-DEBUG] Setting cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
         })
       },

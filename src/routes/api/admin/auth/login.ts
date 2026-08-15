@@ -62,8 +62,9 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           }
 
           // 4. Supabase SSR Auth
-          const responseHeaders = new Headers(corsHeaders);
-          const supabase = createSupabaseSSR(request, responseHeaders);
+          // Criamos uma nova Headers que será fundida com a resposta
+          const authHeaders = new Headers(corsHeaders);
+          const supabase = createSupabaseSSR(request, authHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
             email: email.trim().toLowerCase(),
@@ -71,10 +72,11 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
+            console.warn(`[AV-ADMIN-LOGIN] signInWithPassword failed: ${authError?.message}`);
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
 
-          // 5. Profile Check (Service Role para bypass RLS)
+          // 5. Profile Check
           const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
           const { data: profile } = await supabaseAdmin
@@ -84,6 +86,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             .single();
 
           if (!profile || !profile.active) {
+            console.warn(`[AV-ADMIN-LOGIN] Admin profile check failed for ${data.user.id}`);
             await supabase.auth.signOut();
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
@@ -96,18 +99,20 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // 7. Retornar resposta com Headers que contém os Set-Cookie
-          const finalResponse = new Response(JSON.stringify({
+          // 7. Retornar resposta
+          const finalHeaders = new Headers(authHeaders);
+          
+          console.log(`[AV-ADMIN-LOGIN] Success. Headers:`, Array.from(finalHeaders.keys()));
+          console.log(`[AV-ADMIN-LOGIN] Set-Cookie check:`, finalHeaders.getSetCookie().length);
+          
+          return new Response(JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
           }), { 
             status: 200, 
-            headers: responseHeaders 
+            headers: finalHeaders 
           });
-          
-          console.log(`[AV-ADMIN-LOGIN] Final headers:`, Array.from(finalResponse.headers.entries()));
-          return finalResponse;
 
         } catch (err) {
           console.error(`[AV-ADMIN-LOGIN] Fatal:`, err);
