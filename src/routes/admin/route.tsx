@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, Outlet } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { getAdminContext } from '@/lib/server/av-admin-auth.server'
 import { getRequest } from '@tanstack/react-start/server'
@@ -16,7 +16,8 @@ const checkAdminAuth = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
-    // 1. Não proteger a página de login para evitar loop de redirecionamento
+    // 1. IMPORTANTE: Não aplicar redirecionamento na própria página de login 
+    // ou em sub-rotas dela para evitar loop infinito de redirecionamento.
     if (location.pathname.startsWith('/admin/login')) {
       return;
     }
@@ -37,4 +38,5 @@ export const Route = createFileRoute('/admin')({
       adminContext: context
     };
   },
+  component: () => <Outlet />,
 })
