@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
         const allowedOrigins = getAllowedOrigins(request);
         const corsHeaders: Record<string, string> = {
           "Content-Type": "application/json",
-          "Cache-Control": "no-store",
+          "Cache-Control": "private, no-store",
         };
 
         if (origin && allowedOrigins.includes(origin)) {
@@ -42,22 +42,18 @@ export const Route = createFileRoute('/api/admin/auth/login')({
         }
 
         try {
-          // 1. Validar Origin
-          if (!origin && process.env['NODE_ENV'] === 'production') {
-             // Permitir requests sem origin em dev se necessário, mas em prod é mandatório
-             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
-          }
+          // 1. Validar Origin (Opcional em preview, mandatório em prod)
           if (origin && !allowedOrigins.includes(origin)) {
             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
           }
 
-          // 2. Rate Limit (Scope admin-login)
+          // 2. Rate Limit
           const rlResult = await checkRateLimit(request, correlationId, 'admin-login'); 
           if (!rlResult.allowed) {
             return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: corsHeaders });
           }
 
-          // 3. Ler Body
+          // 3. Body
           const body = await request.json();
           const { email, password } = body;
 
@@ -65,7 +61,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
 
-          // 4. Autenticar com Supabase SSR Client
+          // 4. Supabase SSR Auth
           const responseHeaders = new Headers(corsHeaders);
           const supabase = createSupabaseSSR(request, responseHeaders);
 
@@ -75,46 +71,24 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
-            await logAdminAction({
-              action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'AUTH_FAILURE', message: authError?.message },
-              correlationId
-            });
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
 
-          // 5. Validar Perfil Administrativo (Service Role para bypass de RLS)
+          // 5. Profile Check (Service Role para bypass RLS)
           const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
-          const { data: profile, error: profileError } = await supabaseAdmin
+          const { data: profile } = await supabaseAdmin
             .from('av_admin_profiles')
             .select('role, active, display_name')
             .eq('user_id', data.user.id)
             .single();
 
-          if (profileError || !profile) {
-            await logAdminAction({
-              adminUserId: data.user.id,
-              action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'NO_PROFILE' },
-              correlationId
-            });
+          if (!profile || !profile.active) {
             await supabase.auth.signOut();
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
 
-          if (!profile.active) {
-            await logAdminAction({
-              adminUserId: data.user.id,
-              action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'INACTIVE_PROFILE' },
-              correlationId
-            });
-            await supabase.auth.signOut();
-            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
-          }
-
-          // 6. Sucesso -> Registrar Auditoria
+          // 6. Sucesso -> Auditoria
           await logAdminAction({
             adminUserId: data.user.id,
             action: 'ADMIN_LOGIN_SUCCESS',
@@ -122,18 +96,10 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // 7. Resposta
-          responseHeaders.set('Cache-Control', 'private, no-store');
-          
-          // Debugging headers
-          console.log(`[AV-ADMIN-LOGIN] Success. Set-Cookie count: ${responseHeaders.getSetCookie().length}`);
-          
+          // 7. Retornar resposta com Headers que contém os Set-Cookie
           return new Response(JSON.stringify({
             success: true,
-            user: {
-              display_name: profile.display_name,
-              role: profile.role
-            },
+            user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
           }), { 
             status: 200, 
@@ -141,7 +107,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
         } catch (err) {
-          console.error(`[AV-ADMIN-LOGIN] Erro fatal:`, err);
+          console.error(`[AV-ADMIN-LOGIN] Fatal:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
         }
       }
