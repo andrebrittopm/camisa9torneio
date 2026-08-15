@@ -68,10 +68,10 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-status')({
 
           const targetSuperadmin = superadmins[0];
           
-          if (targetSuperadmin.bootstrap_completed_at) {
+          if (!targetSuperadmin || targetSuperadmin.bootstrap_completed_at) {
             return new Response(JSON.stringify({ 
               available: false, 
-              reason: 'ALREADY_COMPLETED' 
+              reason: targetSuperadmin ? 'ALREADY_COMPLETED' : 'PROFILE_NOT_FOUND' 
             }), { status: 200, headers: corsHeaders });
           }
 
