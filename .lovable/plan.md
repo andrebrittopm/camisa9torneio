@@ -1,68 +1,61 @@
-# Plan - ETAPA 4.3C-R2 — PROVIDER REAL + OUTBOX IDEMPOTENTE + ORDER-VIEW FINAL
+# Plan - ETAPA 4.3C-R3 — ATIVAÇÃO DO PROVIDER REAL DE E-MAIL
 
-Esta etapa foca no hardening do sistema de e-mail transacional, implementação de outbox robusta com idempotência e finalização da visualização segura de pedidos (Order-View).
+Esta etapa consiste na substituição do provedor mock (console.log) por uma integração real com o Resend, mantendo a arquitetura de outbox e garantindo a entrega segura e idempotente das notificações transacionais.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> **Email Provider:** O projeto atualmente usa `console.log` como mock. Se um provider real (ex: Resend, SendGrid) for desejado, as credenciais devem ser fornecidas via `add_secret`. Caso contrário, manteremos o mock mas com toda a infraestrutura de produção pronta.
-> **Email Backfill:** Existem 3 pedidos de teste na base. Eles serão atualizados para `suporte@torneio.com.br` para permitir a aplicação da constraint `NOT NULL`.
+> **Provedor Escolhido:** Resend (recomendado para TanStack Start/Edge).
+> **Configuração de Secrets:** É necessário configurar as seguintes secrets no backend:
+> 1. `RESEND_API_KEY`: Sua chave de API do Resend.
+> 2. `EMAIL_FROM`: O remetente oficial (ex: `9º Torneio Amigos do Vôlei <noreply@amigosdovolei.com.br>`).
+> 3. `APP_URL`: URL base do projeto para links do Order-View (ex: `https://project--...lovable.app`).
 
 ## Proposed Changes
 
-### 1. Database & Migrations
-- **av_orders:** Adicionar `customer_email` (NOT NULL) com validação de formato e comprimento (254 chars).
-- **av_email_outbox:** 
-    - Adicionar `event_key` para idempotência granular.
-    - Criar constraint UNIQUE em `(order_id, event_type, event_key)`.
-    - Implementar lógica de enqueue que respeita o status `sent`.
-    - Garantir RLS estrito (acesso apenas para `service_role`).
-
-### 2. Server-Side Hardening
+### 1. Server-Side Delivery (Resend Integration)
 - **src/lib/server/av-email.server.ts:**
-    - Implementar adapter com suporte a timeout e idempotency keys (se o provider suportar).
-    - Lógica de normalização de e-mail (trim, lowercase).
-    - Sistema de retentativa sem duplicação de pedidos.
-- **src/routes/api/public/av-order-view.ts:**
-    - Garantir que `expires` faz parte da assinatura HMAC.
-    - Sanitização total da resposta (remover PII e IDs internos).
-    - Adicionar headers de segurança: `Cache-Control: no-store`, `Referrer-Policy: no-referrer`.
-- **src/lib/server/av-order-access.server.ts:**
-    - Unificar geração de tokens incluindo expiração de forma opaca ou explícita (conforme auditoria).
+    - Implementar `sendEmailViaProvider` usando a API REST do Resend (compatível com Edge).
+    - Adicionar suporte a `headers: { 'X-Entity-Ref-ID': eventKey }` para idempotência no provedor.
+    - Implementar timeout de 5s e tratamento de erros granular.
+    - Atualizar `sendOrderConfirmationEmail` e `sendReceiptConfirmationEmail` para utilizar o envio real.
+    - **Segurança:** Garantir que NENHUM PII (e-mail, corpo) ou secret seja logado, mantendo apenas metadados técnicos (`correlation_id`, `event_key`).
 
-### 3. Frontend Integration
-- **OrderSuccess.tsx:** Atualizar exibição do Link Seguro para garantir que handle/token/expires estejam codificados corretamente.
-- **OrderReview.tsx:** Reforçar a captura e validação do e-mail antes da submissão.
+### 2. Outbox Lifecycle Management
+- **src/lib/server/av-email.server.ts:**
+    - Atualizar o status na `av_email_outbox` após o envio:
+        - Sucesso: `status = 'sent'`, `sent_at = NOW()`, `provider_message_id = res.id`.
+        - Falha: `status = 'retryable'`, `attempt_count++`.
+    - Garantir que eventos já marcados como `sent` nunca sejam reprocessados.
+
+### 3. Order-View Link Consistency
+- **src/lib/server/av-email.server.ts:**
+    - Construir a URL do `Order-View` usando `process.env['APP_URL']` para garantir links válidos em produção.
+    - Verificar se a assinatura HMAC continua cobrindo os campos necessários.
 
 ## Technical Details
 
-### SQL Schema Changes
-```sql
--- Normalização e Constraint de Email
-ALTER TABLE public.av_orders ADD COLUMN IF NOT EXISTS customer_email TEXT;
-UPDATE public.av_orders SET customer_email = 'suporte@torneio.com.br' WHERE customer_email IS NULL;
-ALTER TABLE public.av_orders ALTER COLUMN customer_email SET NOT NULL;
-ALTER TABLE public.av_orders ADD CONSTRAINT av_orders_email_check 
-    CHECK (length(customer_email) <= 254 AND customer_email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$');
-
--- Evolução da Outbox
-CREATE TABLE IF NOT EXISTS public.av_email_outbox (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID REFERENCES public.av_orders(id) NOT NULL,
-    event_type TEXT NOT NULL,
-    event_key TEXT NOT NULL,
-    recipient_email TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    attempt_count INT DEFAULT 0,
-    last_attempt_at TIMESTAMPTZ,
-    sent_at TIMESTAMPTZ,
-    provider_message_id TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(order_id, event_type, event_key)
-);
+### Resend API Call (Edge Compatible)
+```typescript
+const response = await fetch('https://api.resend.com/emails', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    from: emailFrom,
+    to: recipient,
+    subject: subject,
+    html: htmlBody,
+    headers: { 'X-Entity-Ref-ID': eventKey }
+  })
+});
 ```
 
-### Test Plan (MAIL01-MAIL25)
-- Testes automatizados via script de auditoria para validar assinatura, expiração, sanitização e idempotência.
-- Verificação manual de fluxo: Compra -> Recebimento -> Order View (Novo Browser) -> Refresh.
+### Test Matrix (REAL01-REAL15)
+- **REAL01:** Envio bem-sucedido -> Outbox 'sent' -> Message ID presente.
+- **REAL02:** Tentativa duplicada -> Bloqueio por `event_key` (idempotência).
+- **REAL03:** Falha no provedor (429/500) -> Outbox 'retryable' -> Incremento de `attempt_count`.
+- **REAL04:** Link Order-View no e-mail -> Acesso funcional -> Sem PII na URL.
+- **REAL05:** Verificação de logs -> Zero PII -> Apenas metadados técnicos.
