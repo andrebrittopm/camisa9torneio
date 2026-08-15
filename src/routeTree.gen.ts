@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminResetPasswordRouteImport } from './routes/admin/reset-password'
 import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av-order-view'
@@ -42,6 +43,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const ApiPublicAvCatalogRoute = ApiPublicAvCatalogRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
   '/admin/login': typeof AdminLoginRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin/login'
+    | '/admin/reset-password'
     | '/admin/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin/login'
+    | '/admin/reset-password'
     | '/admin'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin/login'
+    | '/admin/reset-password'
     | '/admin/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
@@ -238,6 +250,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/reset-password': {
+      id: '/admin/reset-password'
+      path: '/reset-password'
+      fullPath: '/admin/reset-password'
+      preLoaderRoute: typeof AdminResetPasswordRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/api/public/av-catalog': {
@@ -315,11 +334,13 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminResetPasswordRoute: typeof AdminResetPasswordRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
+  AdminResetPasswordRoute: AdminResetPasswordRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
