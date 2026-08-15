@@ -180,8 +180,18 @@ function AdminLogin() {
             </button>
           )}
 
+          {isBootstrapAvailable === false && (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[10px] text-red-400 font-black uppercase tracking-widest text-left space-y-2">
+              <p className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                Segurança Nível 5 Ativada
+              </p>
+              <p className="leading-relaxed opacity-80">
+                O botão de ativação via Server Secret está oculto porque o SUPERADMIN_BOOTSTRAP_PASSWORD ainda não foi configurado ou o bootstrap já foi concluído.
+              </p>
+            </div>
+          )}
 
-          
           <Link to="/" className="inline-block text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest">
             Voltar para a Landing Page
           </Link>
