@@ -122,8 +122,20 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // A sessão é gerenciada pelo Supabase Auth Client (Cookies/Headers)
-          // TanStack Start deve processar o Set-Cookie se o client estiver configurado
+          // 7. Persistência de Sessão (TanStack Start / Supabase SSR)
+          const responseHeaders = new Headers(corsHeaders);
+          
+          // Se o signInWithPassword foi bem sucedido, o objeto 'data.session' contém os tokens.
+          // Em um Server Route manual, precisamos garantir que o browser receba os cookies.
+          // O Supabase JS Client em Node não grava cookies automaticamente na Response.
+          if (data.session) {
+            const { access_token, refresh_token, expires_in } = data.session;
+            
+            // Definir cookies compatíveis com Supabase SSR
+            // Usamos nomes genéricos que o getAdminContext vai tentar ler
+            responseHeaders.append('Set-Cookie', `sb-access-token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expires_in}; Secure`);
+            responseHeaders.append('Set-Cookie', `sb-refresh-token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000; Secure`);
+          }
           
           return new Response(JSON.stringify({
             success: true,
@@ -131,12 +143,13 @@ export const Route = createFileRoute('/api/admin/auth/login')({
               display_name: profile.display_name,
               role: profile.role
             },
-            session: data.session,
             correlation_id: correlationId
           }), { 
             status: 200, 
-            headers: corsHeaders 
+            headers: responseHeaders 
           });
+
+
 
         } catch (err) {
           console.error(`[AV-ADMIN-LOGIN] Erro fatal:`, err);
