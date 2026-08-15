@@ -75,7 +75,7 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
             'admin_bootstrap'
           );
           if (!turnstile.success) {
-            return new Response(JSON.stringify({ error: "INVALID_CAPTCHA", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
+            console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=turnstile_fail error=${turnstile.error}`); return new Response(JSON.stringify({ error: "INVALID_CAPTCHA", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
 
           // 4. Verificação do Secret (FAIL-CLOSED)
