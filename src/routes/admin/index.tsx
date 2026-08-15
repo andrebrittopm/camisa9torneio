@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { LayoutDashboard, ShoppingBag, Receipt, Users, History, ArrowRight } from 'lucide-react'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { LayoutDashboard, ShoppingBag, Receipt, Users, History, ArrowRight, Shield } from 'lucide-react'
 
 import { createServerFn } from '@tanstack/react-start'
 import { getAdminContext } from '@/lib/server/av-admin-auth.server'
