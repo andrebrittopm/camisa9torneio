@@ -8,8 +8,6 @@ import { createSupabaseSSR } from '@/lib/server/supabase-ssr.server'
  * ETAPA 5.1A — LOGIN ADMINISTRATIVO (SERVER ROUTE)
  */
 
-const MAX_BODY_BYTES = 4096; // 4KB para login
-
 function getAllowedOrigins(request: Request): string[] {
   const fromEnv = (process.env['ALLOWED_ORIGINS'] || '')
     .split(',')
@@ -45,19 +43,21 @@ export const Route = createFileRoute('/api/admin/auth/login')({
 
         try {
           // 1. Validar Origin
-          if (!origin || !allowedOrigins.includes(origin)) {
+          if (!origin && process.env['NODE_ENV'] === 'production') {
+             // Permitir requests sem origin em dev se necessário, mas em prod é mandatório
+             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
+          }
+          if (origin && !allowedOrigins.includes(origin)) {
             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
           }
 
           // 2. Rate Limit (Scope admin-login)
-          // Isolado do fluxo de pedidos públicos
           const rlResult = await checkRateLimit(request, correlationId, 'admin-login'); 
           if (!rlResult.allowed) {
             return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: corsHeaders });
           }
 
-
-          // 3. Ler Body (Limite 4KB)
+          // 3. Ler Body
           const body = await request.json();
           const { email, password } = body;
 
@@ -123,14 +123,10 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           // 7. Resposta
-          // O setAll() dentro do createSupabaseSSR já injetou os cookies em responseHeaders
           responseHeaders.set('Cache-Control', 'private, no-store');
           
           // Debugging headers
           console.log(`[AV-ADMIN-LOGIN] Success. Set-Cookie count: ${responseHeaders.getSetCookie().length}`);
-          responseHeaders.getSetCookie().forEach((c, i) => {
-             console.log(`[AV-ADMIN-LOGIN] Cookie ${i}: ${c.split('=')[0]}...`);
-          });
           
           return new Response(JSON.stringify({
             success: true,
@@ -143,8 +139,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             status: 200, 
             headers: responseHeaders 
           });
-
-
 
         } catch (err) {
           console.error(`[AV-ADMIN-LOGIN] Erro fatal:`, err);
