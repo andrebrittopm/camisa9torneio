@@ -61,9 +61,9 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
 
           // 3. Parsing e Validação Turnstile
           const body = await request.json();
-          const { password, turnstileToken } = body;
+          const { turnstileToken } = body;
 
-          if (!password || typeof password !== 'string' || !turnstileToken) {
+          if (!turnstileToken) {
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
 
@@ -71,13 +71,12 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
             turnstileToken, 
             process.env['TURNSTILE_SECRET_KEY'], 
             correlationId,
-            [], // hostname pinning bypass handled by test_mode if needed
+            [], 
             'admin_bootstrap'
           );
           if (!turnstile.success) {
             return new Response(JSON.stringify({ error: "INVALID_CAPTCHA", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
-
 
           // 4. Verificação do Secret (FAIL-CLOSED)
           const bootstrapSecret = process.env['SUPERADMIN_BOOTSTRAP_PASSWORD'];
@@ -86,46 +85,44 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
             return new Response(JSON.stringify({ error: "BOOTSTRAP_NOT_AVAILABLE", correlation_id: correlationId }), { status: 503, headers: corsHeaders });
           }
 
-          if (password !== bootstrapSecret) {
-            await logAdminAction({
-              action: 'ADMIN_BOOTSTRAP_FAILED',
-              metadata: { reason: 'INVALID_SECRET' },
-              correlationId
-            });
-            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
-          }
-
-          // 5. Localizar o primeiro SUPERADMIN
+          // 5. Conexão Admin e Verificação de Superadmin Único
           const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
           const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
           const { data: superadmins, error: profileError } = await supabaseAdmin
             .from('av_admin_profiles')
-            .select('user_id, role, active')
+            .select('user_id, role, active, bootstrap_completed_at')
             .eq('role', 'SUPERADMIN')
-            .order('created_at', { ascending: true })
-            .limit(1);
+            .eq('active', true);
 
-          if (profileError || !superadmins || superadmins.length === 0) {
-            console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=profile_lookup error=NOT_FOUND`);
+          if (profileError) {
+            console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=profile_lookup error=${profileError.message}`);
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
+          }
+
+          if (!superadmins || superadmins.length === 0) {
+            console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=profile_lookup error=NO_SUPERADMIN_FOUND`);
+            return new Response(JSON.stringify({ error: "BOOTSTRAP_NOT_AVAILABLE", correlation_id: correlationId }), { status: 503, headers: corsHeaders });
+          }
+
+          if (superadmins.length > 1) {
+            console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=profile_lookup error=MULTIPLE_SUPERADMINS_FOUND`);
             return new Response(JSON.stringify({ error: "BOOTSTRAP_NOT_AVAILABLE", correlation_id: correlationId }), { status: 503, headers: corsHeaders });
           }
 
           const targetSuperadmin = superadmins[0];
-          if (!targetSuperadmin) {
-            return new Response(JSON.stringify({ error: "BOOTSTRAP_NOT_AVAILABLE", correlation_id: correlationId }), { status: 503, headers: corsHeaders });
+
+          // 6. One-time Guard: bootstrap_completed_at
+          if (targetSuperadmin.bootstrap_completed_at) {
+            console.warn(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=guard error=ALREADY_COMPLETED`);
+            return new Response(JSON.stringify({ error: "GONE", correlation_id: correlationId }), { status: 410, headers: corsHeaders });
           }
 
-
-          if (!targetSuperadmin.active) {
-            return new Response(JSON.stringify({ error: "ACCOUNT_INACTIVE", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
-          }
-
-          // 6. Atualizar Senha no Auth
+          // 7. Atualizar Senha no Auth (Usando apenas o Secret do Servidor)
           const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(targetSuperadmin.user_id, {
-            password: password,
-            email_confirm: true // Garantir que está confirmado durante o bootstrap
+            password: bootstrapSecret,
+            email_confirm: true 
           });
 
           if (updateError) {
@@ -133,17 +130,29 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
             return new Response(JSON.stringify({ error: "UPDATE_FAILED", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
           }
 
-          // 7. Auditoria de Sucesso
+          // 8. Marcar como Completo no Perfil
+          const { error: markError } = await supabaseAdmin
+            .from('av_admin_profiles')
+            .update({ bootstrap_completed_at: new Date().toISOString() })
+            .eq('user_id', targetSuperadmin.user_id);
+
+          if (markError) {
+             // Mesmo se falhar a marcação aqui, o log de auditoria e a senha atualizada já ocorreram. 
+             // Mas é crítico para o One-time guard.
+             console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=mark_completed error=${markError.message}`);
+          }
+
+          // 9. Auditoria de Sucesso
           await logAdminAction({
             adminUserId: targetSuperadmin.user_id,
             action: 'ADMIN_BOOTSTRAP_SUCCESS',
-            metadata: { method: 'secret_bootstrap' },
+            metadata: { method: 'server_side_secret_only' },
             correlationId
           });
 
           return new Response(JSON.stringify({
             success: true,
-            message: "Senha de bootstrap aplicada com sucesso.",
+            message: "Senha de bootstrap aplicada com sucesso via Server Secret.",
             correlation_id: correlationId
           }), { status: 200, headers: corsHeaders });
 
@@ -151,6 +160,7 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
           console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} fatal_error:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
         }
+
       }
     }
   }
