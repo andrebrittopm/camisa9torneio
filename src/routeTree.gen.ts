@@ -20,6 +20,7 @@ import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av
 import { Route as ApiPublicAvPaymentInfoRouteImport } from './routes/api/public/av-payment-info'
 import { Route as ApiPublicAvPaymentReceiptRouteImport } from './routes/api/public/av-payment-receipt'
 import { Route as ApiAdminAuthBootstrapPasswordRouteImport } from './routes/api/admin/auth/bootstrap-password'
+import { Route as ApiAdminAuthBootstrapStatusRouteImport } from './routes/api/admin/auth/bootstrap-status'
 import { Route as ApiAdminAuthLoginRouteImport } from './routes/api/admin/auth/login'
 import { Route as ApiAdminAuthLogoutRouteImport } from './routes/api/admin/auth/logout'
 import { Route as ApiAdminAuthMeRouteImport } from './routes/api/admin/auth/me'
@@ -83,6 +84,12 @@ const ApiAdminAuthBootstrapPasswordRoute =
     path: '/api/admin/auth/bootstrap-password',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminAuthBootstrapStatusRoute =
+  ApiAdminAuthBootstrapStatusRouteImport.update({
+    id: '/api/admin/auth/bootstrap-status',
+    path: '/api/admin/auth/bootstrap-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminAuthLoginRoute = ApiAdminAuthLoginRouteImport.update({
   id: '/api/admin/auth/login',
   path: '/api/admin/auth/login',
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
   '/api/admin/auth/bootstrap-password': typeof ApiAdminAuthBootstrapPasswordRoute
+  '/api/admin/auth/bootstrap-status': typeof ApiAdminAuthBootstrapStatusRoute
   '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
   '/api/admin/auth/bootstrap-password': typeof ApiAdminAuthBootstrapPasswordRoute
+  '/api/admin/auth/bootstrap-status': typeof ApiAdminAuthBootstrapStatusRoute
   '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
   '/api/admin/auth/bootstrap-password': typeof ApiAdminAuthBootstrapPasswordRoute
+  '/api/admin/auth/bootstrap-status': typeof ApiAdminAuthBootstrapStatusRoute
   '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
     | '/api/admin/auth/bootstrap-password'
+    | '/api/admin/auth/bootstrap-status'
     | '/api/admin/auth/login'
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
     | '/api/admin/auth/bootstrap-password'
+    | '/api/admin/auth/bootstrap-status'
     | '/api/admin/auth/login'
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
@@ -213,6 +225,7 @@ export interface FileRouteTypes {
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
     | '/api/admin/auth/bootstrap-password'
+    | '/api/admin/auth/bootstrap-status'
     | '/api/admin/auth/login'
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
@@ -229,6 +242,7 @@ export interface RootRouteChildren {
   ApiPublicAvPaymentInfoRoute: typeof ApiPublicAvPaymentInfoRoute
   ApiPublicAvPaymentReceiptRoute: typeof ApiPublicAvPaymentReceiptRoute
   ApiAdminAuthBootstrapPasswordRoute: typeof ApiAdminAuthBootstrapPasswordRoute
+  ApiAdminAuthBootstrapStatusRoute: typeof ApiAdminAuthBootstrapStatusRoute
   ApiAdminAuthLoginRoute: typeof ApiAdminAuthLoginRoute
   ApiAdminAuthLogoutRoute: typeof ApiAdminAuthLogoutRoute
   ApiAdminAuthMeRoute: typeof ApiAdminAuthMeRoute
@@ -315,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAuthBootstrapPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/auth/bootstrap-status': {
+      id: '/api/admin/auth/bootstrap-status'
+      path: '/api/admin/auth/bootstrap-status'
+      fullPath: '/api/admin/auth/bootstrap-status'
+      preLoaderRoute: typeof ApiAdminAuthBootstrapStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/auth/login': {
       id: '/api/admin/auth/login'
       path: '/api/admin/auth/login'
@@ -378,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAvPaymentInfoRoute: ApiPublicAvPaymentInfoRoute,
   ApiPublicAvPaymentReceiptRoute: ApiPublicAvPaymentReceiptRoute,
   ApiAdminAuthBootstrapPasswordRoute: ApiAdminAuthBootstrapPasswordRoute,
+  ApiAdminAuthBootstrapStatusRoute: ApiAdminAuthBootstrapStatusRoute,
   ApiAdminAuthLoginRoute: ApiAdminAuthLoginRoute,
   ApiAdminAuthLogoutRoute: ApiAdminAuthLogoutRoute,
   ApiAdminAuthMeRoute: ApiAdminAuthMeRoute,
