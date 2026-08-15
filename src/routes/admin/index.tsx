@@ -1,24 +1,16 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { LayoutDashboard, ShoppingBag, Receipt, Users, History, ArrowRight, Shield } from 'lucide-react'
-
 import { getAdminContext } from '@/lib/server/av-admin-auth.server'
-import { getRequest } from '@tanstack/react-start/server'
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async ({ location }) => {
-    const request = getRequest()
-    if (!request) {
-      throw redirect({ to: '/admin/login' })
-    }
+    // TanStack Start request object
+    const request = (globalThis as any).getRequest?.() || new Request(location.href);
 
-    const context = await getAdminContext(request)
+    const context = await getAdminContext(request);
     
     if (!context.authenticated || !context.active) {
-      console.warn(`[AV-ADMIN-GUARD] Access denied for /admin. Redirecting to login. Context:`, {
-        auth: context.authenticated,
-        active: context.active,
-        url: location.href
-      })
+      console.warn(`[AV-ADMIN-GUARD] Redirecting to login.`, { auth: context.authenticated });
       throw redirect({
         to: '/admin/login',
         search: {
@@ -108,7 +100,6 @@ function AdminDashboard() {
     </div>
   )
 }
-
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(' ');

@@ -22,14 +22,15 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          // Hardening para o ambiente de preview (iframe + cross-domain)
+          // Hardening para o ambiente de preview
+          // Em ambientes de iframe (Lovable preview), SameSite=None + Secure é essencial
+          // mas exige HTTPS. Localhost/Preview do Lovable usa HTTPS.
           const cookieStr = serialize(name, value, {
             ...options,
             path: '/',
             sameSite: 'none',
             secure: true
           })
-          console.log(`[AV-SSR-DEBUG] Appending Set-Cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
         })
       },
@@ -48,10 +49,9 @@ function serialize(name: string, value: string, options: CookieOptions) {
   if (options.secure) str += `; Secure`
   
   if (typeof options.sameSite === 'string') {
-    // Para TanStack Start / Nitro, precisamos garantir que o valor seja capitalizado ou minúsculo
-    // mas a especificação Set-Cookie é case-insensitive para o valor. 
-    // "None" é o valor padrão para cross-site.
-    const ss = options.sameSite.charAt(0).toUpperCase() + options.sameSite.slice(1).toLowerCase();
+    // TanStack Start/Nitro tratam Set-Cookie; garantimos o valor exato da spec
+    const ss = options.sameSite.toLowerCase() === 'none' ? 'None' : 
+               options.sameSite.toLowerCase() === 'strict' ? 'Strict' : 'Lax';
     str += `; SameSite=${ss}`
   } else if (options.sameSite === true) {
     str += `; SameSite=Strict`

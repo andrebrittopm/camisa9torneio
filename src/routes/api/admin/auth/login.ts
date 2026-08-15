@@ -51,7 +51,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
         const origin = request.headers.get("origin");
         const allowedOrigins = getAllowedOrigins(request);
         
-        // Headers unificados
         const responseHeaders = new Headers();
         responseHeaders.set("Content-Type", "application/json");
         responseHeaders.set("Cache-Control", "private, no-store");
@@ -79,7 +78,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: responseHeaders });
           }
 
-          // Supabase SSR Auth - Injeta Set-Cookie nos responseHeaders
           const supabase = createSupabaseSSR(request, responseHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -88,7 +86,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
-            console.warn(`[AV-ADMIN-LOGIN] Auth error for ${email}: ${authError?.message}`);
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
@@ -112,20 +109,19 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          const payload = JSON.stringify({
+          // TanStack Start exige que retornemos o Response com os headers exatos
+          // manipulados pelo adapter do @supabase/ssr
+          return new Response(JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
-          });
-
-          // Retornar headers manipulados pelo SSR adapter
-          return new Response(payload, { 
+          }), { 
             status: 200, 
             headers: responseHeaders 
           });
 
         } catch (err) {
-          console.error(`[AV-ADMIN-LOGIN] Fatal error:`, err);
+          console.error(`[AV-ADMIN-LOGIN] Fatal:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: responseHeaders });
         }
       }
