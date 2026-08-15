@@ -15,6 +15,9 @@ import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/
 import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av-order-view'
 import { Route as ApiPublicAvPaymentInfoRouteImport } from './routes/api/public/av-payment-info'
 import { Route as ApiPublicAvPaymentReceiptRouteImport } from './routes/api/public/av-payment-receipt'
+import { Route as ApiAdminAuthLoginRouteImport } from './routes/api/admin/auth/login'
+import { Route as ApiAdminAuthLogoutRouteImport } from './routes/api/admin/auth/logout'
+import { Route as ApiAdminAuthMeRouteImport } from './routes/api/admin/auth/me'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,6 +50,21 @@ const ApiPublicAvPaymentReceiptRoute =
     path: '/api/public/av-payment-receipt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminAuthLoginRoute = ApiAdminAuthLoginRouteImport.update({
+  id: '/api/admin/auth/login',
+  path: '/api/admin/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAuthLogoutRoute = ApiAdminAuthLogoutRouteImport.update({
+  id: '/api/admin/auth/logout',
+  path: '/api/admin/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAuthMeRoute = ApiAdminAuthMeRouteImport.update({
+  id: '/api/admin/auth/me',
+  path: '/api/admin/auth/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -55,6 +73,9 @@ export interface FileRoutesByFullPath {
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
+  '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
+  '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
+  '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -63,6 +84,9 @@ export interface FileRoutesByTo {
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
+  '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
+  '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
+  '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -72,6 +96,9 @@ export interface FileRoutesById {
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
+  '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
+  '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
+  '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -82,6 +109,9 @@ export interface FileRouteTypes {
     | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
+    | '/api/admin/auth/login'
+    | '/api/admin/auth/logout'
+    | '/api/admin/auth/me'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -90,6 +120,9 @@ export interface FileRouteTypes {
     | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
+    | '/api/admin/auth/login'
+    | '/api/admin/auth/logout'
+    | '/api/admin/auth/me'
   id:
     | '__root__'
     | '/'
@@ -98,6 +131,9 @@ export interface FileRouteTypes {
     | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
+    | '/api/admin/auth/login'
+    | '/api/admin/auth/logout'
+    | '/api/admin/auth/me'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -107,6 +143,9 @@ export interface RootRouteChildren {
   ApiPublicAvOrderViewRoute: typeof ApiPublicAvOrderViewRoute
   ApiPublicAvPaymentInfoRoute: typeof ApiPublicAvPaymentInfoRoute
   ApiPublicAvPaymentReceiptRoute: typeof ApiPublicAvPaymentReceiptRoute
+  ApiAdminAuthLoginRoute: typeof ApiAdminAuthLoginRoute
+  ApiAdminAuthLogoutRoute: typeof ApiAdminAuthLogoutRoute
+  ApiAdminAuthMeRoute: typeof ApiAdminAuthMeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -153,6 +192,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAvPaymentReceiptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/auth/login': {
+      id: '/api/admin/auth/login'
+      path: '/api/admin/auth/login'
+      fullPath: '/api/admin/auth/login'
+      preLoaderRoute: typeof ApiAdminAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/auth/logout': {
+      id: '/api/admin/auth/logout'
+      path: '/api/admin/auth/logout'
+      fullPath: '/api/admin/auth/logout'
+      preLoaderRoute: typeof ApiAdminAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/auth/me': {
+      id: '/api/admin/auth/me'
+      path: '/api/admin/auth/me'
+      fullPath: '/api/admin/auth/me'
+      preLoaderRoute: typeof ApiAdminAuthMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -163,6 +223,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAvOrderViewRoute: ApiPublicAvOrderViewRoute,
   ApiPublicAvPaymentInfoRoute: ApiPublicAvPaymentInfoRoute,
   ApiPublicAvPaymentReceiptRoute: ApiPublicAvPaymentReceiptRoute,
+  ApiAdminAuthLoginRoute: ApiAdminAuthLoginRoute,
+  ApiAdminAuthLogoutRoute: ApiAdminAuthLogoutRoute,
+  ApiAdminAuthMeRoute: ApiAdminAuthMeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

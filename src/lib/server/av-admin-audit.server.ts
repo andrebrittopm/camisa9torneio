@@ -31,10 +31,10 @@ export async function logAdminAction(params: {
   const { error } = await supabase
     .from('av_admin_audit_logs')
     .insert({
-      admin_user_id: params.adminUserId,
+      admin_user_id: params.adminUserId ?? null,
       action: params.action,
-      resource_type: params.resourceType,
-      resource_id: params.resourceId,
+      resource_type: params.resourceType ?? null,
+      resource_id: params.resourceId ?? null,
       metadata: sanitizedMetadata,
       correlation_id: params.correlationId
     });
