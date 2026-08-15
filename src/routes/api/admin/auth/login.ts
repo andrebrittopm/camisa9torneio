@@ -126,6 +126,12 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           // O setAll() dentro do createSupabaseSSR já injetou os cookies em responseHeaders
           responseHeaders.set('Cache-Control', 'private, no-store');
           
+          // Debugging headers
+          console.log(`[AV-ADMIN-LOGIN] Success. Set-Cookie count: ${responseHeaders.getSetCookie().length}`);
+          responseHeaders.getSetCookie().forEach((c, i) => {
+             console.log(`[AV-ADMIN-LOGIN] Cookie ${i}: ${c.split('=')[0]}...`);
+          });
+          
           return new Response(JSON.stringify({
             success: true,
             user: {
