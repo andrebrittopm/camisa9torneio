@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions, serializeCookie } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import type { Database } from '@/integrations/supabase/types'
 
 /**
@@ -22,8 +22,6 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          // Usamos a função serialize oficial do @supabase/ssr se disponível,
-          // ou implementamos uma que garanta a propagação correta.
           const cookieStr = serialize(name, value, options)
           responseHeaders.append('Set-Cookie', cookieStr)
         })
@@ -42,7 +40,6 @@ function serialize(name: string, value: string, options: CookieOptions) {
   if (options.httpOnly) str += `; HttpOnly`
   if (options.secure) str += `; Secure`
   
-  // Hardening: Forçar SameSite=Lax para garantir persistência em navegação direta
   if (options.sameSite) {
     str += `; SameSite=${options.sameSite}`
   } else {
