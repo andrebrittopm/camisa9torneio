@@ -22,7 +22,13 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          const cookieStr = serialize(name, value, options)
+          // Hardening para o ambiente de preview (iframe + cross-domain)
+          const cookieStr = serialize(name, value, {
+            ...options,
+            path: '/',
+            sameSite: 'none',
+            secure: true
+          })
           console.log(`[AV-SSR-DEBUG] Appending Set-Cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
         })
@@ -36,25 +42,19 @@ function serialize(name: string, value: string, options: CookieOptions) {
   
   if (options.maxAge !== undefined) str += `; Max-Age=${options.maxAge}`
   if (options.domain) str += `; Domain=${options.domain}`
-  
-  // Hardening do Path para garantir visibilidade em /admin e /api
-  str += `; Path=/`
-  
+  if (options.path) str += `; Path=${options.path}`
   if (options.expires) str += `; Expires=${options.expires.toUTCString()}`
   if (options.httpOnly) str += `; HttpOnly`
+  if (options.secure) str += `; Secure`
   
-  // IMPORTANTE: Em ambientes de preview Lovable, Secure=true é obrigatório
-  // mas o preview as vezes roda em contextos onde o cookie precisa de relaxamento de SameSite.
-  str += `; Secure`
-  
-  if (options.sameSite) {
-    // Garantir formato correto: Lax, Strict ou None
-    const ss = typeof options.sameSite === 'string' 
-      ? options.sameSite.charAt(0).toUpperCase() + options.sameSite.slice(1).toLowerCase()
-      : 'Lax';
+  if (typeof options.sameSite === 'string') {
+    // Para TanStack Start / Nitro, precisamos garantir que o valor seja capitalizado ou minúsculo
+    // mas a especificação Set-Cookie é case-insensitive para o valor. 
+    // "None" é o valor padrão para cross-site.
+    const ss = options.sameSite.charAt(0).toUpperCase() + options.sameSite.slice(1).toLowerCase();
     str += `; SameSite=${ss}`
-  } else {
-    str += `; SameSite=Lax`
+  } else if (options.sameSite === true) {
+    str += `; SameSite=Strict`
   }
   
   return str
