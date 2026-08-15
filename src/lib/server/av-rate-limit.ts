@@ -240,13 +240,13 @@ export async function checkRateLimit(
         return { allowed: true, fail_open: true, code: 'STORAGE_UNAVAILABLE' };
       }
 
-      // unknown = closed
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=UNKNOWN_DB_ERROR status=${status}`);
+      // 400 Bad Request (possivelmente erro de validação/assinatura na RPC) -> closed
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=DB_ERROR_400 status=${status} message=${error.message}`);
       throw new Error('UNKNOWN_DB_ERROR');
     }
 
     if (!data || typeof data !== 'object' || typeof data.allowed !== 'boolean') {
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE`);
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE data=${JSON.stringify(data)}`);
       throw new Error('INVALID_RPC_RESPONSE');
     }
 
