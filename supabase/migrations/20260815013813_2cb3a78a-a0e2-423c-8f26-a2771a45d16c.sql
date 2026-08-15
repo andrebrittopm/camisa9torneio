@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.av_increment_outbox_attempts(UUID, TEXT, TEXT) FROM PUBLIC, authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.av_increment_outbox_attempts(UUID, TEXT, TEXT) TO service_role;

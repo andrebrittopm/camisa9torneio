@@ -503,7 +503,9 @@ export const Route = createFileRoute('/api/public/av-create-order')({
               rpcData.display_order_number,
               summary,
               viewUrl,
-              correlationId
+              correlationId,
+              rpcData.order_id,
+              'order-created'
             ).catch(err => {
               console.error(`[AV] correlation=${correlationId} stage=email code=ASYNC_FAILED error=${err}`);
             });

@@ -207,7 +207,9 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
                       customerEmail, 
                       orderData.customer_name, 
                       displayNum, 
-                      correlationId
+                      correlationId,
+                      orderId,
+                      submissionId
                     ).catch(err => console.error(`[AV] correlation=${correlationId} stage=email_receipt code=ASYNC_FAILED error=${err}`));
                   }
                 });
