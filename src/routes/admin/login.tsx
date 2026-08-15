@@ -36,22 +36,33 @@ function AdminLogin() {
     setIsLoading(true)
 
     try {
+      console.log('[AV-ADMIN-LOGIN] Requesting login for:', email);
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ email, password })
       })
 
       const data = await response.json()
+      console.log('[AV-ADMIN-LOGIN] Response status:', response.status);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao entrar no painel.')
       }
 
       toast.success(`Bem-vindo, ${data.user.display_name}!`)
-      navigate({ to: '/admin' })
+      
+      // Pequeno atraso para garantir que os cookies sejam processados pelo browser
+      // antes da navegação que aciona o guard SSR
+      setTimeout(() => {
+        navigate({ to: '/admin' })
+      }, 500);
+
     } catch (err: any) {
-      console.error('[AV-ADMIN-LOGIN]', err)
+      console.error('[AV-ADMIN-LOGIN] Error:', err)
       toast.error(err.message === 'INVALID_CREDENTIALS' ? 'E-mail ou senha inválidos.' : 'Erro de conexão com o servidor.')
     } finally {
       setIsLoading(false)
@@ -86,7 +97,7 @@ function AdminLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@torneioav.com.br"
-                className="h-14 bg-slate-900/50 border-white/5 rounded-2xl focus:border-gold/50 focus:ring-gold/20 transition-all"
+                className="h-14 bg-slate-900/50 border-white/5 rounded-2xl focus:border-gold/50 focus:ring-gold/20 transition-all text-white placeholder:text-slate-700"
               />
             </div>
 
@@ -99,7 +110,7 @@ function AdminLogin() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="h-14 bg-slate-900/50 border-white/5 rounded-2xl focus:border-gold/50 focus:ring-gold/20 transition-all"
+                className="h-14 bg-slate-900/50 border-white/5 rounded-2xl focus:border-gold/50 focus:ring-gold/20 transition-all text-white placeholder:text-slate-700"
               />
             </div>
 
