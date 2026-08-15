@@ -14,9 +14,19 @@ const checkAdminAuth = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async ({ location }) => {
-    const context = await checkAdminAuth()
+    const request = getRequest()
+    if (!request) {
+      throw redirect({ to: '/admin/login' })
+    }
+
+    const context = await getAdminContext(request)
     
     if (!context.authenticated || !context.active) {
+      console.warn(`[AV-ADMIN-GUARD] Access denied for /admin. Redirecting to login. Context:`, {
+        auth: context.authenticated,
+        active: context.active,
+        url: location.href
+      })
       throw redirect({
         to: '/admin/login',
         search: {

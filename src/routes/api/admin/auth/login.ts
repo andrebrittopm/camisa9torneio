@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
 import { logAdminAction } from '@/lib/server/av-admin-audit.server'
+import { createSupabaseSSR } from '@/lib/server/supabase-ssr.server'
 
 /**
  * ETAPA 5.1A — LOGIN ADMINISTRATIVO (SERVER ROUTE)
@@ -64,10 +65,9 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
 
-          // 4. Autenticar Supabase Auth
-          const supabaseUrl = process.env['SUPABASE_URL']!;
-          const supabaseKey = process.env['SUPABASE_PUBLISHABLE_KEY']!;
-          const supabase = createClient(supabaseUrl, supabaseKey);
+          // 4. Autenticar com Supabase SSR Client
+          const responseHeaders = new Headers(corsHeaders);
+          const supabase = createSupabaseSSR(request, responseHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
             email: email.trim().toLowerCase(),
@@ -77,13 +77,14 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           if (authError || !data.user) {
             await logAdminAction({
               action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'AUTH_FAILURE' },
+              metadata: { reason: 'AUTH_FAILURE', message: authError?.message },
               correlationId
             });
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
 
-          // 5. Validar Perfil Administrativo (Service Role)
+          // 5. Validar Perfil Administrativo (Service Role para bypass de RLS)
+          const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
           const { data: profile, error: profileError } = await supabaseAdmin
             .from('av_admin_profiles')
@@ -98,7 +99,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
               metadata: { reason: 'NO_PROFILE' },
               correlationId
             });
-            // Logout para limpar sessão auth parcial
             await supabase.auth.signOut();
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
@@ -122,20 +122,9 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // 7. Persistência de Sessão (TanStack Start / Supabase SSR)
-          const responseHeaders = new Headers(corsHeaders);
-          
-          // Se o signInWithPassword foi bem sucedido, o objeto 'data.session' contém os tokens.
-          // Em um Server Route manual, precisamos garantir que o browser receba os cookies.
-          // O Supabase JS Client em Node não grava cookies automaticamente na Response.
-          if (data.session) {
-            const { access_token, refresh_token, expires_in } = data.session;
-            
-            // Definir cookies compatíveis com Supabase SSR
-            // Usamos nomes genéricos que o getAdminContext vai tentar ler
-            responseHeaders.append('Set-Cookie', `sb-access-token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expires_in}; Secure`);
-            responseHeaders.append('Set-Cookie', `sb-refresh-token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000; Secure`);
-          }
+          // 7. Resposta
+          // O setAll() dentro do createSupabaseSSR já injetou os cookies em responseHeaders
+          responseHeaders.set('Cache-Control', 'private, no-store');
           
           return new Response(JSON.stringify({
             success: true,
