@@ -62,9 +62,8 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           }
 
           // 4. Supabase SSR Auth
-          // Criamos uma nova Headers que será fundida com a resposta
-          const authHeaders = new Headers(corsHeaders);
-          const supabase = createSupabaseSSR(request, authHeaders);
+          const responseHeaders = new Headers(corsHeaders);
+          const supabase = createSupabaseSSR(request, responseHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
             email: email.trim().toLowerCase(),
@@ -72,7 +71,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
-            console.warn(`[AV-ADMIN-LOGIN] signInWithPassword failed: ${authError?.message}`);
+            console.warn(`[AV-ADMIN-LOGIN] Auth error for ${email}: ${authError?.message}`);
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
 
@@ -86,7 +85,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             .single();
 
           if (!profile || !profile.active) {
-            console.warn(`[AV-ADMIN-LOGIN] Admin profile check failed for ${data.user.id}`);
             await supabase.auth.signOut();
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
           }
@@ -100,22 +98,21 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           // 7. Retornar resposta
-          const finalHeaders = new Headers(authHeaders);
-          
-          console.log(`[AV-ADMIN-LOGIN] Success. Headers:`, Array.from(finalHeaders.keys()));
-          console.log(`[AV-ADMIN-LOGIN] Set-Cookie check:`, finalHeaders.getSetCookie().length);
-          
-          return new Response(JSON.stringify({
+          // A criação de um novo objeto Response com os headers fundidos é essencial 
+          // para garantir que o Nitro/Vite propague o Set-Cookie.
+          const payload = JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
-          }), { 
+          });
+
+          return new Response(payload, { 
             status: 200, 
-            headers: finalHeaders 
+            headers: responseHeaders 
           });
 
         } catch (err) {
-          console.error(`[AV-ADMIN-LOGIN] Fatal:`, err);
+          console.error(`[AV-ADMIN-LOGIN] Fatal error:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
         }
       }
