@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      av_admin_audit_logs: {
+        Row: {
+          action: string
+          admin_user_id: string | null
+          correlation_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id?: string | null
+          correlation_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+        }
+        Relationships: []
+      }
+      av_admin_profiles: {
+        Row: {
+          active: boolean
+          created_at: string
+          display_name: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          display_name: string
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          display_name?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       av_email_outbox: {
         Row: {
           attempt_count: number | null
