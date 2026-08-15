@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
+import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av-order-view'
 import { Route as ApiPublicAvPaymentInfoRouteImport } from './routes/api/public/av-payment-info'
 import { Route as ApiPublicAvPaymentReceiptRouteImport } from './routes/api/public/av-payment-receipt'
 
@@ -30,6 +31,11 @@ const ApiPublicAvCreateOrderRoute = ApiPublicAvCreateOrderRouteImport.update({
   path: '/api/public/av-create-order',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAvOrderViewRoute = ApiPublicAvOrderViewRouteImport.update({
+  id: '/api/public/av-order-view',
+  path: '/api/public/av-order-view',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAvPaymentInfoRoute = ApiPublicAvPaymentInfoRouteImport.update({
   id: '/api/public/av-payment-info',
   path: '/api/public/av-payment-info',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
+  '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
 }
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
+  '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
 }
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
+  '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
 }
@@ -70,6 +79,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
+    | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
   fileRoutesByTo: FileRoutesByTo
@@ -77,6 +87,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
+    | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
   id:
@@ -84,6 +95,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
+    | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
   fileRoutesById: FileRoutesById
@@ -92,6 +104,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPublicAvCatalogRoute: typeof ApiPublicAvCatalogRoute
   ApiPublicAvCreateOrderRoute: typeof ApiPublicAvCreateOrderRoute
+  ApiPublicAvOrderViewRoute: typeof ApiPublicAvOrderViewRoute
   ApiPublicAvPaymentInfoRoute: typeof ApiPublicAvPaymentInfoRoute
   ApiPublicAvPaymentReceiptRoute: typeof ApiPublicAvPaymentReceiptRoute
 }
@@ -119,6 +132,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAvCreateOrderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/av-order-view': {
+      id: '/api/public/av-order-view'
+      path: '/api/public/av-order-view'
+      fullPath: '/api/public/av-order-view'
+      preLoaderRoute: typeof ApiPublicAvOrderViewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/av-payment-info': {
       id: '/api/public/av-payment-info'
       path: '/api/public/av-payment-info'
@@ -140,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPublicAvCatalogRoute: ApiPublicAvCatalogRoute,
   ApiPublicAvCreateOrderRoute: ApiPublicAvCreateOrderRoute,
+  ApiPublicAvOrderViewRoute: ApiPublicAvOrderViewRoute,
   ApiPublicAvPaymentInfoRoute: ApiPublicAvPaymentInfoRoute,
   ApiPublicAvPaymentReceiptRoute: ApiPublicAvPaymentReceiptRoute,
 }

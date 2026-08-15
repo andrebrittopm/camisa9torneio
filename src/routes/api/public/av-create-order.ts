@@ -2,8 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { verifyTurnstileToken } from '@/lib/server/av-turnstile'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
-import { generateReceiptAccessToken } from '@/lib/server/av-order-access.server'
-import { sendOrderConfirmationEmail } from '@/lib/server/av-email.server'
+import { generateReceiptAccessToken, generateOrderViewToken } from '@/lib/server/av-order-access.server'
+import { sendOrderConfirmationEmail, queueOrderEmail } from '@/lib/server/av-email.server'
+
 
 
 /**
@@ -44,9 +45,8 @@ const ITEM_ALLOWED_FIELDS = [
   'custom_name',
   'custom_number',
   'quantity',
-  'model_name', // Adicionado para e-mail transacional
-  'shirt_type', // Adicionado para e-mail transacional
 ]
+
 
 const ITEM_PROHIBITED_FIELDS = [
   'unit_price',
@@ -309,7 +309,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             if (itemKeys.some(k => !ITEM_ALLOWED_FIELDS.includes(k) || ITEM_PROHIBITED_FIELDS.includes(k))) {
               return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             }
-            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity, model_name, shirt_type } = item
+            const { shirt_model_id, size_option, custom_size, custom_name, custom_number, quantity } = item
             // 16. shirt_model_id UUID
             if (!isValidUuid(shirt_model_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             // 17. size_option
@@ -320,7 +320,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             }
             // 19. custom_size/custom_name/custom_number
             const validateOptionalString = (v: any) => (v === undefined || v === null || typeof v === "string")
-            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number) || !validateOptionalString(model_name) || !validateOptionalString(shirt_type)) {
+            if (!validateOptionalString(custom_size) || !validateOptionalString(custom_name) || !validateOptionalString(custom_number)) {
               return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
             }
             validatedItems.push({
@@ -329,10 +329,9 @@ export const Route = createFileRoute('/api/public/av-create-order')({
               custom_size: custom_size === undefined ? null : custom_size,
               custom_name: custom_name === undefined ? null : custom_name,
               custom_number: custom_number === undefined ? null : custom_number,
-              quantity,
-              model_name: model_name || 'Modelo',
-              shirt_type: shirt_type || 'tshirt'
+              quantity
             })
+
           }
 
           // 20. RATE LIMITING
@@ -395,10 +394,11 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           // 22. fingerprint (Excludes turnstile_token)
           const sortedItems = [...validatedItems].sort((a, b) => {
-            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity, a.model_name, a.shirt_type])
-            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity, b.model_name, b.shirt_type])
+            const keyA = JSON.stringify([a.shirt_model_id, a.size_option, a.custom_size, a.custom_name, a.custom_number, a.quantity])
+            const keyB = JSON.stringify([b.shirt_model_id, b.size_option, b.custom_size, b.custom_name, b.custom_number, b.quantity])
             return keyA.localeCompare(keyB)
           })
+
 
           const canonicalPayload = {
             event_id,
@@ -438,7 +438,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             p_notes: notes === undefined ? null : notes,
             p_idempotency_key: idempotency_key,
             p_request_fingerprint: fingerprint,
-            p_items: sortedItems.map(({ model_name, shirt_type, ...rest }) => rest) as any
+            p_items: sortedItems as any
           })
 
           if (error) {
@@ -473,34 +473,48 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
           const rpcData = data.data
 
-          // 25. Generate Receipt Access Token (deterministically from order_id)
+          // 25. Capability Tokens (Etapa 4.3C-R1)
           const receiptAccessToken = await generateReceiptAccessToken(rpcData.order_id)
+          
+          // Expiração em 30 dias para visualização
+          const expiresAt = Date.now() + (30 * 24 * 60 * 60 * 1000)
+          const orderViewToken = await generateOrderViewToken(rpcData.display_order_number, expiresAt)
 
-          // 26. Disparar E-mail (Async Fire-and-Forget)
+          // 26. Notificação via Outbox e Envio (Async)
           if (!rpcData.is_duplicate) {
-            const successUrl = `${origin}/?view=success&order_id=${rpcData.order_id}&token=${receiptAccessToken}`;
+            // Registrar na outbox para persistência e retry
+            await queueOrderEmail(rpcData.order_id, 'ORDER_CREATED', customer_email.trim())
+
+            // Recuperar snapshots confiáveis do DB para o e-mail (Autoridade Server-Side)
+            const { data: itemSnapshots } = await supabaseAdmin
+              .from('av_order_items')
+              .select('model_name, shirt_type, size_option, custom_name, custom_number, quantity')
+              .eq('order_id', rpcData.order_id)
+
+            const summary = (itemSnapshots || []).map(i => 
+              `${i.quantity}x ${i.model_name} (${i.size_option})${i.custom_name ? ` [${i.custom_name}]` : ''}`
+            ).join('\n')
+
+            const viewUrl = `${origin}/order-view?handle=${rpcData.display_order_number}&token=${orderViewToken}&expires=${expiresAt}`
             
-            sendOrderConfirmationEmail(customer_email.trim(), {
-              order_number: rpcData.display_order_number,
-              customer_name: rpcData.customer_name,
-              total_amount: rpcData.total_amount,
-              items: sortedItems.map(item => ({
-                model_name: item.model_name || 'Modelo de Camisa', // Fallback se não vier no payload
-                shirt_type: item.shirt_type || 'tshirt',
-                size_option: item.size_option,
-                custom_name: item.custom_name,
-                custom_number: item.custom_number,
-                quantity: item.quantity
-              })),
-              success_url: successUrl
-            }, correlationId).catch(err => {
+            sendOrderConfirmationEmail(
+              customer_email.trim(), 
+              rpcData.customer_name,
+              rpcData.display_order_number,
+              summary,
+              viewUrl,
+              correlationId
+            ).catch(err => {
               console.error(`[AV] correlation=${correlationId} stage=email code=ASYNC_FAILED error=${err}`);
             });
           }
 
+
           return new Response(JSON.stringify({
             success: true,
             receipt_access_token: receiptAccessToken,
+            order_view_token: orderViewToken,
+
             data: {
               order_id: rpcData.order_id,
               order_seq: rpcData.order_seq,

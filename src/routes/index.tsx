@@ -30,6 +30,8 @@ function Index() {
   const [view, setView] = useState<'config' | 'review' | 'success'>('config')
   const [createdOrder, setCreatedOrder] = useState<any>(null)
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null)
+  const [orderViewToken, setOrderViewToken] = useState<string | null>(null)
+
 
   const {
     items,
@@ -46,7 +48,9 @@ function Index() {
   const handleClearAll = useCallback(() => {
     clearOrder();
     setReceiptAccessToken(null);
+    setOrderViewToken(null);
   }, [clearOrder]);
+
 
   const loadCatalog = useCallback(async () => {
     setIsLoading(true)
@@ -199,12 +203,14 @@ function Index() {
                 items={items}
                 eventInfo={catalog.event}
                 onBack={() => setView('config')}
-                onSuccess={(order, token) => {
+                onSuccess={(order, rToken, vToken) => {
                   setCreatedOrder(order);
-                  setReceiptAccessToken(token);
+                  setReceiptAccessToken(rToken);
+                  setOrderViewToken(vToken);
                   setView('success');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
+
               />
             )}
           </div>
@@ -216,6 +222,8 @@ function Index() {
                 catalog={catalog}
                 localItems={items}
                 receiptAccessToken={receiptAccessToken}
+                orderViewToken={orderViewToken}
+
                 onStatusUpdate={(pStatus, rStatus) => {
                   setCreatedOrder((prev: any) => ({
                     ...prev,
