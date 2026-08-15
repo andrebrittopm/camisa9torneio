@@ -26,8 +26,8 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
           const cookieStr = serialize(name, value, {
             ...options,
             path: '/',
-            sameSite: 'None', // Necessário para cookies em iframes de domínios diferentes
-            secure: true      // SameSite=None exige Secure
+            sameSite: 'none', // Necessário para cookies em iframes de domínios diferentes
+            secure: true      // SameSite=none exige Secure
           })
           console.log(`[AV-SSR-DEBUG] Appending Set-Cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
@@ -46,7 +46,12 @@ function serialize(name: string, value: string, options: CookieOptions) {
   if (options.expires) str += `; Expires=${options.expires.toUTCString()}`
   if (options.httpOnly) str += `; HttpOnly`
   if (options.secure) str += `; Secure`
-  if (options.sameSite) str += `; SameSite=${options.sameSite}`
+  
+  if (typeof options.sameSite === 'string') {
+    str += `; SameSite=${options.sameSite.charAt(0).toUpperCase() + options.sameSite.slice(1)}`
+  } else if (options.sameSite === true) {
+    str += `; SameSite=Strict`
+  }
   
   return str
 }
