@@ -10,6 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av-order-view'
@@ -23,6 +26,21 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const ApiPublicAvCatalogRoute = ApiPublicAvCatalogRouteImport.update({
   id: '/api/public/av-catalog',
@@ -68,6 +86,9 @@ const ApiAdminAuthMeRoute = ApiAdminAuthMeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
@@ -79,6 +100,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
@@ -91,6 +114,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
@@ -104,6 +130,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
+    | '/admin/login'
+    | '/admin/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
@@ -115,6 +144,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/login'
+    | '/admin'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
@@ -126,6 +157,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
+    | '/admin/login'
+    | '/admin/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
@@ -138,6 +172,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   ApiPublicAvCatalogRoute: typeof ApiPublicAvCatalogRoute
   ApiPublicAvCreateOrderRoute: typeof ApiPublicAvCreateOrderRoute
   ApiPublicAvOrderViewRoute: typeof ApiPublicAvOrderViewRoute
@@ -156,6 +191,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/api/public/av-catalog': {
       id: '/api/public/av-catalog'
@@ -216,8 +272,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   ApiPublicAvCatalogRoute: ApiPublicAvCatalogRoute,
   ApiPublicAvCreateOrderRoute: ApiPublicAvCreateOrderRoute,
   ApiPublicAvOrderViewRoute: ApiPublicAvOrderViewRoute,
