@@ -1,35 +1,13 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { createServerFn } from '@tanstack/react-start'
-import { getAdminContext } from '@/lib/server/av-admin-auth.server'
-import { getRequest } from '@tanstack/react-start/server'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 /**
- * ETAPA 5.1A — LAYOUT ADMINISTRATIVO PROTEGIDO
+ * ETAPA 5.1A — LAYOUT ADMINISTRATIVO
+ * 
+ * Removida toda lógica de 'beforeLoad' deste nível para eliminar 
+ * o loop de redirecionamento causado pelo TanStack Router.
+ * A proteção é aplicada individualmente nas rotas filhas que a exigem.
  */
 
-const checkAdminAuth = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    const request = getRequest()
-    if (!request) return { authenticated: false }
-    return await getAdminContext(request)
-  })
-
 export const Route = createFileRoute('/admin')({
-  beforeLoad: async ({ location }) => {
-    // PROTEÇÃO ATRAVÉS DE SERVER FUNCTION
-    const context = await checkAdminAuth()
-    
-    if (!context.authenticated || !context.active) {
-      throw redirect({
-        to: '/admin/login',
-        search: {
-          redirect: location.href,
-        },
-      });
-    }
-
-    return {
-      adminContext: context
-    };
-  },
+  component: () => <Outlet />,
 })
