@@ -10,16 +10,37 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av-order-view'
 import { Route as ApiPublicAvPaymentInfoRouteImport } from './routes/api/public/av-payment-info'
 import { Route as ApiPublicAvPaymentReceiptRouteImport } from './routes/api/public/av-payment-receipt'
+import { Route as ApiAdminAuthLoginRouteImport } from './routes/api/admin/auth/login'
+import { Route as ApiAdminAuthLogoutRouteImport } from './routes/api/admin/auth/logout'
+import { Route as ApiAdminAuthMeRouteImport } from './routes/api/admin/auth/me'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const ApiPublicAvCatalogRoute = ApiPublicAvCatalogRouteImport.update({
   id: '/api/public/av-catalog',
@@ -47,66 +68,119 @@ const ApiPublicAvPaymentReceiptRoute =
     path: '/api/public/av-payment-receipt',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminAuthLoginRoute = ApiAdminAuthLoginRouteImport.update({
+  id: '/api/admin/auth/login',
+  path: '/api/admin/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAuthLogoutRoute = ApiAdminAuthLogoutRouteImport.update({
+  id: '/api/admin/auth/logout',
+  path: '/api/admin/auth/logout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAuthMeRoute = ApiAdminAuthMeRouteImport.update({
+  id: '/api/admin/auth/me',
+  path: '/api/admin/auth/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
+  '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
+  '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
+  '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
+  '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
+  '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
+  '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
   '/api/public/av-payment-info': typeof ApiPublicAvPaymentInfoRoute
   '/api/public/av-payment-receipt': typeof ApiPublicAvPaymentReceiptRoute
+  '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
+  '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
+  '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
+    | '/admin/login'
+    | '/admin/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
+    | '/api/admin/auth/login'
+    | '/api/admin/auth/logout'
+    | '/api/admin/auth/me'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/login'
+    | '/admin'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
+    | '/api/admin/auth/login'
+    | '/api/admin/auth/logout'
+    | '/api/admin/auth/me'
   id:
     | '__root__'
     | '/'
+    | '/admin'
+    | '/admin/login'
+    | '/admin/'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
     | '/api/public/av-payment-info'
     | '/api/public/av-payment-receipt'
+    | '/api/admin/auth/login'
+    | '/api/admin/auth/logout'
+    | '/api/admin/auth/me'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   ApiPublicAvCatalogRoute: typeof ApiPublicAvCatalogRoute
   ApiPublicAvCreateOrderRoute: typeof ApiPublicAvCreateOrderRoute
   ApiPublicAvOrderViewRoute: typeof ApiPublicAvOrderViewRoute
   ApiPublicAvPaymentInfoRoute: typeof ApiPublicAvPaymentInfoRoute
   ApiPublicAvPaymentReceiptRoute: typeof ApiPublicAvPaymentReceiptRoute
+  ApiAdminAuthLoginRoute: typeof ApiAdminAuthLoginRoute
+  ApiAdminAuthLogoutRoute: typeof ApiAdminAuthLogoutRoute
+  ApiAdminAuthMeRoute: typeof ApiAdminAuthMeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -117,6 +191,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/api/public/av-catalog': {
       id: '/api/public/av-catalog'
@@ -153,16 +248,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAvPaymentReceiptRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/auth/login': {
+      id: '/api/admin/auth/login'
+      path: '/api/admin/auth/login'
+      fullPath: '/api/admin/auth/login'
+      preLoaderRoute: typeof ApiAdminAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/auth/logout': {
+      id: '/api/admin/auth/logout'
+      path: '/api/admin/auth/logout'
+      fullPath: '/api/admin/auth/logout'
+      preLoaderRoute: typeof ApiAdminAuthLogoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/auth/me': {
+      id: '/api/admin/auth/me'
+      path: '/api/admin/auth/me'
+      fullPath: '/api/admin/auth/me'
+      preLoaderRoute: typeof ApiAdminAuthMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   ApiPublicAvCatalogRoute: ApiPublicAvCatalogRoute,
   ApiPublicAvCreateOrderRoute: ApiPublicAvCreateOrderRoute,
   ApiPublicAvOrderViewRoute: ApiPublicAvOrderViewRoute,
   ApiPublicAvPaymentInfoRoute: ApiPublicAvPaymentInfoRoute,
   ApiPublicAvPaymentReceiptRoute: ApiPublicAvPaymentReceiptRoute,
+  ApiAdminAuthLoginRoute: ApiAdminAuthLoginRoute,
+  ApiAdminAuthLogoutRoute: ApiAdminAuthLogoutRoute,
+  ApiAdminAuthMeRoute: ApiAdminAuthMeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
