@@ -22,6 +22,7 @@ import { Route as ApiAdminAuthLoginRouteImport } from './routes/api/admin/auth/l
 import { Route as ApiAdminAuthLogoutRouteImport } from './routes/api/admin/auth/logout'
 import { Route as ApiAdminAuthMeRouteImport } from './routes/api/admin/auth/me'
 import { Route as ApiAdminAuthRecoveryRouteImport } from './routes/api/admin/auth/recovery'
+import { Route as ApiAdminAuthResetPasswordRouteImport } from './routes/api/admin/auth/reset-password'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -89,6 +90,12 @@ const ApiAdminAuthRecoveryRoute = ApiAdminAuthRecoveryRouteImport.update({
   path: '/api/admin/auth/recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAuthResetPasswordRoute =
+  ApiAdminAuthResetPasswordRouteImport.update({
+    id: '/api/admin/auth/reset-password',
+    path: '/api/admin/auth/reset-password',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
   '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
+  '/api/admin/auth/reset-password': typeof ApiAdminAuthResetPasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
   '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
+  '/api/admin/auth/reset-password': typeof ApiAdminAuthResetPasswordRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
   '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
+  '/api/admin/auth/reset-password': typeof ApiAdminAuthResetPasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
     | '/api/admin/auth/recovery'
+    | '/api/admin/auth/reset-password'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
     | '/api/admin/auth/recovery'
+    | '/api/admin/auth/reset-password'
   id:
     | '__root__'
     | '/'
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
     | '/api/admin/auth/recovery'
+    | '/api/admin/auth/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -194,6 +207,7 @@ export interface RootRouteChildren {
   ApiAdminAuthLogoutRoute: typeof ApiAdminAuthLogoutRoute
   ApiAdminAuthMeRoute: typeof ApiAdminAuthMeRoute
   ApiAdminAuthRecoveryRoute: typeof ApiAdminAuthRecoveryRoute
+  ApiAdminAuthResetPasswordRoute: typeof ApiAdminAuthResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -289,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAuthRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/auth/reset-password': {
+      id: '/api/admin/auth/reset-password'
+      path: '/api/admin/auth/reset-password'
+      fullPath: '/api/admin/auth/reset-password'
+      preLoaderRoute: typeof ApiAdminAuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -318,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuthLogoutRoute: ApiAdminAuthLogoutRoute,
   ApiAdminAuthMeRoute: ApiAdminAuthMeRoute,
   ApiAdminAuthRecoveryRoute: ApiAdminAuthRecoveryRoute,
+  ApiAdminAuthResetPasswordRoute: ApiAdminAuthResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

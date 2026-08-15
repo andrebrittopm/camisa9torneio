@@ -104,8 +104,32 @@ function AdminLogin() {
           </form>
         </div>
 
-        <div className="text-center">
-          <Link to="/" className="text-xs text-slate-500 hover:text-gold transition-colors font-bold uppercase tracking-widest">
+        <div className="text-center space-y-4">
+          <button 
+            onClick={async () => {
+              if (!email) {
+                toast.error('Digite seu e-mail para recuperar a senha.');
+                return;
+              }
+              try {
+                const res = await fetch('/api/admin/auth/recovery', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) toast.success(data.message);
+                else toast.error(data.error);
+              } catch {
+                toast.error('Erro ao solicitar recuperação.');
+              }
+            }}
+            className="block w-full text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest"
+          >
+            Esqueci minha senha
+          </button>
+          
+          <Link to="/" className="inline-block text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest">
             Voltar para a Landing Page
           </Link>
         </div>
