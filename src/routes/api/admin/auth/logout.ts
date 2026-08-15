@@ -41,7 +41,8 @@ export const Route = createFileRoute('/api/admin/auth/logout')({
             await logAdminAction({
               adminUserId: context.userId,
               action: 'ADMIN_LOGOUT',
-              metadata: { success: !error }
+              metadata: { success: !error },
+              correlationId: crypto.randomUUID()
             });
           }
 
