@@ -18,12 +18,13 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
     cookies: {
       getAll() {
         const cookieHeader = request.headers.get('Cookie') ?? ''
-        return cookieHeader.split(';').filter(Boolean).map((c) => {
+        const cookies = cookieHeader.split(';').filter(Boolean).map((c) => {
           const parts = c.split('=')
           const name = parts[0]?.trim() || ''
           const value = parts.slice(1).join('=').trim()
           return { name, value }
         })
+        return cookies
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
