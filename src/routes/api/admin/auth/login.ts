@@ -109,8 +109,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // TanStack Start exige que retornemos o Response com os headers exatos
-          // manipulados pelo adapter do @supabase/ssr
+          // TanStack Start exige que o objeto Response use os headers manipulados pelo SSR adapter.
           return new Response(JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
@@ -121,7 +120,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
         } catch (err) {
-          console.error(`[AV-ADMIN-LOGIN] Fatal:`, err);
+          console.error(`[AV-ADMIN-LOGIN] Fatal error:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: responseHeaders });
         }
       }
