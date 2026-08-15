@@ -76,7 +76,7 @@ function AdminLogin() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" underline={false} className="text-[10px] font-black uppercase tracking-[0.2em] text-gold ml-1">Senha</Label>
+              <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-[0.2em] text-gold ml-1">Senha</Label>
               <Input 
                 id="password"
                 type="password"
