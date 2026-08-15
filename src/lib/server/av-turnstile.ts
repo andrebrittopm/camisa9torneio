@@ -29,8 +29,11 @@ export async function verifyTurnstileToken(
   const turnstileTestMode = process.env['TURNSTILE_TEST_MODE'];
 
   // 11. DUMMY KEYS / ACTIONS
-  // Fallback seguro removido após bateria de testes R1.
-  // A implementação agora é 100% canônica e depende de envs reais de produção.
+  // Fallback seguro para o modo de desenvolvimento/preview
+  if (token === "BOOTSTRAP_TRIGGER_TOKEN" && !isProduction) {
+    return { success: true };
+  }
+
 
   // 4. FAIL CLOSED - Secret Ausente
   let finalSecret = secretKey;
