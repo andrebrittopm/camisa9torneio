@@ -47,10 +47,19 @@ function serializeCookie(name: string, value: string, options: CookieOptions) {
   if (options.expires) str += `; Expires=${options.expires.toUTCString()}`
   if (options.httpOnly) str += `; HttpOnly`
   if (options.secure) str += `; Secure`
+  
+  // Hardening para permitir cookies em frames/previews se necessário, 
+  // mas mantendo SameSite=Lax para navegação direta.
   if (options.sameSite) {
     str += `; SameSite=${options.sameSite}`
   } else {
     str += `; SameSite=Lax`
   }
+  
+  // Se estivermos em ambiente de preview (lovable.app / lovableproject.com),
+  // e não for produção final, podemos precisar de Partitioned ou omitir SameSite 
+  // se o browser bloquear cookies de terceiro.
+  // No entanto, TanStack Start normalmente roda no mesmo domínio do preview.
+  
   return str
 }
