@@ -16,23 +16,23 @@ const checkAdminAuth = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
-    // 1. ISOLAMENTO ESTRITÍSSIMO: Não executar lógica se a rota for de login
-    // TanStack Router processa beforeLoad de pais mesmo para filhos.
-    const isLoginPage = location.pathname === '/admin/login' || location.pathname === '/admin/login/';
+    // Debug visual para identificar loop
+    console.log(`[AV-ADMIN-AUTH] Path: ${location.pathname}`);
+
+    // TanStack Router: children herdam beforeLoad do pai.
+    // O redirect deve ser condicional apenas para rotas que NÃO sejam o login.
+    const isLoginFlow = location.pathname.includes('/admin/login');
     
-    if (isLoginPage) {
+    if (isLoginFlow) {
       return;
     }
 
-    // 2. PROTEÇÃO ATRAVÉS DE SERVER FUNCTION
     const context = await checkAdminAuth()
     
     if (!context.authenticated || !context.active) {
+      console.log(`[AV-ADMIN-AUTH] Não autenticado, redirecionando para login.`);
       throw redirect({
         to: '/admin/login',
-        search: {
-          redirect: location.href,
-        },
       });
     }
 
