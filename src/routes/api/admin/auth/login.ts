@@ -97,7 +97,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           // 7. Retornar resposta com Headers que contém os Set-Cookie
-          return new Response(JSON.stringify({
+          const finalResponse = new Response(JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
@@ -105,6 +105,9 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             status: 200, 
             headers: responseHeaders 
           });
+          
+          console.log(`[AV-ADMIN-LOGIN] Final headers:`, Array.from(finalResponse.headers.entries()));
+          return finalResponse;
 
         } catch (err) {
           console.error(`[AV-ADMIN-LOGIN] Fatal:`, err);
