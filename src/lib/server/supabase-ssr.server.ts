@@ -23,7 +23,6 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
           const cookieStr = serialize(name, value, options)
-          console.log(`[AV-SSR-DEBUG] Setting cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
         })
       },
@@ -44,6 +43,8 @@ function serialize(name: string, value: string, options: CookieOptions) {
   if (options.sameSite) {
     str += `; SameSite=${options.sameSite}`
   } else {
+    // IMPORTANTE: Para o preview do Lovable (iframe), SameSite=None + Secure pode ser necessário
+    // mas por padrão usamos Lax para navegação direta.
     str += `; SameSite=Lax`
   }
   

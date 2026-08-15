@@ -42,8 +42,9 @@ export const Route = createFileRoute('/api/admin/auth/login')({
         }
 
         try {
-          // 1. Validar Origin (Opcional em preview, mandatório em prod)
+          // 1. Validar Origin (Relaxado em dev/preview se necessário)
           if (origin && !allowedOrigins.includes(origin)) {
+            console.warn(`[AV-ADMIN-LOGIN] Blocked origin: ${origin}`);
             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
           }
 
@@ -98,18 +99,23 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           // 7. Retornar resposta
-          // A criação de um novo objeto Response com os headers fundidos é essencial 
-          // para garantir que o Nitro/Vite propague o Set-Cookie.
+          // A criação de um novo objeto Response com os headers que agora contêm Set-Cookie
           const payload = JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
           });
 
-          return new Response(payload, { 
+          const response = new Response(payload, { 
             status: 200, 
             headers: responseHeaders 
           });
+
+          // Debug log dos headers finais saindo do handler
+          console.log(`[AV-ADMIN-LOGIN] Final headers count: ${Array.from(response.headers.keys()).length}`);
+          console.log(`[AV-ADMIN-LOGIN] Set-Cookie check:`, response.headers.getSetCookie());
+
+          return response;
 
         } catch (err) {
           console.error(`[AV-ADMIN-LOGIN] Fatal error:`, err);
