@@ -19,8 +19,10 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       getAll() {
         const cookieHeader = request.headers.get('Cookie') ?? ''
         return cookieHeader.split(';').filter(Boolean).map((c) => {
-          const [name, ...value] = c.split('=')
-          return { name: name.trim(), value: value.join('=').trim() }
+          const parts = c.split('=')
+          const name = parts[0]?.trim() || ''
+          const value = parts.slice(1).join('=').trim()
+          return { name, value }
         })
       },
       setAll(cookiesToSet) {
@@ -38,14 +40,17 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
  */
 function serializeCookie(name: string, value: string, options: CookieOptions) {
   let str = `${name}=${value}`
-  if (options.maxAge) str += `; Max-Age=${options.maxAge}`
+  if (options.maxAge !== undefined) str += `; Max-Age=${options.maxAge}`
   if (options.domain) str += `; Domain=${options.domain}`
   if (options.path) str += `; Path=${options.path}`
   else str += `; Path=/`
   if (options.expires) str += `; Expires=${options.expires.toUTCString()}`
   if (options.httpOnly) str += `; HttpOnly`
   if (options.secure) str += `; Secure`
-  if (options.sameSite) str += `; SameSite=${options.sameSite}`
-  else str += `; SameSite=Lax`
+  if (options.sameSite) {
+    str += `; SameSite=${options.sameSite}`
+  } else {
+    str += `; SameSite=Lax`
+  }
   return str
 }
