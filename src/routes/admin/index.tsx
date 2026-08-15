@@ -1,21 +1,16 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { LayoutDashboard, ShoppingBag, Receipt, Users, History, ArrowRight, Shield } from 'lucide-react'
-import { getAdminContext } from '@/lib/server/av-admin-auth.server'
+import { checkAdminAuth } from '@/lib/server/av-admin-auth-bridge.functions'
 
 export const Route = createFileRoute('/admin/')({
-  beforeLoad: async ({ location }) => {
-    // TanStack Start request object
-    const request = (globalThis as any).getRequest?.() || new Request(location.href);
-
-    const context = await getAdminContext(request);
+  beforeLoad: async () => {
+    // Usamos a bridge function (Server Function) para evitar violação de import-protection
+    const context = await checkAdminAuth();
     
     if (!context.authenticated || !context.active) {
-      console.warn(`[AV-ADMIN-GUARD] Redirecting to login.`, { auth: context.authenticated });
+      console.warn(`[AV-ADMIN-GUARD] Redirecting to login.`);
       throw redirect({
         to: '/admin/login',
-        search: {
-          redirect: location.href,
-        },
       });
     }
 
@@ -39,7 +34,7 @@ function AdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-3">Dashboard Base</h2>
-          <h1 className="text-4xl md:text-5xl font-heading font-black uppercase tracking-tight">Visão Geral</h1>
+          <h1 className="text-4xl md:text-5xl font-heading font-black uppercase tracking-tight text-white">Visão Geral</h1>
         </div>
         <div className="px-6 py-3 bg-white/5 border border-white/5 rounded-2xl backdrop-blur-xl">
           <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Estado do Sistema:</span>
@@ -55,7 +50,7 @@ function AdminDashboard() {
             </div>
             <div>
               <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{stat.label}</p>
-              <p className="text-3xl font-heading font-black mt-1">{stat.value}</p>
+              <p className="text-3xl font-heading font-black mt-1 text-white">{stat.value}</p>
             </div>
           </div>
         ))}
@@ -65,7 +60,7 @@ function AdminDashboard() {
         <div className="lg:col-span-2 p-10 bg-white/[0.02] border border-white/5 rounded-[40px] relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-royal/10 blur-[100px] -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10 space-y-6">
-            <h3 className="text-xl font-heading font-black uppercase tracking-tight">Painel em Construção</h3>
+            <h3 className="text-xl font-heading font-black uppercase tracking-tight text-white">Painel em Construção</h3>
             <p className="text-slate-400 leading-relaxed text-sm">
               A infraestrutura de autenticação e segurança (Etapa 5.1A) foi estabelecida. 
               Os módulos de gestão de pedidos, pagamentos e auditoria real serão habilitados nas próximas sub-etapas.
