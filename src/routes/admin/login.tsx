@@ -45,7 +45,7 @@ function AdminLogin() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6 bg-grid-tech">
-      <div className="absolute inset-0 bg-radial-gradient(circle at 50% 50%, rgba(3, 50, 173, 0.1), transparent 70%) pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(3,50,173,0.1),transparent_70%)] pointer-events-none" />
       
       <div className="w-full max-w-md space-y-8 relative">
         <div className="text-center space-y-2">
@@ -76,7 +76,7 @@ function AdminLogin() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" **role="alert"** className="text-[10px] font-black uppercase tracking-[0.2em] text-gold ml-1">Senha</Label>
+              <Label htmlFor="password" underline={false} className="text-[10px] font-black uppercase tracking-[0.2em] text-gold ml-1">Senha</Label>
               <Input 
                 id="password"
                 type="password"
