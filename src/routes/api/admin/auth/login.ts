@@ -27,12 +27,30 @@ function getAllowedOrigins(request: Request): string[] {
 export const Route = createFileRoute('/api/admin/auth/login')({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) => {
+        const origin = request.headers.get("origin");
+        const allowedOrigins = getAllowedOrigins(request);
+
+        if (origin && allowedOrigins.includes(origin)) {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              "Access-Control-Allow-Origin": origin,
+              "Access-Control-Allow-Methods": "POST, OPTIONS",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Credentials": "true",
+              "Access-Control-Max-Age": "86400",
+              "Vary": "Origin"
+            },
+          });
+        }
+        return new Response(null, { status: 204 });
+      },
       POST: async ({ request }) => {
         const correlationId = crypto.randomUUID();
         const origin = request.headers.get("origin");
         const allowedOrigins = getAllowedOrigins(request);
         
-        // Headers base da resposta (CORS + Segurança)
         const responseHeaders = new Headers();
         responseHeaders.set("Content-Type", "application/json");
         responseHeaders.set("Cache-Control", "private, no-store");
@@ -44,18 +62,15 @@ export const Route = createFileRoute('/api/admin/auth/login')({
         }
 
         try {
-          // 1. Validar Origin
           if (origin && !allowedOrigins.includes(origin)) {
             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: responseHeaders });
           }
 
-          // 2. Rate Limit
           const rlResult = await checkRateLimit(request, correlationId, 'admin-login'); 
           if (!rlResult.allowed) {
             return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: responseHeaders });
           }
 
-          // 3. Body
           const body = await request.json();
           const { email, password } = body;
 
@@ -63,8 +78,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: responseHeaders });
           }
 
-          // 4. Supabase SSR Auth
-          // O createSupabaseSSR injetará Set-Cookie DIRETAMENTE em responseHeaders via adapter setAll
           const supabase = createSupabaseSSR(request, responseHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -77,7 +90,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
-          // 5. Profile Check
           const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
           const { data: profile } = await supabaseAdmin
@@ -91,7 +103,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
-          // 6. Sucesso -> Auditoria
           await logAdminAction({
             adminUserId: data.user.id,
             action: 'ADMIN_LOGIN_SUCCESS',
@@ -99,16 +110,12 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // 7. Resposta Final
-          // IMPORTANTE: Retornamos o responseHeaders que agora contém os cookies do Supabase
           const payload = JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
           });
 
-          console.log(`[AV-ADMIN-LOGIN] Login successful. Cookies generated: ${responseHeaders.getSetCookie().length}`);
-          
           return new Response(payload, { 
             status: 200, 
             headers: responseHeaders 
