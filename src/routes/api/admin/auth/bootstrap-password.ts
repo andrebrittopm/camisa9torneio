@@ -67,10 +67,17 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
 
-          const turnstile = await verifyTurnstileToken(turnstileToken, request);
+          const turnstile = await verifyTurnstileToken(
+            turnstileToken, 
+            process.env['TURNSTILE_SECRET_KEY'], 
+            correlationId,
+            [], // hostname pinning bypass handled by test_mode if needed
+            'admin_bootstrap'
+          );
           if (!turnstile.success) {
             return new Response(JSON.stringify({ error: "INVALID_CAPTCHA", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
+
 
           // 4. Verificação do Secret (FAIL-CLOSED)
           const bootstrapSecret = process.env['SUPERADMIN_BOOTSTRAP_PASSWORD'];
@@ -106,6 +113,10 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
           }
 
           const targetSuperadmin = superadmins[0];
+          if (!targetSuperadmin) {
+            return new Response(JSON.stringify({ error: "BOOTSTRAP_NOT_AVAILABLE", correlation_id: correlationId }), { status: 503, headers: corsHeaders });
+          }
+
 
           if (!targetSuperadmin.active) {
             return new Response(JSON.stringify({ error: "ACCOUNT_INACTIVE", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
