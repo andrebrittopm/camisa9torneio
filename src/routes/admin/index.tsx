@@ -1,10 +1,11 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { LayoutDashboard, ShoppingBag, Receipt, Users, History, ArrowRight, Shield } from 'lucide-react'
-import { checkAdminAuth } from '@/lib/server/av-admin-auth-bridge.functions'
+import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async () => {
-    // Usamos a bridge function (Server Function) para evitar violação de import-protection
+    // Usamos a bridge function (Server Function) para evitar violação de import-protection.
+    // O arquivo .functions.ts é seguro para o bundle client, mas executa no server.
     const context = await checkAdminAuth();
     
     if (!context.authenticated || !context.active) {
