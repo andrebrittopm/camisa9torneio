@@ -126,13 +126,43 @@ function AdminLogin() {
             }}
             className="block w-full text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest"
           >
-            Esqueci minha senha
+            Esqueci minha senha (E-mail)
+          </button>
+
+          <button 
+            onClick={async () => {
+              const password = prompt('Digite a Senha Temporária (Bootstrap Secret):');
+              if (!password) return;
+              
+              setIsLoading(true);
+              try {
+                const res = await fetch('/api/admin/auth/bootstrap-password', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    password,
+                    turnstileToken: 'DUMMY_TOKEN_FOR_BOOTSTRAP' // A RPC e endpoint precisam ser testados com tokens reais se TURNSTILE_TEST_MODE não estiver ativo
+                  })
+                });
+                const data = await res.json();
+                if (res.ok) toast.success('Senha definida com sucesso! Agora você pode logar.');
+                else toast.error(data.error === 'INVALID_CAPTCHA' ? 'Erro de validação (Captcha required). Tente o fluxo de e-mail ou use o Secret corretamente.' : data.error);
+              } catch {
+                toast.error('Erro ao processar bootstrap.');
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            className="block w-full text-[10px] text-gold/40 hover:text-gold transition-colors font-black uppercase tracking-widest border border-gold/10 p-2 rounded-lg"
+          >
+            Definir Senha via Bootstrap Secret
           </button>
           
           <Link to="/" className="inline-block text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest">
             Voltar para a Landing Page
           </Link>
         </div>
+
       </div>
     </div>
   )
