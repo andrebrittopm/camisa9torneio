@@ -27,30 +27,12 @@ function getAllowedOrigins(request: Request): string[] {
 export const Route = createFileRoute('/api/admin/auth/login')({
   server: {
     handlers: {
-      OPTIONS: async ({ request }) => {
-        const origin = request.headers.get("origin");
-        const allowedOrigins = getAllowedOrigins(request);
-
-        if (origin && allowedOrigins.includes(origin)) {
-          return new Response(null, {
-            status: 204,
-            headers: {
-              "Access-Control-Allow-Origin": origin,
-              "Access-Control-Allow-Methods": "POST, OPTIONS",
-              "Access-Control-Allow-Headers": "Content-Type",
-              "Access-Control-Allow-Credentials": "true",
-              "Access-Control-Max-Age": "86400",
-              "Vary": "Origin"
-            },
-          });
-        }
-        return new Response(null, { status: 204 });
-      },
       POST: async ({ request }) => {
         const correlationId = crypto.randomUUID();
         const origin = request.headers.get("origin");
         const allowedOrigins = getAllowedOrigins(request);
         
+        // Headers unificados que serão usados tanto para CORS quanto para Cookies
         const responseHeaders = new Headers();
         responseHeaders.set("Content-Type", "application/json");
         responseHeaders.set("Cache-Control", "private, no-store");
@@ -78,6 +60,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: responseHeaders });
           }
 
+          // Injetamos Set-Cookie DIRETAMENTE no objeto responseHeaders que retornaremos
           const supabase = createSupabaseSSR(request, responseHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -86,7 +69,6 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
-            console.warn(`[AV-ADMIN-LOGIN] Auth error: ${authError?.message}`);
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
@@ -116,6 +98,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlation_id: correlationId
           });
 
+          // A resposta deve conter EXATAMENTE o objeto responseHeaders manipulado pelo adapter
           return new Response(payload, { 
             status: 200, 
             headers: responseHeaders 

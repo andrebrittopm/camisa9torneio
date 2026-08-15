@@ -22,12 +22,11 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          // Hardening para o ambiente de preview (iframe + cross-domain)
           const cookieStr = serialize(name, value, {
             ...options,
             path: '/',
-            sameSite: 'none', // Necessário para cookies em iframes de domínios diferentes
-            secure: true      // SameSite=none exige Secure
+            sameSite: 'lax',
+            secure: true
           })
           console.log(`[AV-SSR-DEBUG] Appending Set-Cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
