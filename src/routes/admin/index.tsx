@@ -4,12 +4,11 @@ import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async () => {
-    // Usamos a bridge function (Server Function) para evitar violação de import-protection.
-    // O arquivo .functions.ts é seguro para o bundle client, mas executa no server.
+    // RPC Bridge para evitar import-protection violation no bundle client
     const context = await checkAdminAuth();
     
     if (!context.authenticated || !context.active) {
-      console.warn(`[AV-ADMIN-GUARD] Redirecting to login.`);
+      console.warn(`[AV-ADMIN-GUARD] Unauthorized, redirecting.`);
       throw redirect({
         to: '/admin/login',
       });
