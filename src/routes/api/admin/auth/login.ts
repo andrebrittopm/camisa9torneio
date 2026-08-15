@@ -48,13 +48,13 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
           }
 
-          // 2. Rate Limit (Scope Login)
-          // Implementação simplificada do bucket de login para esta etapa
-          // Em produção, deve-se usar o HMAC do e-mail normalizado
-          const rlResult = await checkRateLimit(request, correlationId); 
+          // 2. Rate Limit (Scope admin-login)
+          // Isolado do fluxo de pedidos públicos
+          const rlResult = await checkRateLimit(request, correlationId, 'admin-login'); 
           if (!rlResult.allowed) {
             return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: corsHeaders });
           }
+
 
           // 3. Ler Body (Limite 4KB)
           const body = await request.json();
