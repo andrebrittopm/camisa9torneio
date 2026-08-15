@@ -427,6 +427,10 @@ export type Database = {
             }
             Returns: Json
           }
+      av_increment_outbox_attempts: {
+        Args: { p_event_key: string; p_event_type: string; p_order_id: string }
+        Returns: undefined
+      }
       av_submit_payment_receipt: {
         Args: {
           p_file_sha256: string
