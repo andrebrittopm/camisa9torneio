@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      av_email_outbox: {
+        Row: {
+          attempt_count: number | null
+          created_at: string | null
+          event_key: string
+          event_type: string
+          id: string
+          last_attempt_at: string | null
+          order_id: string
+          provider_message_id: string | null
+          recipient_email: string
+          sent_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          created_at?: string | null
+          event_key: string
+          event_type: string
+          id?: string
+          last_attempt_at?: string | null
+          order_id: string
+          provider_message_id?: string | null
+          recipient_email: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          created_at?: string | null
+          event_key?: string
+          event_type?: string
+          id?: string
+          last_attempt_at?: string | null
+          order_id?: string
+          provider_message_id?: string | null
+          recipient_email?: string
+          sent_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "av_email_outbox_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "av_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       av_events: {
         Row: {
           active: boolean
@@ -137,6 +190,7 @@ export type Database = {
       av_orders: {
         Row: {
           created_at: string
+          customer_email: string
           customer_name: string
           event_id: string
           id: string
@@ -153,6 +207,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_email: string
           customer_name: string
           event_id: string
           id?: string
@@ -169,6 +224,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_email?: string
           customer_name?: string
           event_id?: string
           id?: string
@@ -345,18 +401,32 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: number
       }
-      av_create_order: {
-        Args: {
-          p_customer_name: string
-          p_event_id: string
-          p_idempotency_key: string
-          p_items: Json
-          p_notes: string
-          p_request_fingerprint: string
-          p_whatsapp: string
-        }
-        Returns: Json
-      }
+      av_create_order:
+        | {
+            Args: {
+              p_customer_email: string
+              p_customer_name: string
+              p_event_id: string
+              p_idempotency_key: string
+              p_items: Json
+              p_notes: string
+              p_request_fingerprint: string
+              p_whatsapp: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_customer_name: string
+              p_event_id: string
+              p_idempotency_key: string
+              p_items: Json
+              p_notes: string
+              p_request_fingerprint: string
+              p_whatsapp: string
+            }
+            Returns: Json
+          }
       av_submit_payment_receipt: {
         Args: {
           p_file_sha256: string
