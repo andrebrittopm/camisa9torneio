@@ -19,20 +19,35 @@ export async function getAdminContext(request: Request): Promise<AdminContext> {
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
   const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
 
-  // 1. Extrair token da sessão (TanStack Start anexa via cookie ou Authorization header se configurado)
+  // 1. Extrair token da sessão
   const authHeader = request.headers.get('Authorization');
   let token = '';
   
   if (authHeader?.startsWith('Bearer ')) {
     token = authHeader.substring(7);
   } else {
-    // Tentar ler dos cookies (Supabase SSR padrão)
+    // 2. Tentar ler dos cookies (Supabase SSR padrão)
     const cookieHeader = request.headers.get('Cookie') || '';
-    // A chave do cookie depende da configuração do Supabase
-    // Simplificado para esta implementação inicial
+    
+    // Procura por tokens de auth do Supabase (padrão: sb-[project-ref]-auth-token)
+    // Em ambientes TanStack Start com SSR, o adaptador de cookies pode usar outros nomes
+    const cookies = cookieHeader.split(';').map(c => c.trim());
+    
+    // Tenta encontrar qualquer cookie que pareça um JWT do Supabase (3 partes)
+    for (const cookie of cookies) {
+      const [name, value] = cookie.split('=');
+      if (value && value.split('.').length === 3) {
+        token = value;
+        break;
+      }
+    }
   }
 
-  if (!token) return { authenticated: false };
+  if (!token) {
+    console.warn(`[AV-ADMIN-AUTH] No token found in headers or cookies for request to ${request.url}`);
+    return { authenticated: false };
+  }
+
 
   // 2. Validar Token com o Supabase Auth
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
