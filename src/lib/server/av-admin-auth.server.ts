@@ -35,10 +35,14 @@ export async function getAdminContext(request: Request): Promise<AdminContext> {
     
     // Tenta encontrar qualquer cookie que pareça um JWT do Supabase (3 partes)
     for (const cookie of cookies) {
-      const [name, value] = cookie.split('=');
-      if (value && value.split('.').length === 3) {
+      const [name, value] = cookie.split('=').map(s => s.trim());
+      if (name === 'sb-access-token' && value) {
         token = value;
         break;
+      }
+      // Fallback para outros cookies que pareçam JWT
+      if (value && value.split('.').length === 3) {
+        token = value;
       }
     }
   }
@@ -47,6 +51,7 @@ export async function getAdminContext(request: Request): Promise<AdminContext> {
     console.warn(`[AV-ADMIN-AUTH] No token found in headers or cookies for request to ${request.url}`);
     return { authenticated: false };
   }
+
 
 
   // 2. Validar Token com o Supabase Auth

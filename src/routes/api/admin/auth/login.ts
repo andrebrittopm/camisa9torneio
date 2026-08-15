@@ -123,28 +123,32 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           // 7. Persistência de Sessão (TanStack Start / Supabase SSR)
-          // Em ambientes de Preview/Iframe, a persistência de cookies pode falhar
-          // se o SameSite não for 'None' com 'Secure', mas aqui mantemos o padrão SSR.
+          const responseHeaders = new Headers(corsHeaders);
           
-          const responseBody = {
+          // Se o signInWithPassword foi bem sucedido, o objeto 'data.session' contém os tokens.
+          // Em um Server Route manual, precisamos garantir que o browser receba os cookies.
+          // O Supabase JS Client em Node não grava cookies automaticamente na Response.
+          if (data.session) {
+            const { access_token, refresh_token, expires_in } = data.session;
+            
+            // Definir cookies compatíveis com Supabase SSR
+            // Usamos nomes genéricos que o getAdminContext vai tentar ler
+            responseHeaders.append('Set-Cookie', `sb-access-token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expires_in}; Secure`);
+            responseHeaders.append('Set-Cookie', `sb-refresh-token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000; Secure`);
+          }
+          
+          return new Response(JSON.stringify({
             success: true,
             user: {
               display_name: profile.display_name,
               role: profile.role
             },
-            session: data.session,
             correlation_id: correlationId
-          };
-
-          // Debug: Verificar se a sessão contém access_token
-          if (!data.session?.access_token) {
-             console.error(`[AV-ADMIN-LOGIN] correlation=${correlationId} error=MISSING_SESSION_TOKEN`);
-          }
-
-          return new Response(JSON.stringify(responseBody), { 
+          }), { 
             status: 200, 
-            headers: corsHeaders 
+            headers: responseHeaders 
           });
+
 
 
         } catch (err) {
