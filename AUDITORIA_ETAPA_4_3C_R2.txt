@@ -1,0 +1,23 @@
+AUDITORIA ETAPA 4.3C-R2 — HARDENING DE E-MAIL E ORDER-VIEW
+
+1. LIMPEZA E SEGURANÇA DE DADOS
+- Testes sintéticos 'Test TUR16' removidos.
+- customer_email adicionado como NOT NULL em av_orders com validação Regex.
+- av_email_outbox criado com RLS e restrição service_role.
+
+2. INFRAESTRUTURA DE E-MAIL
+- queueOrderEmail refatorado para suportar event_key (idempotência granular).
+- ORDER_CREATED utiliza event_key='order-created'.
+- RECEIPT_SUBMITTED utiliza submission_id como event_key.
+- Provedor Mock implementado com logs detalhados para auditoria.
+
+3. HARDENING DO ORDER-VIEW
+- Retorno restrito a display_order_number, statuses e itens (ZERO PII/UUIDs).
+- HMAC assina a expiração (expires_at).
+- Cabeçalhos de segurança: Cache-Control: no-store, Referrer-Policy: no-referrer.
+
+4. INTEGRIDADE DOS TESTES
+- MAIL01-MAIL25: PASS (via src/scripts/audit-mail-tokens.ts)
+- BUILD: PASS (tsgo clean)
+
+ARTEFATOS PRONTOS PARA PRODUÇÃO.

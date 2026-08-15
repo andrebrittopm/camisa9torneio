@@ -483,7 +483,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
           // 26. Notificação via Outbox e Envio (Async)
           if (!rpcData.is_duplicate) {
             // Registrar na outbox para persistência e retry
-            await queueOrderEmail(rpcData.order_id, 'ORDER_CREATED', customer_email.trim())
+            await queueOrderEmail(rpcData.order_id, 'ORDER_CREATED', 'order-created', customer_email.trim().toLowerCase())
 
             // Recuperar snapshots confiáveis do DB para o e-mail (Autoridade Server-Side)
             const { data: itemSnapshots } = await supabaseAdmin

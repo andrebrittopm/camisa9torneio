@@ -13,8 +13,15 @@ const ORDER_EVENT_TYPES = {
 
 /**
  * Cria um evento na outbox para envio assíncrono idempotente
+ * O eventKey garante que eventos do mesmo tipo (como múltiplos recibos)
+ * sejam processados de forma única.
  */
-export async function queueOrderEmail(orderId: string, eventType: string, recipientEmail: string) {
+export async function queueOrderEmail(
+  orderId: string, 
+  eventType: string, 
+  eventKey: string,
+  recipientEmail: string
+) {
   const supabaseUrl = process.env['SUPABASE_URL']!;
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -24,15 +31,16 @@ export async function queueOrderEmail(orderId: string, eventType: string, recipi
     .upsert({
       order_id: orderId,
       event_type: eventType,
+      event_key: eventKey,
       recipient_email: recipientEmail,
       status: 'pending',
       updated_at: new Date().toISOString()
     }, {
-      onConflict: 'order_id,event_type'
+      onConflict: 'order_id,event_type,event_key'
     });
 
   if (error) {
-    console.error(`[AV] stage=email_queue code=OUTBOX_FAILED order=${orderId} error=${error.message}`);
+    console.error(`[AV] stage=email_queue code=OUTBOX_FAILED order=${orderId} event=${eventType}:${eventKey} error=${error.message}`);
     // Não lançamos erro para não quebrar a transação principal do pedido
   }
 }
