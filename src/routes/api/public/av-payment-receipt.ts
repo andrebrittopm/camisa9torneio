@@ -192,7 +192,7 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
             
             // Enqueue na outbox via server-side helper (idempotência pelo submission_id)
             if (customerEmail) {
-              queueOrderEmail(orderId, 'RECEIPT_SUBMITTED', submission_id, customerEmail)
+              queueOrderEmail(orderId, 'RECEIPT_SUBMITTED', submissionId, customerEmail)
                 .catch(err => console.error(`[AV] correlation=${correlationId} stage=outbox code=QUEUE_FAILED error=${err}`));
 
               // Tentativa de envio imediato
