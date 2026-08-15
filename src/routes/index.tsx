@@ -124,31 +124,6 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-gold-500/30">
-      {isBootstrapAvailable === true && (
-        <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6 text-center">
-          <div className="max-w-xl w-full p-8 bg-white/[0.03] border border-white/10 rounded-[32px] shadow-2xl space-y-8 animate-in fade-in zoom-in duration-500">
-            <div className="space-y-4">
-              <h1 className="text-xl font-black uppercase tracking-tighter text-gold">Ação Requerida</h1>
-              <p className="text-sm text-slate-300 leading-relaxed font-medium">
-                Abra agora a interface segura de Secrets do Lovable Cloud para eu cadastrar:
-              </p>
-              <div className="py-4 bg-black/40 rounded-2xl border border-white/5 font-mono text-gold text-sm tracking-widest">
-                SUPERADMIN_BOOTSTRAP_PASSWORD
-              </div>
-              <div className="space-y-2 text-[10px] text-slate-500 uppercase font-black tracking-widest pt-4 text-left border-t border-white/5">
-                <p>• Não peça o valor da senha no chat.</p>
-                <p>• Não exiba o valor.</p>
-                <p>• Não coloque no código.</p>
-                <p>• Não execute o bootstrap até o Secret estar salvo.</p>
-              </div>
-            </div>
-            <p className="text-xs text-gold/60 font-black uppercase tracking-[0.2em] pt-4">
-              Quero somente a janela segura "Add secrets".
-            </p>
-          </div>
-        </div>
-      )}
-
       <Header />
       <main>
         {view === 'config' ? (
@@ -193,7 +168,7 @@ function Index() {
                           onCancelEdit={() => setEditingItemId(null)}
                           onModelChange={setSelectedModel}
                         />
-
+                        
                         <CustomerDataForm 
                           data={customer}
                           onChange={setCustomer}
