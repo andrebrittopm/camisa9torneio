@@ -13,8 +13,9 @@ interface OrderReviewProps {
   items: OrderItem[];
   eventInfo: AvCatalogEvent;
   onBack: () => void;
-  onSuccess: (order: AvCreateOrderResponse, token: string | null) => void;
+  onSuccess: (order: AvCreateOrderResponse, receiptToken: string | null, viewToken: string | null) => void;
 }
+
 
 type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -29,7 +30,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
   
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
-  // Snapshot do payload para controle de idempotência (sem tokens/keys)
+  // Snapshot do payload para controle de idempotência (sem tokens/keys e sem regressão de nomes)
   const currentPayloadHash = useMemo(() => {
     const essentialData = {
       event_id: eventInfo.id,
@@ -43,13 +44,12 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
         custom_size: i.size_option === 'OUTRO' ? i.custom_size : null,
         custom_name: i.custom_name || null,
         custom_number: i.custom_number || null,
-        quantity: i.quantity,
-        model_name: i.model_name,
-        shirt_type: i.category
+        quantity: i.quantity
       }))
     };
     return JSON.stringify(essentialData);
   }, [eventInfo.id, customer, items]);
+
 
   // Se o pedido mudar, invalidamos a idempotency key
   useEffect(() => {
@@ -90,13 +90,12 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
         custom_size: i.size_option === 'OUTRO' ? i.custom_size : null,
         custom_name: i.custom_name || null,
         custom_number: i.custom_number || null,
-        quantity: i.quantity,
-        model_name: i.model_name,
-        shirt_type: i.category
+        quantity: i.quantity
       }))
+
     };
 
-    const { order: orderResult, receiptAccessToken } = await submitAvOrder(payload);
+    const { order: orderResult, receiptAccessToken, orderViewToken } = await submitAvOrder(payload);
 
     // Resetar Turnstile após qualquer tentativa (Single Use)
     setTurnstileToken(null);
@@ -104,8 +103,9 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
 
     if (orderResult.success) {
       setStatus('success');
-      onSuccess(orderResult, receiptAccessToken);
+      onSuccess(orderResult, receiptAccessToken, orderViewToken);
     } else {
+
       setStatus('error');
       setLastErrorCode(orderResult.code || null);
       

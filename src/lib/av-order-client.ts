@@ -20,7 +20,8 @@ export interface AvCreateOrderResponse {
   error?: string;
   code?: string;
   retry_after?: number | null;
-  receipt_access_token?: string; // ETAPA 4.3B
+  receipt_access_token?: string; 
+  order_view_token?: string; // Etapa 4.3C-R1
 }
 
 /**
@@ -29,16 +30,18 @@ export interface AvCreateOrderResponse {
 export interface AvOrderSubmissionResult {
   order: AvCreateOrderResponse;
   receiptAccessToken: string | null;
+  orderViewToken: string | null;
 }
 
 /**
  * Payload para criação de pedido
+ * HARDENED: model_name e shirt_type removidos (Regressão Etapa 4.3C)
  */
 export interface AvCreateOrderPayload {
   event_id: string;
   customer_name: string;
   whatsapp: string;
-  customer_email: string; // Etapa 4.3C
+  customer_email: string;
   notes: string | null;
   idempotency_key: string;
   turnstile_token: string;
@@ -49,8 +52,6 @@ export interface AvCreateOrderPayload {
     custom_name: string | null;
     custom_number: string | null;
     quantity: number;
-    model_name: string; // Etapa 4.3C (para e-mail)
-    shirt_type: string; // Etapa 4.3C (para e-mail)
   }[];
 }
 
@@ -77,15 +78,17 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
           code: data.code || 'UNKNOWN_ERROR',
           retry_after: response.status === 429 ? parseInt(response.headers.get('Retry-After') || '0', 10) : null
         },
-        receiptAccessToken: null
+        receiptAccessToken: null,
+        orderViewToken: null
       };
     }
 
-    const { receipt_access_token, ...orderData } = data;
+    const { receipt_access_token, order_view_token, ...orderData } = data;
 
     return {
       order: orderData,
-      receiptAccessToken: receipt_access_token || null
+      receiptAccessToken: receipt_access_token || null,
+      orderViewToken: order_view_token || null
     };
   } catch (error) {
     console.error('[AV-ORDER-CLIENT] Network error:', error);
@@ -96,7 +99,8 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
         code: 'NETWORK_ERROR',
         retry_after: null
       },
-      receiptAccessToken: null
+      receiptAccessToken: null,
+      orderViewToken: null
     };
   }
 }
