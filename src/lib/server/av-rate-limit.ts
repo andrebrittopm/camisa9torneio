@@ -10,10 +10,13 @@ export type RateLimitResult =
   | { allowed: false; retry_after_seconds: number }
   | { allowed: true; fail_open: true; code: string }; // Fail-Open para storage
 
+export type RateLimitScope = 'order' | 'admin-login';
+
 export interface RateLimitConfig {
   mode: 'global_only' | 'global_and_client';
   secret: string;
 }
+
 
 /**
  * Normaliza IPv4 para A.B.C.D estrito.
@@ -70,10 +73,11 @@ function normalizeIPv6(ip: string): string | null {
 /**
  * Gera HMAC-SHA-256 usando Web Crypto API.
  */
-async function generateHMAC(secret: string, scope: string, identifier: string): Promise<string> {
+async function generateHMAC(secret: string, scope: string, identifier: string, endpoint: string = 'av-create-order'): Promise<string> {
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
-  const messageData = encoder.encode(`v1|${scope}|av-create-order|${identifier}`);
+  const messageData = encoder.encode(`v1|${scope}|${endpoint}|${identifier}`);
+
 
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
@@ -94,8 +98,10 @@ async function generateHMAC(secret: string, scope: string, identifier: string): 
  */
 export async function checkRateLimit(
   request: Request,
-  correlationId: string
+  correlationId: string,
+  scope: RateLimitScope = 'order'
 ): Promise<RateLimitResult> {
+
   // 1. Ler Config
   const mode = process.env['AV_RATE_LIMIT_MODE'];
   const secret = process.env['AV_RATE_LIMIT_HASH_SECRET'];
@@ -114,47 +120,72 @@ export async function checkRateLimit(
 
   // 2. Identificação do Cliente (se necessário)
   let identifier = 'global';
+  const cfIp = request.headers.get('CF-Connecting-IP');
+  
   if (mode === 'global_and_client') {
-    const cfIp = request.headers.get('CF-Connecting-IP');
     if (!cfIp) {
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_MISSING`);
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=IP_MISSING`);
       throw new Error('CONFIG_MISSING');
     }
 
     const normalized = cfIp.includes(':') ? normalizeIPv6(cfIp) : normalizeIPv4(cfIp);
     if (!normalized) {
-      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_INVALID`);
+      console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=IP_INVALID`);
       throw new Error('CONFIG_INVALID');
     }
     identifier = normalized;
+  }
 
-    // Spec Client Burst
+  // 3. Gerar Specs Baseadas no Escopo
+  const endpoint = scope === 'admin-login' ? 'av-admin-login' : 'av-create-order';
+
+  if (scope === 'admin-login') {
+    // Escopo Administrativo: admin-login:account e admin-login:global
+    // Bucket por conta (usar identifier se disponível, ou global)
     specs.push({
-      bucket_key_hash: await generateHMAC(secret, 'order:client:burst', identifier),
-      scope: 'order:client:burst',
+      bucket_key_hash: await generateHMAC(secret, 'admin-login:account', identifier, endpoint),
+      scope: 'admin-login:account',
       capacity: 5,
-      refill_rate_per_second: 5 / 60,
-      ttl_seconds: 86400
+      refill_rate_per_second: 5 / 900, // 5 a cada 15m
+      ttl_seconds: 3600
     });
 
-    // Spec Client Sustained
     specs.push({
-      bucket_key_hash: await generateHMAC(secret, 'order:client:sustained', identifier),
-      scope: 'order:client:sustained',
-      capacity: 20,
-      refill_rate_per_second: 20 / 900,
+      bucket_key_hash: await generateHMAC(secret, 'admin-login:global', 'global', endpoint),
+      scope: 'admin-login:global',
+      capacity: 100,
+      refill_rate_per_second: 100 / 900,
+      ttl_seconds: 3600
+    });
+  } else {
+    // Escopo Público: order:client e order:global
+    if (mode === 'global_and_client') {
+      specs.push({
+        bucket_key_hash: await generateHMAC(secret, 'order:client:burst', identifier, endpoint),
+        scope: 'order:client:burst',
+        capacity: 5,
+        refill_rate_per_second: 5 / 60,
+        ttl_seconds: 86400
+      });
+
+      specs.push({
+        bucket_key_hash: await generateHMAC(secret, 'order:client:sustained', identifier, endpoint),
+        scope: 'order:client:sustained',
+        capacity: 20,
+        refill_rate_per_second: 20 / 900,
+        ttl_seconds: 86400
+      });
+    }
+
+    specs.push({
+      bucket_key_hash: await generateHMAC(secret, 'order:global', 'global', endpoint),
+      scope: 'order:global',
+      capacity: 100,
+      refill_rate_per_second: 100 / 60,
       ttl_seconds: 86400
     });
   }
 
-  // Spec Global (Sempre)
-  specs.push({
-    bucket_key_hash: await generateHMAC(secret, 'order:global', 'global'),
-    scope: 'order:global',
-    capacity: 100,
-    refill_rate_per_second: 100 / 60,
-    ttl_seconds: 86400
-  });
 
   // 3. Chamar Banco
   const supabaseUrl = process.env['SUPABASE_URL'];
