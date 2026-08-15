@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import { createSupabaseSSR } from './supabase-ssr.server';
 
 /**
  * Helper Server-Side para autenticação administrativa.
@@ -14,54 +15,30 @@ export interface AdminContext {
   active?: boolean;
 }
 
-export async function getAdminContext(request: Request): Promise<AdminContext> {
+/**
+ * Obtém o contexto administrativo usando o cliente SSR unificado.
+ */
+export async function getAdminContext(request: Request, responseHeaders?: Headers): Promise<AdminContext> {
+  const dummyHeaders = new Headers();
+  const headers = responseHeaders || dummyHeaders;
+  
+  const supabase = createSupabaseSSR(request, headers);
+
+  // 1. Obter usuário (Source of Truth)
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    if (authError) {
+      console.warn(`[AV-ADMIN-AUTH] auth.getUser failed: ${authError.message}`);
+    }
+    return { authenticated: false };
+  }
+
+  // 2. Buscar Perfil Administrativo (Service Role para garantir bypass de RLS na validação de permissão)
   const supabaseUrl = process.env['SUPABASE_URL']!;
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
   const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
 
-  // 1. Extrair token da sessão
-  const authHeader = request.headers.get('Authorization');
-  let token = '';
-  
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  } else {
-    // 2. Tentar ler dos cookies (Supabase SSR padrão)
-    const cookieHeader = request.headers.get('Cookie') || '';
-    
-    // Procura por tokens de auth do Supabase (padrão: sb-[project-ref]-auth-token)
-    // Em ambientes TanStack Start com SSR, o adaptador de cookies pode usar outros nomes
-    const cookies = cookieHeader.split(';').map(c => c.trim());
-    
-    // Tenta encontrar qualquer cookie que pareça um JWT do Supabase (3 partes)
-    for (const cookie of cookies) {
-      const [name, value] = cookie.split('=').map(s => s.trim());
-      if (name === 'sb-access-token' && value) {
-        token = value;
-        break;
-      }
-      // Fallback para outros cookies que pareçam JWT
-      if (value && value.split('.').length === 3) {
-        token = value;
-      }
-    }
-  }
-
-  if (!token) {
-    console.warn(`[AV-ADMIN-AUTH] No token found in headers or cookies for request to ${request.url}`);
-    return { authenticated: false };
-  }
-
-
-
-  // 2. Validar Token com o Supabase Auth
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-  
-  if (authError || !user) {
-    return { authenticated: false };
-  }
-
-  // 3. Buscar Perfil Administrativo (Source of Truth)
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('av_admin_profiles')
     .select('role, active, display_name')
@@ -69,10 +46,11 @@ export async function getAdminContext(request: Request): Promise<AdminContext> {
     .single();
 
   if (profileError || !profile) {
+    console.warn(`[AV-ADMIN-AUTH] Profile fetch failed for user ${user.id}: ${profileError?.message || 'Not found'}`);
     return { authenticated: false };
   }
 
-  // 4. Validar Status Ativo
+  // 3. Validar Status Ativo
   if (!profile.active) {
     return { authenticated: false, active: false };
   }

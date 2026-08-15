@@ -1,42 +1,53 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { getAdminContext } from '@/lib/server/av-admin-auth.server'
+import { createSupabaseSSR } from '@/lib/server/supabase-ssr.server'
+
+/**
+ * Endpoint para validar a sessão administrativa no SSR
+ */
 
 export const Route = createFileRoute('/api/admin/auth/me')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const correlationId = crypto.randomUUID();
-        const corsHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        };
+        const responseHeaders = new Headers();
+        responseHeaders.set("Content-Type", "application/json");
+        responseHeaders.set("Cache-Control", "private, no-store");
 
         try {
-          const context = await getAdminContext(request);
+          const supabase = createSupabaseSSR(request, responseHeaders);
+          
+          // Debugging cookies no servidor
+          const cookies = request.headers.get('Cookie');
+          console.log(`[AV-ADMIN-ME] Incoming Cookies: ${cookies?.substring(0, 30)}...`);
 
-          if (!context.authenticated) {
-            return new Response(JSON.stringify({ authenticated: false, correlation_id: correlationId }), { 
-              status: 200, 
-              headers: corsHeaders 
+          const { data: { user }, error } = await supabase.auth.getUser();
+
+          if (error || !user) {
+            console.warn(`[AV-ADMIN-ME] Unauthorized: ${error?.message || 'No user'}`);
+            return new Response(JSON.stringify({ 
+              authenticated: false,
+              debug: { has_cookie: !!cookies }
+            }), { 
+              status: 200, // Retornamos 200 para o client tratar o dado
+              headers: responseHeaders 
             });
           }
 
+          // Se chegamos aqui, o token é válido e o adapter pode ter atualizado o token (Set-Cookie)
           return new Response(JSON.stringify({
             authenticated: true,
             user: {
-              display_name: context.displayName,
-              role: context.role
-            },
-            correlation_id: correlationId
+              id: user.id,
+              email: user.email
+            }
           }), { 
             status: 200, 
-            headers: corsHeaders 
+            headers: responseHeaders 
           });
+
         } catch (err) {
-          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { 
-            status: 500, 
-            headers: corsHeaders 
-          });
+          console.error(`[AV-ADMIN-ME] Fatal:`, err);
+          return new Response(JSON.stringify({ authenticated: false, error: "INTERNAL_ERROR" }), { status: 500, headers: responseHeaders });
         }
       }
     }

@@ -32,25 +32,6 @@ function Index() {
   const [createdOrder, setCreatedOrder] = useState<any>(null)
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null)
   const [orderViewToken, setOrderViewToken] = useState<string | null>(null)
-  const [isBootstrapAvailable, setIsBootstrapAvailable] = useState<boolean | null>(null)
-  const [isCheckingBootstrap, setIsCheckingBootstrap] = useState(true)
-
-  useEffect(() => {
-    const checkBootstrap = async () => {
-      try {
-        const res = await fetch('/api/admin/auth/bootstrap-status');
-        const data = await res.json();
-        setIsBootstrapAvailable(data.available === true);
-      } catch {
-        setIsBootstrapAvailable(false);
-      } finally {
-        setIsCheckingBootstrap(false);
-      }
-    };
-    checkBootstrap();
-  }, []);
-
-
 
   const {
     items,

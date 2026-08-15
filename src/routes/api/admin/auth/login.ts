@@ -2,12 +2,11 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
 import { logAdminAction } from '@/lib/server/av-admin-audit.server'
+import { createSupabaseSSR } from '@/lib/server/supabase-ssr.server'
 
 /**
  * ETAPA 5.1A — LOGIN ADMINISTRATIVO (SERVER ROUTE)
  */
-
-const MAX_BODY_BYTES = 4096; // 4KB para login
 
 function getAllowedOrigins(request: Request): string[] {
   const fromEnv = (process.env['ALLOWED_ORIGINS'] || '')
@@ -28,46 +27,58 @@ function getAllowedOrigins(request: Request): string[] {
 export const Route = createFileRoute('/api/admin/auth/login')({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) => {
+        const origin = request.headers.get("origin");
+        const allowedOrigins = getAllowedOrigins(request);
+
+        if (origin && allowedOrigins.includes(origin)) {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              "Access-Control-Allow-Origin": origin,
+              "Access-Control-Allow-Methods": "POST, OPTIONS",
+              "Access-Control-Allow-Headers": "Content-Type",
+              "Access-Control-Allow-Credentials": "true",
+              "Access-Control-Max-Age": "86400",
+              "Vary": "Origin"
+            },
+          });
+        }
+        return new Response(null, { status: 204 });
+      },
       POST: async ({ request }) => {
         const correlationId = crypto.randomUUID();
         const origin = request.headers.get("origin");
         const allowedOrigins = getAllowedOrigins(request);
-        const corsHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        };
+        
+        const responseHeaders = new Headers();
+        responseHeaders.set("Content-Type", "application/json");
+        responseHeaders.set("Cache-Control", "private, no-store");
 
         if (origin && allowedOrigins.includes(origin)) {
-          corsHeaders["Access-Control-Allow-Origin"] = origin;
-          corsHeaders["Vary"] = "Origin";
+          responseHeaders.set("Access-Control-Allow-Origin", origin);
+          responseHeaders.set("Vary", "Origin");
+          responseHeaders.set("Access-Control-Allow-Credentials", "true");
         }
 
         try {
-          // 1. Validar Origin
-          if (!origin || !allowedOrigins.includes(origin)) {
-            return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: corsHeaders });
+          if (origin && !allowedOrigins.includes(origin)) {
+            return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: responseHeaders });
           }
 
-          // 2. Rate Limit (Scope admin-login)
-          // Isolado do fluxo de pedidos públicos
           const rlResult = await checkRateLimit(request, correlationId, 'admin-login'); 
           if (!rlResult.allowed) {
-            return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: responseHeaders });
           }
 
-
-          // 3. Ler Body (Limite 4KB)
           const body = await request.json();
           const { email, password } = body;
 
           if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
-            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 400, headers: responseHeaders });
           }
 
-          // 4. Autenticar Supabase Auth
-          const supabaseUrl = process.env['SUPABASE_URL']!;
-          const supabaseKey = process.env['SUPABASE_PUBLISHABLE_KEY']!;
-          const supabase = createClient(supabaseUrl, supabaseKey);
+          const supabase = createSupabaseSSR(request, responseHeaders);
 
           const { data, error: authError } = await supabase.auth.signInWithPassword({
             email: email.trim().toLowerCase(),
@@ -75,46 +86,22 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
-            await logAdminAction({
-              action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'AUTH_FAILURE' },
-              correlationId
-            });
-            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
-          // 5. Validar Perfil Administrativo (Service Role)
+          const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
-          const { data: profile, error: profileError } = await supabaseAdmin
+          const { data: profile } = await supabaseAdmin
             .from('av_admin_profiles')
             .select('role, active, display_name')
             .eq('user_id', data.user.id)
             .single();
 
-          if (profileError || !profile) {
-            await logAdminAction({
-              adminUserId: data.user.id,
-              action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'NO_PROFILE' },
-              correlationId
-            });
-            // Logout para limpar sessão auth parcial
+          if (!profile || !profile.active) {
             await supabase.auth.signOut();
-            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
+            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
-          if (!profile.active) {
-            await logAdminAction({
-              adminUserId: data.user.id,
-              action: 'ADMIN_LOGIN_FAILED',
-              metadata: { reason: 'INACTIVE_PROFILE' },
-              correlationId
-            });
-            await supabase.auth.signOut();
-            return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: corsHeaders });
-          }
-
-          // 6. Sucesso -> Registrar Auditoria
           await logAdminAction({
             adminUserId: data.user.id,
             action: 'ADMIN_LOGIN_SUCCESS',
@@ -122,38 +109,19 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // 7. Persistência de Sessão (TanStack Start / Supabase SSR)
-          const responseHeaders = new Headers(corsHeaders);
-          
-          // Se o signInWithPassword foi bem sucedido, o objeto 'data.session' contém os tokens.
-          // Em um Server Route manual, precisamos garantir que o browser receba os cookies.
-          // O Supabase JS Client em Node não grava cookies automaticamente na Response.
-          if (data.session) {
-            const { access_token, refresh_token, expires_in } = data.session;
-            
-            // Definir cookies compatíveis com Supabase SSR
-            // Usamos nomes genéricos que o getAdminContext vai tentar ler
-            responseHeaders.append('Set-Cookie', `sb-access-token=${access_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${expires_in}; Secure`);
-            responseHeaders.append('Set-Cookie', `sb-refresh-token=${refresh_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000; Secure`);
-          }
-          
+          // TanStack Start exige que o objeto Response use os headers manipulados pelo SSR adapter.
           return new Response(JSON.stringify({
             success: true,
-            user: {
-              display_name: profile.display_name,
-              role: profile.role
-            },
+            user: { display_name: profile.display_name, role: profile.role },
             correlation_id: correlationId
           }), { 
             status: 200, 
             headers: responseHeaders 
           });
 
-
-
         } catch (err) {
-          console.error(`[AV-ADMIN-LOGIN] Erro fatal:`, err);
-          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
+          console.error(`[AV-ADMIN-LOGIN] Fatal error:`, err);
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: responseHeaders });
         }
       }
     }
