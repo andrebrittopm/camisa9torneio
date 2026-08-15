@@ -16,9 +16,11 @@ const checkAdminAuth = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: async ({ location }) => {
-    // 1. IMPORTANTE: Não aplicar redirecionamento na própria página de login 
-    // ou em sub-rotas dela para evitar loop infinito de redirecionamento.
-    if (location.pathname.startsWith('/admin/login')) {
+    // 1. ISOLAMENTO ESTRITÍSSIMO: Não executar lógica se a rota for de login
+    // TanStack Router processa beforeLoad de pais mesmo para filhos.
+    const isLoginPage = location.pathname === '/admin/login' || location.pathname === '/admin/login/';
+    
+    if (isLoginPage) {
       return;
     }
 
