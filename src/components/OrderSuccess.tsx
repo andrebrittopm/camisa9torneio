@@ -17,8 +17,10 @@ interface OrderSuccessProps {
   localItems: OrderItem[];
   onNewOrder: () => void;
   receiptAccessToken?: string | null;
+  orderViewToken?: string | null;
   onStatusUpdate?: (paymentStatus: string, reviewStatus: string) => void;
 }
+
 
 
 const ORDER_STATUS_MAP: Record<string, string> = {
@@ -37,7 +39,7 @@ const PAYMENT_STATUS_MAP: Record<string, string> = {
   receipt_rejected: "COMPROVANTE NÃO APROVADO",
 };
 
-export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAccessToken, onStatusUpdate }: OrderSuccessProps) {
+export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAccessToken, orderViewToken, onStatusUpdate }: OrderSuccessProps) {
   const [copied, setCopied] = useState(false);
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
@@ -206,12 +208,21 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
             </div>
           </div>
           
-          <div className="bg-white/[0.01] border border-white/5 p-8 rounded-[32px] text-center">
+          <div className="bg-white/[0.01] border border-white/5 p-8 rounded-[32px] text-center space-y-4">
             <p className="text-sm text-ice/40 leading-relaxed max-w-md mx-auto">
               Seu pedido foi registrado e está aguardando a abertura do período de pagamentos. <br/>
-              Acompanhe seu WhatsApp para novas instruções.
+              Acompanhe seu e-mail para novas instruções.
             </p>
+            {orderViewToken && (
+              <div className="pt-4 border-t border-white/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ice/20 mb-2">Link Seguro de Visualização</p>
+                <code className="block p-3 bg-black/40 rounded-lg text-[9px] text-gold/60 break-all border border-gold/10">
+                  {`${window.location.origin}/order-view?handle=${order.display_order_number}&token=${orderViewToken}`}
+                </code>
+              </div>
+            )}
           </div>
+
         </div>
 
         {/* Local Items Summary (Side) */}
