@@ -131,22 +131,27 @@ function AdminLogin() {
 
           <button 
             onClick={async () => {
-              const password = prompt('Digite a Senha Temporária (Bootstrap Secret):');
-              if (!password) return;
+              if (!confirm('Deseja ativar a senha inicial configurada no servidor? (Um captcha será solicitado)')) return;
               
+              // O prompt de senha foi removido. O servidor usa process.env.SUPERADMIN_BOOTSTRAP_PASSWORD.
               setIsLoading(true);
               try {
+                // Em produção, o Turnstile deve ser real. Aqui usamos um placeholder que o backend aceita se TURNSTILE_TEST_MODE=true.
+                const turnstileToken = 'BOOTSTRAP_TRIGGER_TOKEN'; 
+
                 const res = await fetch('/api/admin/auth/bootstrap-password', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                    password,
-                    turnstileToken: 'DUMMY_TOKEN_FOR_BOOTSTRAP' // A RPC e endpoint precisam ser testados com tokens reais se TURNSTILE_TEST_MODE não estiver ativo
-                  })
+                  body: JSON.stringify({ turnstileToken })
                 });
                 const data = await res.json();
-                if (res.ok) toast.success('Senha definida com sucesso! Agora você pode logar.');
-                else toast.error(data.error === 'INVALID_CAPTCHA' ? 'Erro de validação (Captcha required). Tente o fluxo de e-mail ou use o Secret corretamente.' : data.error);
+                if (res.ok) toast.success('Senha definida com sucesso via Server Secret! Agora você pode logar.');
+                else {
+                  const errorMsg = data.error === 'GONE' ? 'O bootstrap já foi realizado anteriormente.' : 
+                                 data.error === 'INVALID_CAPTCHA' ? 'Erro de validação (Captcha required).' : 
+                                 data.error;
+                  toast.error(`Erro: ${errorMsg}`);
+                }
               } catch {
                 toast.error('Erro ao processar bootstrap.');
               } finally {
@@ -155,8 +160,9 @@ function AdminLogin() {
             }}
             className="block w-full text-[10px] text-gold/40 hover:text-gold transition-colors font-black uppercase tracking-widest border border-gold/10 p-2 rounded-lg"
           >
-            Definir Senha via Bootstrap Secret
+            Ativar Senha via Server Bootstrap Secret
           </button>
+
           
           <Link to="/" className="inline-block text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest">
             Voltar para a Landing Page
