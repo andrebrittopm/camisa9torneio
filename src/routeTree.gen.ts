@@ -21,6 +21,7 @@ import { Route as ApiPublicAvPaymentReceiptRouteImport } from './routes/api/publ
 import { Route as ApiAdminAuthLoginRouteImport } from './routes/api/admin/auth/login'
 import { Route as ApiAdminAuthLogoutRouteImport } from './routes/api/admin/auth/logout'
 import { Route as ApiAdminAuthMeRouteImport } from './routes/api/admin/auth/me'
+import { Route as ApiAdminAuthRecoveryRouteImport } from './routes/api/admin/auth/recovery'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -83,6 +84,11 @@ const ApiAdminAuthMeRoute = ApiAdminAuthMeRouteImport.update({
   path: '/api/admin/auth/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAuthRecoveryRoute = ApiAdminAuthRecoveryRouteImport.update({
+  id: '/api/admin/auth/recovery',
+  path: '/api/admin/auth/recovery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
+  '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
+  '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/api/admin/auth/login': typeof ApiAdminAuthLoginRoute
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
+  '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/login'
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
+    | '/api/admin/auth/recovery'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/login'
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
+    | '/api/admin/auth/recovery'
   id:
     | '__root__'
     | '/'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/login'
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
+    | '/api/admin/auth/recovery'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   ApiAdminAuthLoginRoute: typeof ApiAdminAuthLoginRoute
   ApiAdminAuthLogoutRoute: typeof ApiAdminAuthLogoutRoute
   ApiAdminAuthMeRoute: typeof ApiAdminAuthMeRoute
+  ApiAdminAuthRecoveryRoute: typeof ApiAdminAuthRecoveryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -269,6 +282,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAuthMeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/auth/recovery': {
+      id: '/api/admin/auth/recovery'
+      path: '/api/admin/auth/recovery'
+      fullPath: '/api/admin/auth/recovery'
+      preLoaderRoute: typeof ApiAdminAuthRecoveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -297,6 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuthLoginRoute: ApiAdminAuthLoginRoute,
   ApiAdminAuthLogoutRoute: ApiAdminAuthLogoutRoute,
   ApiAdminAuthMeRoute: ApiAdminAuthMeRoute,
+  ApiAdminAuthRecoveryRoute: ApiAdminAuthRecoveryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
