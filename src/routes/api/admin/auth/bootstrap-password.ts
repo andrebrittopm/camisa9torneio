@@ -112,6 +112,9 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
           }
 
           const targetSuperadmin = superadmins[0];
+          if (!targetSuperadmin) {
+            return new Response(JSON.stringify({ error: "BOOTSTRAP_NOT_AVAILABLE", correlation_id: correlationId }), { status: 503, headers: corsHeaders });
+          }
 
           // 6. One-time Guard: bootstrap_completed_at
           if (targetSuperadmin.bootstrap_completed_at) {
@@ -137,8 +140,6 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
             .eq('user_id', targetSuperadmin.user_id);
 
           if (markError) {
-             // Mesmo se falhar a marcação aqui, o log de auditoria e a senha atualizada já ocorreram. 
-             // Mas é crítico para o One-time guard.
              console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} stage=mark_completed error=${markError.message}`);
           }
 
@@ -160,6 +161,7 @@ export const Route = createFileRoute('/api/admin/auth/bootstrap-password')({
           console.error(`[AV-ADMIN-BOOTSTRAP] correlation=${correlationId} fatal_error:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
         }
+
 
       }
     }
