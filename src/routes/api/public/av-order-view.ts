@@ -100,7 +100,6 @@ export const Route = createFileRoute('/api/public/av-order-view')({
             .from('av_orders')
             .select(`
               display_order_number,
-              customer_name,
               total_quantity,
               total_amount,
               order_status,
