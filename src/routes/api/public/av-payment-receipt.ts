@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { verifyReceiptAccessToken } from '@/lib/server/av-order-access.server';
-import { sendReceiptConfirmationEmail } from '@/lib/server/av-email.server';
+import { sendReceiptConfirmationEmail, queueOrderEmail } from '@/lib/server/av-email.server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
@@ -186,24 +186,32 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
             }), { status, headers: corsHeaders });
           }
 
-          // 10. Disparar E-mail de Recebimento (Async)
+          // 10. Disparar E-mail de Recebimento (Async Outbox + Provider)
           if (rpcResult && !rpcResult.is_duplicate) {
-            // Buscar e-mail do cliente para notificação
-            supabase.from('av_orders')
-              .select('customer_email, customer_name, order_seq, event_year')
-              .eq('id', orderId)
-              .single()
-              .then(({ data: orderData }) => {
-                if (orderData?.customer_email) {
-                  const displayNum = `AV-${orderData.event_year}-${String(orderData.order_seq).padStart(4, '0')}`;
-                  sendReceiptConfirmationEmail(
-                    orderData.customer_email, 
-                    orderData.customer_name, 
-                    displayNum, 
-                    correlationId
-                  ).catch(err => console.error(`[AV] correlation=${correlationId} stage=email_receipt code=ASYNC_FAILED error=${err}`));
-                }
-              });
+            const customerEmail = rpcResult.customer_email || '';
+            
+            // Enqueue na outbox via server-side helper (idempotência pelo submission_id)
+            if (customerEmail) {
+              queueOrderEmail(orderId, 'RECEIPT_SUBMITTED', submission_id, customerEmail)
+                .catch(err => console.error(`[AV] correlation=${correlationId} stage=outbox code=QUEUE_FAILED error=${err}`));
+
+              // Tentativa de envio imediato
+              supabase.from('av_orders')
+                .select('customer_name, order_seq, event_year')
+                .eq('id', orderId)
+                .single()
+                .then(({ data: orderData }) => {
+                  if (orderData) {
+                    const displayNum = `AV-${orderData.event_year}-${String(orderData.order_seq).padStart(4, '0')}`;
+                    sendReceiptConfirmationEmail(
+                      customerEmail, 
+                      orderData.customer_name, 
+                      displayNum, 
+                      correlationId
+                    ).catch(err => console.error(`[AV] correlation=${correlationId} stage=email_receipt code=ASYNC_FAILED error=${err}`));
+                  }
+                });
+            }
           }
 
           return new Response(JSON.stringify({
