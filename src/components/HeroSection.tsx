@@ -4,7 +4,7 @@ import { ProductStage } from "./ProductStage";
 
 export function HeroSection() {
   const scrollToSelection = () => {
-    const el = document.getElementById('camisa');
+    const el = document.getElementById('camisas');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -51,7 +51,7 @@ export function HeroSection() {
                 Personalizar minha camisa
               </Button>
               <Button 
-                onClick={() => document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' })}
                 size="lg" 
                 variant="outline" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest border-ice/10 hover:bg-ice/5 hover:border-gold/30 active:scale-95 transition-all duration-300 backdrop-blur-sm"

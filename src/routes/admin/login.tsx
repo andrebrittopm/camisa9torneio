@@ -36,7 +36,6 @@ function AdminLogin() {
     setIsLoading(true)
 
     try {
-      console.log('[AV-ADMIN-LOGIN] Requesting login for:', email);
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: { 
@@ -47,7 +46,6 @@ function AdminLogin() {
       })
 
       const data = await response.json()
-      console.log('[AV-ADMIN-LOGIN] Response status:', response.status);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao entrar no painel.')
