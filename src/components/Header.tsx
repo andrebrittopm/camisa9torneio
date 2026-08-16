@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import logoAsset from "@/assets/logo-oficial.png.asset.json";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -39,8 +40,12 @@ export function Header() {
           className="flex items-center gap-3 group"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          <div className="w-12 h-12 bg-gold rounded-2xl flex items-center justify-center font-black text-navy shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-            AV
+          <div className="w-14 h-14 bg-white/5 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 overflow-hidden border border-gold/20 p-1">
+            <img 
+              src={logoAsset.url} 
+              alt="Logo Amigos do Vôlei" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-heading font-black text-lg md:text-xl tracking-tighter uppercase leading-none">
