@@ -11,20 +11,20 @@ export const Route = createFileRoute('/api/admin/auth/logout')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const corsHeaders: Record<string, string> = {
-          "Content-Type": "application/json",
-          "Cache-Control": "private, no-store",
-        };
+        const responseHeaders = new Headers();
+        responseHeaders.set("Content-Type", "application/json");
+        responseHeaders.set("Cache-Control", "no-store, max-age=0");
 
         const origin = request.headers.get("origin");
-        if (origin) {
-          corsHeaders["Access-Control-Allow-Origin"] = origin;
-          corsHeaders["Vary"] = "Origin";
+        const allowedOrigins = (process.env['ALLOWED_ORIGINS'] || '').split(',').map(o => o.trim()).filter(Boolean);
+        
+        if (origin && (allowedOrigins.includes(origin) || new URL(request.url).origin === origin)) {
+          responseHeaders.set("Access-Control-Allow-Origin", origin);
+          responseHeaders.set("Vary", "Origin");
+          responseHeaders.set("Access-Control-Allow-Credentials", "true");
         }
 
         try {
-          const responseHeaders = new Headers(corsHeaders);
-          
           // 1. Identificar usuário para auditoria antes de destruir a sessão
           const context = await getAdminContext(request);
           
@@ -53,8 +53,9 @@ export const Route = createFileRoute('/api/admin/auth/logout')({
 
         } catch (err) {
           console.error(`[AV-ADMIN-LOGOUT] Fatal error:`, err);
-          return new Response(JSON.stringify({ error: "INTERNAL_ERROR" }), { status: 500, headers: corsHeaders });
+          return new Response(JSON.stringify({ error: "INTERNAL_ERROR" }), { status: 500, headers: responseHeaders });
         }
+
       }
     }
   }

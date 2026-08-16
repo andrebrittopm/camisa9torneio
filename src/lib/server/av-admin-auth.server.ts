@@ -29,9 +29,10 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
   
   if (authError || !user) {
     if (authError) {
-      console.warn(`[AV-ADMIN-AUTH] auth.getUser failed: ${authError.message}`);
+      // Silent return for unauthenticated access to avoid log noise in common flow
     }
     return { authenticated: false };
+
   }
 
   // 2. Buscar Perfil Administrativo (Service Role para garantir bypass de RLS na validação de permissão)
