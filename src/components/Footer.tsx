@@ -48,6 +48,15 @@ export function Footer() {
                 © 2026 Todos os direitos reservados • Desenvolvido com foco em performance
               </p>
             </div>
+            
+            <div className="mt-4 md:mt-0 opacity-40 hover:opacity-100 transition-opacity">
+              <a 
+                href="/admin"
+                className="text-[9px] font-black uppercase tracking-[0.2em] text-ice hover:text-gold"
+              >
+                Área Administrativa
+              </a>
+            </div>
           </div>
         </div>
       </div>
