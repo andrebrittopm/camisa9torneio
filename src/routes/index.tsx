@@ -36,8 +36,8 @@ export const Route = createFileRoute('/')({
       { property: "og:description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/tshirt-01-oficial.webp" },
-      { name: "twitter:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/tshirt-01-oficial.webp" }
+      { property: "og:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/__l5e/assets-v1/9571fcf6-b9b9-4b52-b613-db20c3fa9b2e/tshirt-01-oficial.webp" },
+      { name: "twitter:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/__l5e/assets-v1/9571fcf6-b9b9-4b52-b613-db20c3fa9b2e/tshirt-01-oficial.webp" }
     ]
   }),
   component: Index,
