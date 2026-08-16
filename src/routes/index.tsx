@@ -5,12 +5,6 @@
  * - A partir de agora o projeto terá APENAS UM modelo de uniforme disponível para pedido (TSHIRT-01).
  * - TSHIRT-02, TSHIRT-03, TANK-01, TANK-02 e TANK-03 foram desativados no banco.
  * - O fluxo público foi simplificado para remover a escolha de modelo.
- * 
- * SINGLE01-20: VALIDADO
- * TYPECHECK: PASS
- * BUILD: PASS
- * 
- * "ETAPA 4.4C — CATÁLOGO SIMPLIFICADO PARA CAMISETA OFICIAL ÚNICA TSHIRT-01 E VALIDADO."
  */
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -34,6 +28,18 @@ import { OrderReview } from '@/components/OrderReview'
 import { OrderSuccess } from '@/components/OrderSuccess'
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    title: "Camisa Oficial 2026 | 9º Torneio Amigos do Vôlei",
+    meta: [
+      { name: "description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
+      { property: "og:title", content: "Camisa Oficial 2026 | 9º Torneio Amigos do Vôlei" },
+      { property: "og:description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/tshirt-01-oficial.webp" },
+      { name: "twitter:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/tshirt-01-oficial.webp" }
+    ]
+  }),
   component: Index,
 })
 
