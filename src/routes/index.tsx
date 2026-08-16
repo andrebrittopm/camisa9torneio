@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
 import { ModelsSection } from '@/components/ModelsSection'
-import { CustomizationPreview } from '@/components/CustomizationPreview'
+
 import { HowItWorks } from '@/components/HowItWorks'
 import { FinalCTA } from '@/components/FinalCTA'
 import { Footer } from '@/components/Footer'
@@ -148,13 +148,7 @@ function Index() {
                 <section id="pedido" className="py-24 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-1/2 h-full bg-royal/5 blur-[120px] rounded-full pointer-events-none" />
                   <div className="container mx-auto px-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-                      <CustomizationPreview 
-                        selectedModel={selectedModel}
-                        eventInfo={catalog.event}
-                        customName={editingItem?.custom_name ?? null}
-                        customNumber={editingItem?.custom_number ?? null}
-                      />
+                    <div className="max-w-4xl mx-auto w-full">
                       
                       <div className="space-y-12">
                         <OrderConfigurator 
