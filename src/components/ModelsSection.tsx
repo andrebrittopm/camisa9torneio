@@ -321,7 +321,8 @@ export function ModelCard({
               variant={isSelected ? "secondary" : "default"} 
               className={cn(
                 "flex-1 font-black uppercase tracking-[0.2em] h-14 rounded-2xl transition-all duration-300 text-[10px]",
-                isSelected ? "glow-gold" : "bg-white/5 border border-white/10 hover:bg-white/10"
+                isSelected ? "glow-gold" : "bg-white/5 border border-white/10 hover:bg-white/10",
+                isSelected && "pointer-events-none opacity-80"
               )}
               onClick={onSelect}
             >
@@ -388,7 +389,7 @@ export function ModelsSection({
             <ModelCard 
               model={singleModel} 
               isSelected={true}
-              onSelect={() => onSelectModel(singleModel)}
+              onSelect={() => {}}
               eventInfo={eventInfo}
             />
           </div>
