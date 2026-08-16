@@ -28,7 +28,7 @@ export function FinalCTA() {
         <div className="absolute top-1/2 right-0 w-24 h-px bg-gradient-to-l from-gold/20 to-transparent" />
 
         <div className="relative z-10">
-          <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px] md:text-xs mb-8 block">Tempestade 2026</span>
+          <span className="text-gold font-black uppercase tracking-[0.4em] text-[10px] md:text-xs mb-8 block">E AÍ JOGADOR?</span>
           <h2 className="text-5xl md:text-7xl font-heading font-black uppercase mb-8 leading-[0.9] tracking-tighter">
             Pronto para entrar<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-dark drop-shadow-[0_0_10px_rgba(252,195,7,0.2)]">em quadra?</span>
           </h2>
