@@ -23,6 +23,7 @@ import { Route as ApiAdminAuthLoginRouteImport } from './routes/api/admin/auth/l
 import { Route as ApiAdminAuthLogoutRouteImport } from './routes/api/admin/auth/logout'
 import { Route as ApiAdminAuthMeRouteImport } from './routes/api/admin/auth/me'
 import { Route as ApiAdminAuthRecoveryRouteImport } from './routes/api/admin/auth/recovery'
+import { Route as ApiAdminAuthRecoveryCallbackRouteImport } from './routes/api/admin/auth/recovery-callback'
 import { Route as ApiAdminAuthResetPasswordRouteImport } from './routes/api/admin/auth/reset-password'
 
 const IndexRoute = IndexRouteImport.update({
@@ -96,6 +97,12 @@ const ApiAdminAuthRecoveryRoute = ApiAdminAuthRecoveryRouteImport.update({
   path: '/api/admin/auth/recovery',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAuthRecoveryCallbackRoute =
+  ApiAdminAuthRecoveryCallbackRouteImport.update({
+    id: '/api/admin/auth/recovery-callback',
+    path: '/api/admin/auth/recovery-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminAuthResetPasswordRoute =
   ApiAdminAuthResetPasswordRouteImport.update({
     id: '/api/admin/auth/reset-password',
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
   '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
+  '/api/admin/auth/recovery-callback': typeof ApiAdminAuthRecoveryCallbackRoute
   '/api/admin/auth/reset-password': typeof ApiAdminAuthResetPasswordRoute
 }
 export interface FileRoutesByTo {
@@ -134,6 +142,7 @@ export interface FileRoutesByTo {
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
   '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
+  '/api/admin/auth/recovery-callback': typeof ApiAdminAuthRecoveryCallbackRoute
   '/api/admin/auth/reset-password': typeof ApiAdminAuthResetPasswordRoute
 }
 export interface FileRoutesById {
@@ -152,6 +161,7 @@ export interface FileRoutesById {
   '/api/admin/auth/logout': typeof ApiAdminAuthLogoutRoute
   '/api/admin/auth/me': typeof ApiAdminAuthMeRoute
   '/api/admin/auth/recovery': typeof ApiAdminAuthRecoveryRoute
+  '/api/admin/auth/recovery-callback': typeof ApiAdminAuthRecoveryCallbackRoute
   '/api/admin/auth/reset-password': typeof ApiAdminAuthResetPasswordRoute
 }
 export interface FileRouteTypes {
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
     | '/api/admin/auth/recovery'
+    | '/api/admin/auth/recovery-callback'
     | '/api/admin/auth/reset-password'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
     | '/api/admin/auth/recovery'
+    | '/api/admin/auth/recovery-callback'
     | '/api/admin/auth/reset-password'
   id:
     | '__root__'
@@ -204,6 +216,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/logout'
     | '/api/admin/auth/me'
     | '/api/admin/auth/recovery'
+    | '/api/admin/auth/recovery-callback'
     | '/api/admin/auth/reset-password'
   fileRoutesById: FileRoutesById
 }
@@ -219,6 +232,7 @@ export interface RootRouteChildren {
   ApiAdminAuthLogoutRoute: typeof ApiAdminAuthLogoutRoute
   ApiAdminAuthMeRoute: typeof ApiAdminAuthMeRoute
   ApiAdminAuthRecoveryRoute: typeof ApiAdminAuthRecoveryRoute
+  ApiAdminAuthRecoveryCallbackRoute: typeof ApiAdminAuthRecoveryCallbackRoute
   ApiAdminAuthResetPasswordRoute: typeof ApiAdminAuthResetPasswordRoute
 }
 
@@ -322,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAuthRecoveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/auth/recovery-callback': {
+      id: '/api/admin/auth/recovery-callback'
+      path: '/api/admin/auth/recovery-callback'
+      fullPath: '/api/admin/auth/recovery-callback'
+      preLoaderRoute: typeof ApiAdminAuthRecoveryCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/auth/reset-password': {
       id: '/api/admin/auth/reset-password'
       path: '/api/admin/auth/reset-password'
@@ -360,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuthLogoutRoute: ApiAdminAuthLogoutRoute,
   ApiAdminAuthMeRoute: ApiAdminAuthMeRoute,
   ApiAdminAuthRecoveryRoute: ApiAdminAuthRecoveryRoute,
+  ApiAdminAuthRecoveryCallbackRoute: ApiAdminAuthRecoveryCallbackRoute,
   ApiAdminAuthResetPasswordRoute: ApiAdminAuthResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
