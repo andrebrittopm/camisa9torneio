@@ -16,7 +16,7 @@ export function OrderItemsSummary({ items, eventInfo, onRemove, onEdit, disabled
   const totalEstimated = items.reduce((sum, item) => sum + (item.quantity * eventInfo.unit_price), 0);
 
   return (
-    <div className="space-y-6 bg-white/[0.02] backdrop-blur-xl p-10 rounded-[32px] border border-white/5">
+    <div className="space-y-6 bg-white/[0.02] backdrop-blur-xl p-6 sm:p-10 rounded-[32px] border border-white/5">
       <h3 className="text-2xl font-heading font-black uppercase tracking-tight">Seu Pedido</h3>
 
       <div className="space-y-4">
