@@ -11,29 +11,48 @@ export const Route = createFileRoute('/api/admin/auth/me')({
       GET: async ({ request }) => {
         const responseHeaders = new Headers();
         responseHeaders.set("Content-Type", "application/json");
-        responseHeaders.set("Cache-Control", "private, no-store");
+        responseHeaders.set("Cache-Control", "no-store, max-age=0");
 
         try {
           const supabase = createSupabaseSSR(request, responseHeaders);
           
-          // Debugging cookies no servidor
-          const cookies = request.headers.get('Cookie');
-
+          // auth.getUser() is the most reliable check and triggers refresh if needed
           const { data: { user }, error } = await supabase.auth.getUser();
 
           if (error || !user) {
-            console.warn(`[AV-ADMIN-ME] Unauthorized: ${error?.message || 'No user'}`);
             return new Response(JSON.stringify({ 
               authenticated: false,
+              message: error?.message || 'No session'
             }), { 
-              status: 200, // Retornamos 200 para o client tratar o dado
+              status: 200, 
               headers: responseHeaders 
             });
           }
 
-          // Se chegamos aqui, o token é válido e o adapter pode ter atualizado o token (Set-Cookie)
+          // Check profile via admin client to ensure active status
+          const supabaseUrl = process.env['SUPABASE_URL']!;
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
+          
+          const { data: profile } = await supabaseAdmin
+            .from('av_admin_profiles')
+            .select('role, active')
+            .eq('user_id', user.id)
+            .single();
+
+          if (!profile || !profile.active) {
+            return new Response(JSON.stringify({ 
+              authenticated: false,
+              message: 'Inactive profile'
+            }), { 
+              status: 200, 
+              headers: responseHeaders 
+            });
+          }
+
           return new Response(JSON.stringify({
             authenticated: true,
+            role: profile.role,
             user: {
               id: user.id,
               email: user.email
@@ -48,6 +67,7 @@ export const Route = createFileRoute('/api/admin/auth/me')({
           return new Response(JSON.stringify({ authenticated: false, error: "INTERNAL_ERROR" }), { status: 500, headers: responseHeaders });
         }
       }
+
     }
   }
 })

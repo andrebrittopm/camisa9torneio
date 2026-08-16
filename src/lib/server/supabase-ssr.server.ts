@@ -3,6 +3,9 @@ import type { Database } from '@/integrations/supabase/types'
 
 /**
  * Supabase SSR Utility for TanStack Start
+ * 
+ * Central helper to create a Supabase client that reads and writes cookies
+ * using standard @supabase/ssr implementation.
  */
 
 export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
@@ -22,15 +25,14 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => {
-          // Hardening para o ambiente de preview
-          // IMPORTANTE: Em ambientes de iframe (Lovable preview), SameSite=None + Secure é essencial.
+          // Hardening for preview environments (iframe compatibility)
+          // Essential for Lovable preview: SameSite=None + Secure
           const cookieStr = serialize(name, value, {
             ...options,
             path: '/',
             sameSite: 'none',
-            secure: true
+            secure: true,
           })
-          console.log(`[AV-SSR-DEBUG] Appending Set-Cookie: ${name}`);
           responseHeaders.append('Set-Cookie', cookieStr)
         })
       },
@@ -38,6 +40,9 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
   })
 }
 
+/**
+ * Basic cookie serializer as @supabase/ssr might not export one directly in this version
+ */
 function serialize(name: string, value: string, options: CookieOptions) {
   let str = `${name}=${value}`
   
@@ -49,7 +54,6 @@ function serialize(name: string, value: string, options: CookieOptions) {
   if (options.secure) str += `; Secure`
   
   if (typeof options.sameSite === 'string') {
-    // A especificação Set-Cookie é case-insensitive para SameSite, mas "None" é o padrão.
     const ss = options.sameSite.toLowerCase() === 'none' ? 'None' : 
                options.sameSite.toLowerCase() === 'strict' ? 'Strict' : 'Lax';
     str += `; SameSite=${ss}`
@@ -59,3 +63,5 @@ function serialize(name: string, value: string, options: CookieOptions) {
   
   return str
 }
+
+

@@ -29,15 +29,18 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
   
   if (authError || !user) {
     if (authError) {
-      console.warn(`[AV-ADMIN-AUTH] auth.getUser failed: ${authError.message}`);
+      // Silent return for unauthenticated access to avoid log noise in common flow
     }
     return { authenticated: false };
+
   }
 
   // 2. Buscar Perfil Administrativo (Service Role para garantir bypass de RLS na validação de permissão)
   const supabaseUrl = process.env['SUPABASE_URL']!;
+  const { createClient } = await import('@supabase/supabase-js');
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
   const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('av_admin_profiles')
