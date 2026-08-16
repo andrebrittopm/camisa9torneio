@@ -169,7 +169,7 @@ export async function sendOrderConfirmationEmail(
   const htmlBody = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Olá ${name},</h2>
-      <p>Seu pedido <strong>${orderNumber}</strong> foi recebido com sucesso.</p>
+      <p>Seu pedido da <strong>CAMISA OFICIAL</strong> (${orderNumber}) foi recebido com sucesso.</p>
       <hr />
       <h3>Resumo do Pedido:</h3>
       <pre style="background: #f4f4f4; pading: 15px; border-radius: 8px;">${summary}</pre>

@@ -89,7 +89,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                 {/* Controls Overlay */}
                 <div className="absolute top-6 left-6 flex items-center gap-4">
                   <div className="bg-gold text-navy text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-lg">
-                    {model.code}
+                    CAMISA OFICIAL
                   </div>
                   <div className="bg-white/5 backdrop-blur-md text-ice/60 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest border border-white/10">
                     {activeSide === 'front' ? 'Frente' : 'Costas'}
@@ -124,9 +124,9 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-2 block">
-                    {model.category === 'tshirt' ? 'Camiseta Oficial' : 'Regata Oficial'}
+                    {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
                   </span>
-                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">{model.name}</h3>
+                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">CAMISA OFICIAL</h3>
                   <div className="text-3xl font-black text-white">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(eventInfo.unit_price)}
                   </div>
@@ -302,9 +302,9 @@ export function ModelCard({
           <div className="flex justify-between items-end mb-6">
             <div>
               <span className="text-[10px] text-gold font-black uppercase tracking-[0.3em] mb-1 block">
-                {model.category === 'tshirt' ? 'Camiseta' : 'Regata'}
+                {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
               </span>
-              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">{model.name}</h3>
+              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">CAMISA OFICIAL</h3>
               <div className="text-gold font-black text-lg mt-2">{formattedPrice}</div>
             </div>
           </div>

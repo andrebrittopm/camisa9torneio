@@ -114,7 +114,7 @@ export function OrderConfigurator({
       <div className="flex flex-col gap-2">
         <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Passo único: Personalize sua peça</span>
         <h3 className="text-2xl font-heading font-black uppercase tracking-tight">
-          {editingItem ? "Editando Item" : "Personalize Agora"}
+          CAMISA OFICIAL
         </h3>
       </div>
 

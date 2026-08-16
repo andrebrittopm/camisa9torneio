@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrderViewToken } from '@/lib/server/av-order-access.server'
 
 /**
- * ETAPA 4.3C-R1 — SERVER ROUTE PARA VISUALIZAÇÃO SEGURA DO PEDIDO
+ * ETAPA 4.3C-R1 — SERVER ROUTE PARA VISUALIZAÇÃO SEGURA DA CAMISA OFICIAL
  */
 
 function getAllowedOrigins(request: Request): string[] {
