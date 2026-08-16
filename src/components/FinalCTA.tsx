@@ -33,7 +33,7 @@ export function FinalCTA() {
             Pronto para entrar<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-dark drop-shadow-[0_0_10px_rgba(252,195,7,0.2)]">em quadra?</span>
           </h2>
           <p className="text-lg md:text-xl text-ice/70 max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
-            Escolha sua camisa oficial do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span> e faça parte da elite desta temporada.
+            Garanta sua camisa oficial do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span> e faça parte da elite desta temporada.
           </p>
           <Button 
             onClick={scrollToSelection}
@@ -41,7 +41,7 @@ export function FinalCTA() {
             variant="secondary" 
             className="px-12 py-8 text-xl font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300 rounded-2xl"
           >
-            Escolher minha camisa
+            Personalizar minha camisa
           </Button>
         </div>
       </motion.div>

@@ -48,7 +48,7 @@ export function HeroSection() {
                 variant="secondary" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
               >
-                Escolher minha camisa
+                Personalizar minha camisa
               </Button>
               <Button 
                 onClick={scrollToSelection}
@@ -56,7 +56,7 @@ export function HeroSection() {
                 variant="outline" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest border-ice/10 hover:bg-ice/5 hover:border-gold/30 active:scale-95 transition-all duration-300 backdrop-blur-sm"
               >
-                Ver modelos
+                Ver Camisa Oficial
               </Button>
             </div>
 
