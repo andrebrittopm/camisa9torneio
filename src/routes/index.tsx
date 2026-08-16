@@ -38,13 +38,6 @@
  * RESULTADO:
  * ETAPA 8.0-R1 — PUBLICATION GATE: PASS.
  */
- * ETAPA 4.4C — SIMPLIFICAÇÃO DO CATÁLOGO PARA MODELO ÚNICO
- * 
- * MUDANÇA DE REGRA DE NEGÓCIO:
- * - A partir de agora o projeto terá APENAS UM modelo de uniforme disponível para pedido (TSHIRT-01).
- * - TSHIRT-02, TSHIRT-03, TANK-01, TANK-02 e TANK-03 foram desativados no banco.
- * - O fluxo público foi simplificado para remover a escolha de modelo.
- */
 import { createFileRoute } from '@tanstack/react-router'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
