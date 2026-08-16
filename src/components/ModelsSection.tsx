@@ -41,7 +41,7 @@ export function ModelCard({
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center border border-dashed border-ice/10 rounded-2xl group-hover:border-gold/20 transition-all duration-500 bg-white/[0.01]">
           {model.front_image_url ? (
             <img 
-              src={model.image_url} 
+              src={model.front_image_url} 
               alt={model.name}
               className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
             />

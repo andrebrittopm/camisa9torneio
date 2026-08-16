@@ -33,7 +33,7 @@ export function CustomizationPreview({
       <div className="relative z-10 w-full h-full border border-dashed border-ice/10 rounded-3xl flex flex-col items-center justify-center group">
         {selectedModel?.front_image_url ? (
           <img 
-            src={selectedModel.image_url} 
+            src={selectedModel.front_image_url} 
             alt={selectedModel.name}
             className="absolute inset-0 w-full h-full object-contain p-8 opacity-20"
           />
