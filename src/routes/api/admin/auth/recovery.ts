@@ -79,13 +79,11 @@ export const Route = createFileRoute('/api/admin/auth/recovery')({
               const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
                 type: 'recovery',
                 email: normalizedEmail,
-                options: { redirectTo: `${origin}/admin/reset-password` }
+                options: { redirectTo: `${origin}/api/admin/auth/recovery-callback` }
               });
 
               if (!linkError && linkData?.properties?.action_link) {
-                // 3. Enviar via SendGrid API (infraestrutura existente)
-                const { sendOrderConfirmationEmail } = await import('@/lib/server/av-email.server');
-                // Reutilizamos a lógica de transporte, mas com template de recovery
+                // 3. Enviar via SendGrid API
                 const recoveryLink = linkData.properties.action_link;
                 
                 const subject = "Redefinição de senha — Amigos do Vôlei";
@@ -101,11 +99,11 @@ export const Route = createFileRoute('/api/admin/auth/recovery')({
                   </div>
                 `;
 
-                // Chamada direta ao SendGrid bypassando a outbox para tokens sensíveis
                 const apiKey = process.env['SENDGRID_API_KEY'];
                 const from = process.env['EMAIL_FROM'];
                 
                 if (apiKey && from) {
+                  // Bypass tracking para recovery links e tokens sensíveis
                   await fetch('https://api.sendgrid.com/v3/mail/send', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -113,7 +111,11 @@ export const Route = createFileRoute('/api/admin/auth/recovery')({
                       personalizations: [{ to: [{ email: normalizedEmail }] }],
                       from: { email: from, name: "Amigos do Vôlei" },
                       subject: subject,
-                      content: [{ type: 'text/html', value: htmlBody }]
+                      content: [{ type: 'text/html', value: htmlBody }],
+                      tracking_settings: {
+                        click_tracking: { enable: false, enable_text: false },
+                        open_tracking: { enable: false }
+                      }
                     })
                   });
 

@@ -15,23 +15,29 @@ function AdminResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [sessionUser, setSessionUser] = useState<any>(null)
   const [hasToken, setHasToken] = useState<boolean | null>(null)
-  const [accessToken, setAccessToken] = useState<string | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Capturar token do Supabase da URL hash (#access_token=...)
-    const hash = window.location.hash
-    const params = new URLSearchParams(hash.replace('#', '?'))
-    const token = params.get('access_token')
-    
-    if (token) {
-      setAccessToken(token)
-      setHasToken(true)
-    } else {
-      setHasToken(false)
-      toast.error('Link de recuperação inválido ou expirado.')
+    // Agora validamos a sessão real via Supabase (injetada pelo callback SSR)
+    const checkSession = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser()
+      
+      if (error || !user) {
+        setHasToken(false)
+        // Verificamos se há erro na URL para exibir toast específico
+        const urlParams = new URLSearchParams(window.location.search)
+        if (urlParams.get('error')) {
+          toast.error('Link de recuperação inválido ou expirado.')
+        }
+      } else {
+        setSessionUser(user)
+        setHasToken(true)
+      }
     }
+    
+    checkSession()
   }, [])
 
   const handleReset = async (e: React.FormEvent) => {
@@ -54,8 +60,7 @@ function AdminResetPassword() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          password, 
-          access_token: accessToken 
+          password
         })
       })
 
