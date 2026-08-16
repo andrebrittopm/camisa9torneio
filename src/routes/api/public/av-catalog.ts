@@ -31,6 +31,7 @@ const ShirtModelSchema = z.object({
   name: z.string().min(1),
   category: ModelCategorySchema,
   front_image_url: z.string().nullable(),
+  back_image_url: z.string().nullable(),
   model_3d_url: z.string().nullable(),
   available_sizes: z.array(z.string()),
   allow_custom_size: z.boolean(),
@@ -155,7 +156,7 @@ export const Route = createFileRoute('/api/public/av-catalog')({
           // 3. Consulta dos Modelos
           const { data: modelRows, error: modelsError } = await supabase
             .from('av_shirt_models')
-            .select('id, code, name, category, front_image_url, model_3d_url, available_sizes, allow_custom_size, sort_order')
+            .select('id, code, name, category, front_image_url, back_image_url, model_3d_url, available_sizes, allow_custom_size, sort_order')
             .eq('event_id', validatedEvent.id)
             .eq('active', true)
             .order('sort_order', { ascending: true })
@@ -218,7 +219,8 @@ export const Route = createFileRoute('/api/public/av-catalog')({
                 code: m.code,
                 name: m.name,
                 category: m.category,
-                image_url: m.front_image_url,
+                front_image_url: m.front_image_url,
+                back_image_url: m.back_image_url,
                 model_3d_url: m.model_3d_url,
                 available_sizes: m.available_sizes,
                 allow_custom_size: m.allow_custom_size,

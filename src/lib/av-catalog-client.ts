@@ -14,7 +14,8 @@ export interface AvShirtModel {
   code: string
   name: string
   category: 'tshirt' | 'tank'
-  image_url: string | null
+  front_image_url: string | null
+  back_image_url: string | null
   model_3d_url: string | null
   available_sizes: string[]
   allow_custom_size: boolean
