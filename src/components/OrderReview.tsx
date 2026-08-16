@@ -157,8 +157,8 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
       className="max-w-4xl mx-auto space-y-8 px-6 lg:px-0"
     >
       <div className="text-center mb-12">
-        <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">Revise seu Pedido</h2>
-        <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes antes de finalizar</p>
+        <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">Revise sua Camisa</h2>
+        <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes da sua camisa antes de finalizar</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
