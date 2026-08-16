@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -106,9 +106,17 @@ export function Header() {
                 {link.label}
               </a>
             ))}
+            <Link
+              to="/admin"
+              className="flex items-center gap-3 text-lg font-black py-4 uppercase tracking-[0.2em] border-b border-white/5 text-ice/40 hover:text-gold transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Shield className="w-5 h-5" />
+              Área Administrativa
+            </Link>
             <Button 
               onClick={() => {
-                document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('pedido')?.scrollIntoView({ behavior: 'smooth' });
                 setIsMobileMenuOpen(false);
               }}
               variant="secondary" 
