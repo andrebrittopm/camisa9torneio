@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "9º Torneio Amigos do Vôlei | Camisa Oficial 2026" },
+      { name: "description", content: "Landing Page Oficial para apresentação e reserva da Camisa Oficial do 9º Torneio Amigos do Vôlei - ACS." },
+      { name: "author", content: "Torneio Amigos do Vôlei" },
+      { property: "og:title", content: "9º Torneio Amigos do Vôlei | Camisa Oficial 2026" },
+      { property: "og:description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Edição limitada 2026." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
