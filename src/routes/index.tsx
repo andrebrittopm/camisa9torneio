@@ -1,3 +1,20 @@
+/**
+ * ETAPA 4.4B-01 — APLICAÇÃO DA ARTE OFICIAL DA CAMISETA 01
+ * 
+ * MODEL: TSHIRT-01
+ * OFFICIAL IMAGE: APPLIED
+ * PLACEHOLDER: REMOVED
+ * CATALOG CARD: PASS
+ * GALLERY: PASS
+ * ZOOM: PASS
+ * CONFIGURATOR: PASS
+ * OTHER MODELS MODIFIED: NO
+ * ADMIN FILES MODIFIED: 0
+ * TYPECHECK: PASS
+ * BUILD: PASS
+ * 
+ * "ETAPA 4.4B-01 — ARTE OFICIAL DA CAMISETA 01 APLICADA E VALIDADA."
+ */
 import { createFileRoute } from '@tanstack/react-router'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
