@@ -14,21 +14,8 @@ function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isBootstrapAvailable, setIsBootstrapAvailable] = useState<boolean | null>(null)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const checkBootstrap = async () => {
-      try {
-        const res = await fetch('/api/admin/auth/bootstrap-status');
-        const data = await res.json();
-        setIsBootstrapAvailable(data.available === true);
-      } catch {
-        setIsBootstrapAvailable(false);
-      }
-    };
-    checkBootstrap();
-  }, []);
 
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -153,53 +140,6 @@ function AdminLogin() {
             Esqueci minha senha (E-mail)
           </button>
 
-          {isBootstrapAvailable === true && (
-            <button 
-              onClick={async () => {
-                if (!confirm('Deseja ativar a senha inicial configurada no servidor? (Um captcha será solicitado)')) return;
-                
-                setIsLoading(true);
-                try {
-                  const turnstileToken = 'BOOTSTRAP_TRIGGER_TOKEN'; 
-
-                  const res = await fetch('/api/admin/auth/bootstrap-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ turnstileToken })
-                  });
-                  const data = await res.json();
-                  if (res.ok) {
-                    toast.success('Senha definida com sucesso via Server Secret! Agora você pode logar.');
-                    setIsBootstrapAvailable(false);
-                  } else {
-                    const errorMsg = data.error === 'GONE' ? 'O bootstrap já foi realizado anteriormente.' : 
-                                   data.error === 'INVALID_CAPTCHA' ? 'Erro de validação (Captcha required).' : 
-                                   data.error;
-                    toast.error(`Erro: ${errorMsg}`);
-                  }
-                } catch {
-                  toast.error('Erro ao processar bootstrap.');
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-              className="block w-full text-[10px] text-gold/60 hover:text-gold transition-colors font-black uppercase tracking-widest border border-gold/10 p-4 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] animate-pulse"
-            >
-              Ativar Senha via Server Bootstrap Secret
-            </button>
-          )}
-
-          {isBootstrapAvailable === false && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-[10px] text-red-400 font-black uppercase tracking-widest text-left space-y-2">
-              <p className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                Segurança Nível 5 Ativada
-              </p>
-              <p className="leading-relaxed opacity-80">
-                O botão de ativação via Server Secret está oculto porque o SUPERADMIN_BOOTSTRAP_PASSWORD ainda não foi configurado ou o bootstrap já foi concluído.
-              </p>
-            </div>
-          )}
 
           <Link to="/" className="inline-block text-[10px] text-slate-500 hover:text-gold transition-colors font-black uppercase tracking-widest">
             Voltar para a Landing Page
