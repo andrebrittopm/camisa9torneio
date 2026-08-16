@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import logoAsset from "@/assets/logo-oficial.png.asset.json";
+import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
