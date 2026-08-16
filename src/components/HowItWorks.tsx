@@ -5,14 +5,14 @@ export function HowItWorks() {
   const steps = [
     {
       number: "01",
-      title: "Escolha",
-      description: "Selecione sua camiseta ou regata favorita entre os modelos exclusivos.",
+      title: "Conheça",
+      description: "Confira os detalhes da Camiseta Oficial exclusiva do torneio.",
       icon: <MousePointer2 className="w-6 h-6" />,
     },
     {
       number: "02",
       title: "Personalize",
-      description: "Informe seu tamanho ideal, nome e o número que levará nas costas.",
+      description: "Escolha seu tamanho e personalize com seu nome e número.",
       icon: <Settings2 className="w-6 h-6" />,
     },
     {

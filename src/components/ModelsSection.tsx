@@ -321,7 +321,8 @@ export function ModelCard({
               variant={isSelected ? "secondary" : "default"} 
               className={cn(
                 "flex-1 font-black uppercase tracking-[0.2em] h-14 rounded-2xl transition-all duration-300 text-[10px]",
-                isSelected ? "glow-gold" : "bg-white/5 border border-white/10 hover:bg-white/10"
+                isSelected ? "glow-gold" : "bg-white/5 border border-white/10 hover:bg-white/10",
+                isSelected && "pointer-events-none opacity-80"
               )}
               onClick={onSelect}
             >
@@ -369,6 +370,33 @@ export function ModelsSection({
       setActiveTab(currentModel.category);
     }
   }, [selectedModelId, models]);
+
+  if (models.length === 1 && models[0]) {
+    const singleModel = models[0];
+    return (
+      <section id="camisas" className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
+              Conheça a Camiseta Oficial
+            </h2>
+            <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
+              9º Torneio Amigos do Vôlei — ACS
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <ModelCard 
+              model={singleModel} 
+              isSelected={true}
+              onSelect={() => {}}
+              eventInfo={eventInfo}
+            />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="camisas" className="py-24 relative overflow-hidden">

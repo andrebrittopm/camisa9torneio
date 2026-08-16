@@ -20,7 +20,7 @@ export function Footer() {
             <div className="flex flex-wrap gap-8">
               {[
                 { label: 'Início', href: '#inicio' },
-                { label: 'Camisas', href: '#camisas' },
+                { label: 'Camisa', href: '#camisa' },
                 { label: 'Como funciona', href: '#como-funciona' },
                 { label: 'Pedido', href: '#pedido' }
               ].map((item) => (

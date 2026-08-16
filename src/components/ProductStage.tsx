@@ -35,7 +35,7 @@ export function ProductStage() {
         />
       </div>
 
-      {/* Main Content Area (Prepared for 3D) */}
+      {/* Main Content Area */}
       <motion.div
         initial={{ y: 0 }}
         animate={{ 
@@ -46,37 +46,37 @@ export function ProductStage() {
           repeat: Infinity, 
           ease: "easeInOut" 
         }}
-        className="relative z-10 w-full h-full flex items-center justify-center cursor-pointer"
+        className="relative z-10 w-full h-full flex items-center justify-center"
       >
-        {/* Placeholder visual representation */}
         <div className="relative flex flex-col items-center justify-center group-hover:scale-105 transition-transform duration-700">
-           {/* Glow behind the shirt placeholder */}
+           {/* Glow behind the jersey */}
            <div className="absolute inset-0 bg-royal/40 blur-3xl rounded-full scale-75 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
            
-           <div className="w-48 h-72 md:w-64 md:h-96 relative flex items-center justify-center overflow-hidden">
+           <div className="relative w-[320px] md:w-[480px] aspect-[4/3] flex items-center justify-center">
              {/* Tech lines decorations */}
-             <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold/40" />
-             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold/40" />
+             <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-gold/40" />
+             <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-gold/40" />
              
-             {/* Main placeholder silhouette */}
-             <svg width="200" height="300" viewBox="0 0 60 100" className="text-ice/20 fill-current drop-shadow-[0_0_15px_rgba(3,50,173,0.4)]">
-                <path d="M30 0C10 0 0 10 0 30V80H10V95H50V80H60V30C60 10 50 0 30 0Z" />
-             </svg>
+             <img 
+               src="/tshirt-01-oficial.webp" 
+               alt="Camiseta Oficial 2026"
+               className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(3,50,173,0.6)]"
+             />
              
              {/* Subtle technical particles/elements */}
-             <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-gold/60 rounded-full animate-ping" />
-             <div className="absolute bottom-1/3 right-1/4 w-1 h-1 bg-gold/60 rounded-full animate-ping delay-700" />
+             <div className="absolute top-1/4 left-1/4 w-1.5 h-1.5 bg-gold/60 rounded-full animate-ping" />
+             <div className="absolute bottom-1/3 right-1/4 w-1.5 h-1.5 bg-gold/60 rounded-full animate-ping delay-700" />
            </div>
 
            <div className="mt-8 flex flex-col items-center gap-2">
-             <div className="flex items-center gap-2 mb-1">
-               <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-               <span className="text-gold font-heading font-black uppercase tracking-[0.3em] text-xs">
-                 Modelo oficial em breve
+             <div className="flex items-center gap-3 mb-1">
+               <span className="w-2.5 h-2.5 rounded-full bg-gold animate-pulse glow-gold" />
+               <span className="text-gold font-heading font-black uppercase tracking-[0.4em] text-sm">
+                 Uniforme Oficial 2026
                </span>
              </div>
-             <span className="text-ice/40 text-[10px] font-bold uppercase tracking-[0.2em] border border-ice/10 px-3 py-1 rounded-full backdrop-blur-sm">
-               360° Interativo
+             <span className="text-ice/60 text-[11px] font-bold uppercase tracking-[0.25em] border border-ice/20 px-5 py-2 rounded-full backdrop-blur-md bg-white/5">
+               Edição Limitada • Alta Performance
              </span>
            </div>
         </div>
@@ -90,7 +90,7 @@ export function ProductStage() {
       </motion.div>
       
       {/* Contact Shadow */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-1/2 h-6 bg-black/40 blur-2xl rounded-full" />
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-3/4 h-10 bg-black/60 blur-3xl rounded-full" />
     </div>
   );
 }

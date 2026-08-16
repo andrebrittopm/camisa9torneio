@@ -1,19 +1,10 @@
 /**
- * ETAPA 4.4B-02 — ARTE OFICIAL DA CAMISETA 02
+ * ETAPA 4.4C — SIMPLIFICAÇÃO DO CATÁLOGO PARA MODELO ÚNICO
  * 
- * MODEL: TSHIRT-02
- * OFFICIAL IMAGE: APPLIED
- * PLACEHOLDER: REMOVED
- * CATALOG CARD: PASS
- * GALLERY: PASS
- * ZOOM: PASS
- * CONFIGURATOR: PASS
- * OTHER MODELS MODIFIED: NO
- * ADMIN FILES MODIFIED: 0
- * TYPECHECK: PASS
- * BUILD: PASS
- * 
- * "ETAPA 4.4B-02 — ARTE OFICIAL DA CAMISETA 02 APLICADA E VALIDADA."
+ * MUDANÇA DE REGRA DE NEGÓCIO:
+ * - A partir de agora o projeto terá APENAS UM modelo de uniforme disponível para pedido (TSHIRT-01).
+ * - TSHIRT-02, TSHIRT-03, TANK-01, TANK-02 e TANK-03 foram desativados no banco.
+ * - O fluxo público foi simplificado para remover a escolha de modelo.
  */
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -37,6 +28,18 @@ import { OrderReview } from '@/components/OrderReview'
 import { OrderSuccess } from '@/components/OrderSuccess'
 
 export const Route = createFileRoute('/')({
+  head: () => ({
+    title: "Camisa Oficial 2026 | 9º Torneio Amigos do Vôlei",
+    meta: [
+      { name: "description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
+      { property: "og:title", content: "Camisa Oficial 2026 | 9º Torneio Amigos do Vôlei" },
+      { property: "og:description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/tshirt-01-oficial.webp" },
+      { name: "twitter:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/tshirt-01-oficial.webp" }
+    ]
+  }),
   component: Index,
 })
 
@@ -76,7 +79,7 @@ function Index() {
       const response = await fetchAvCatalog()
       setCatalog(response.data)
       
-      const initialModel = response.data.models.find(m => m.category === 'tshirt') || response.data.models[0]
+      const initialModel = response.data.models[0]
       if (initialModel) {
         setSelectedModel(initialModel)
       }

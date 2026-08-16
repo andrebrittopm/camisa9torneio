@@ -19,7 +19,7 @@ export function Header() {
 
   const navLinks = [
     { label: "Início", href: "#inicio" },
-    { label: "Camisas", href: "#camisas" },
+    { label: "Camisa", href: "#camisa" },
     { label: "Como funciona", href: "#como-funciona" },
     { label: "Pedido", href: "#pedido" },
   ];
@@ -65,7 +65,7 @@ export function Header() {
             </a>
           ))}
           <Button 
-            onClick={() => document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' })}
             variant="secondary" 
             className="font-black uppercase tracking-[0.15em] px-6 py-5 rounded-xl glow-gold hover:scale-105 active:scale-95 transition-all duration-300 text-[11px]"
           >
@@ -103,7 +103,7 @@ export function Header() {
             ))}
             <Button 
               onClick={() => {
-                document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' });
                 setIsMobileMenuOpen(false);
               }}
               variant="secondary" 

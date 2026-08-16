@@ -112,7 +112,7 @@ export function OrderConfigurator({
   return (
     <div className="space-y-10 bg-white/[0.02] backdrop-blur-xl p-10 rounded-[32px] border border-white/5 shadow-2xl">
       <div className="flex flex-col gap-2">
-        <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Passo 2: Configure sua peça</span>
+        <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Passo único: Personalize sua peça</span>
         <h3 className="text-2xl font-heading font-black uppercase tracking-tight">
           {editingItem ? "Editando Item" : "Personalize Agora"}
         </h3>

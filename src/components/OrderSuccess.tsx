@@ -98,9 +98,9 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
             tabIndex={-1}
             className="text-5xl md:text-7xl font-heading font-black uppercase tracking-tighter outline-none"
           >
-            Pedido Registrado!
+            Camisa Garantida!
           </h2>
-          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Seu pedido foi recebido com sucesso.</p>
+          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Sua camisa oficial foi reservada com sucesso.</p>
         </div>
       </div>
 
