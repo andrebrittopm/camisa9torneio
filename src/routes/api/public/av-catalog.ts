@@ -219,7 +219,9 @@ export const Route = createFileRoute('/api/public/av-catalog')({
                 code: m.code,
                 name: m.name,
                 category: m.category,
-                front_image_url: m.front_image_url,
+                front_image_url: m.code === 'TSHIRT-01' 
+                  ? '/__l5e/assets-v1/99eb17c3-7264-474f-ac87-e13bf9bd36cc/tshirt-01-oficial.webp' 
+                  : m.front_image_url,
                 back_image_url: m.back_image_url,
                 model_3d_url: m.model_3d_url,
                 available_sizes: m.available_sizes,
