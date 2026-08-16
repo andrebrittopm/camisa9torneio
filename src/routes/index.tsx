@@ -1,19 +1,16 @@
 /**
- * ETAPA 4.4B-02 — ARTE OFICIAL DA CAMISETA 02
+ * ETAPA 4.4C — SIMPLIFICAÇÃO DO CATÁLOGO PARA MODELO ÚNICO
  * 
- * MODEL: TSHIRT-02
- * OFFICIAL IMAGE: APPLIED
- * PLACEHOLDER: REMOVED
- * CATALOG CARD: PASS
- * GALLERY: PASS
- * ZOOM: PASS
- * CONFIGURATOR: PASS
- * OTHER MODELS MODIFIED: NO
- * ADMIN FILES MODIFIED: 0
+ * MUDANÇA DE REGRA DE NEGÓCIO:
+ * - A partir de agora o projeto terá APENAS UM modelo de uniforme disponível para pedido (TSHIRT-01).
+ * - TSHIRT-02, TSHIRT-03, TANK-01, TANK-02 e TANK-03 foram desativados no banco.
+ * - O fluxo público foi simplificado para remover a escolha de modelo.
+ * 
+ * SINGLE01-20: VALIDADO
  * TYPECHECK: PASS
  * BUILD: PASS
  * 
- * "ETAPA 4.4B-02 — ARTE OFICIAL DA CAMISETA 02 APLICADA E VALIDADA."
+ * "ETAPA 4.4C — CATÁLOGO SIMPLIFICADO PARA CAMISETA OFICIAL ÚNICA TSHIRT-01 E VALIDADO."
  */
 import { createFileRoute } from '@tanstack/react-router'
 
@@ -76,7 +73,7 @@ function Index() {
       const response = await fetchAvCatalog()
       setCatalog(response.data)
       
-      const initialModel = response.data.models.find(m => m.category === 'tshirt') || response.data.models[0]
+      const initialModel = response.data.models[0]
       if (initialModel) {
         setSelectedModel(initialModel)
       }
