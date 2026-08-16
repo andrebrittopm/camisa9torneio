@@ -1,3 +1,5 @@
+import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
+
 export function Footer() {
   return (
     <footer className="py-20 relative overflow-hidden bg-navy border-t border-white/5">
@@ -7,8 +9,12 @@ export function Footer() {
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
           <div className="flex items-center gap-6 group">
-            <div className="w-16 h-16 bg-white/[0.03] rounded-[24px] flex items-center justify-center font-black text-gold text-2xl border border-white/10 group-hover:border-gold/50 transition-all duration-500 shadow-2xl">
-              AV
+            <div className="w-16 h-16 bg-white/[0.03] rounded-[24px] flex items-center justify-center font-black text-gold text-2xl border border-white/10 group-hover:border-gold/50 transition-all duration-500 shadow-2xl overflow-hidden p-1.5">
+              <img 
+                src={logoAsset.url} 
+                alt="Logo Amigos do Vôlei" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h4 className="font-heading font-black uppercase tracking-tighter text-2xl mb-1">Amigos do Vôlei</h4>
