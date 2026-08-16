@@ -37,7 +37,7 @@ export function HeroSection() {
             </h1>
             
             <p className="text-lg md:text-xl text-ice/70 max-w-lg mb-12 leading-relaxed font-medium">
-              Apresentamos a coleção oficial do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span>. 
+              Apresentamos a <span className="text-ice font-bold">camisa oficial</span> do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span>. 
               Design de elite, performance profissional e a alma do esporte em cada fibra.
             </p>
             
