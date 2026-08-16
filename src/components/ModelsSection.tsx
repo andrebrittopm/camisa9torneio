@@ -370,7 +370,7 @@ export function ModelsSection({
     }
   }, [selectedModelId, models]);
 
-  if (models.length === 1) {
+  if (models.length === 1 && models[0]) {
     const singleModel = models[0];
     return (
       <section id="camisas" className="py-24 relative overflow-hidden">
