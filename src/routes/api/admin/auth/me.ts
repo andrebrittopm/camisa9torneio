@@ -18,7 +18,6 @@ export const Route = createFileRoute('/api/admin/auth/me')({
           
           // Debugging cookies no servidor
           const cookies = request.headers.get('Cookie');
-          console.log(`[AV-ADMIN-ME] Incoming Cookies: ${cookies?.substring(0, 30)}...`);
 
           const { data: { user }, error } = await supabase.auth.getUser();
 
@@ -26,7 +25,6 @@ export const Route = createFileRoute('/api/admin/auth/me')({
             console.warn(`[AV-ADMIN-ME] Unauthorized: ${error?.message || 'No user'}`);
             return new Response(JSON.stringify({ 
               authenticated: false,
-              debug: { has_cookie: !!cookies }
             }), { 
               status: 200, // Retornamos 200 para o client tratar o dado
               headers: responseHeaders 

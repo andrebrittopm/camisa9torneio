@@ -4,7 +4,7 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import logoAsset from "@/assets/logo-oficial.png.asset.json";
+import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -70,7 +70,7 @@ export function Header() {
             </a>
           ))}
           <Button 
-            onClick={() => document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' })}
             variant="secondary" 
             className="font-black uppercase tracking-[0.15em] px-6 py-5 rounded-xl glow-gold hover:scale-105 active:scale-95 transition-all duration-300 text-[11px]"
           >
@@ -108,7 +108,7 @@ export function Header() {
             ))}
             <Button 
               onClick={() => {
-                document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' });
                 setIsMobileMenuOpen(false);
               }}
               variant="secondary" 
