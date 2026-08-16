@@ -238,9 +238,9 @@ export const Route = createFileRoute('/')({
   head: () => ({
     title: "Camisa Oficial 2026 | 9º Torneio Amigos do Vôlei",
     meta: [
-      { name: "description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
+      { name: "description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, alta performance." },
       { property: "og:title", content: "Camisa Oficial 2026 | 9º Torneio Amigos do Vôlei" },
-      { property: "og:description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, edição limitada." },
+      { property: "og:description", content: "Garanta a camisa oficial do 9º Torneio Amigos do Vôlei. Modelo exclusivo, alta performance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:image", content: "https://id-preview--65a358d0-53ce-4ccc-a2a6-229ba614f5cb.lovable.app/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp" },

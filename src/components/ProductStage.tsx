@@ -76,7 +76,7 @@ export function ProductStage() {
                </span>
              </div>
              <span className="text-ice/60 text-[11px] font-bold uppercase tracking-[0.25em] border border-ice/20 px-5 py-2 rounded-full backdrop-blur-md bg-white/5">
-               Edição Limitada • Alta Performance
+               Alta Performance
              </span>
            </div>
         </div>
