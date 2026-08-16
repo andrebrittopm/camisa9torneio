@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 import { checkRateLimit } from '@/lib/server/av-rate-limit'
 import { logAdminAction } from '@/lib/server/av-admin-audit.server'
+import { createSupabaseSSR } from '@/lib/server/supabase-ssr.server'
 
 /**
  * ETAPA 5.1A — REDEFINIÇÃO DE SENHA ADMINISTRATIVA (SERVER ROUTE)
@@ -52,9 +53,10 @@ export const Route = createFileRoute('/api/admin/auth/reset-password')({
           }
 
           const body = await request.json();
-          const { password, access_token } = body;
+          const { password } = body;
+          const responseHeaders = new Headers();
 
-          if (!password || !access_token || typeof password !== 'string' || typeof access_token !== 'string') {
+          if (!password || typeof password !== 'string') {
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders });
           }
 
@@ -65,11 +67,9 @@ export const Route = createFileRoute('/api/admin/auth/reset-password')({
           const supabaseUrl = process.env['SUPABASE_URL']!;
           const supabaseKey = process.env['SUPABASE_PUBLISHABLE_KEY']!;
           
-          // Usar o access_token do cliente para validar a sessão de recuperação
-          const supabase = createClient(supabaseUrl, supabaseKey);
-          
-          // 1. Validar e definir a sessão com o token recebido
-          const { data: { user }, error: authError } = await supabase.auth.getUser(access_token);
+          // Usar a sessão de cookie (SSR) para validar o usuário
+          const supabase = createSupabaseSSR(request, responseHeaders);
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
           
           if (authError || !user) {
             await logAdminAction({
