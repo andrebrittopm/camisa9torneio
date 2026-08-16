@@ -263,9 +263,6 @@ export function ModelCard({
                 alt={model.name}
                 className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://placehold.co/800x1000/071F66/FCC307?text=ARTE+OFICIAL+EM+BREVE';
-                }}
               />
             ) : (
               <div className="w-32 h-44 md:w-40 md:h-56 relative flex items-center justify-center">
