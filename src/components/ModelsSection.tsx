@@ -39,7 +39,7 @@ export function ModelCard({
         
         {/* Placeholder Image Area - Larger & Prepared for images */}
         <div className="relative z-10 w-full h-full flex flex-col items-center justify-center border border-dashed border-ice/10 rounded-2xl group-hover:border-gold/20 transition-all duration-500 bg-white/[0.01]">
-          {model.image_url ? (
+          {model.front_image_url ? (
             <img 
               src={model.image_url} 
               alt={model.name}
@@ -56,7 +56,7 @@ export function ModelCard({
               </svg>
             </div>
           )}
-          {!model.image_url && (
+          {!model.front_image_url && (
             <div className="mt-4 flex flex-col items-center">
               <span className="text-[10px] text-ice/30 uppercase tracking-[0.2em] font-black">Modelo oficial em breve</span>
               <div className="mt-1 flex gap-1">
