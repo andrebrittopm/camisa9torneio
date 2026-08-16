@@ -36,8 +36,10 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
 
   // 2. Buscar Perfil Administrativo (Service Role para garantir bypass de RLS na validação de permissão)
   const supabaseUrl = process.env['SUPABASE_URL']!;
+  const { createClient } = await import('@supabase/supabase-js');
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
   const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('av_admin_profiles')

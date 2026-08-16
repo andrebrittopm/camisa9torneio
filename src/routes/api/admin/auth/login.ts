@@ -53,7 +53,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
         
         const responseHeaders = new Headers();
         responseHeaders.set("Content-Type", "application/json");
-        responseHeaders.set("Cache-Control", "private, no-store");
+        responseHeaders.set("Cache-Control", "no-store, max-age=0");
 
         if (origin && allowedOrigins.includes(origin)) {
           responseHeaders.set("Access-Control-Allow-Origin", origin);
@@ -86,11 +86,15 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           });
 
           if (authError || !data.user) {
+            console.warn(`[AV-ADMIN-LOGIN] Auth failed: ${authError?.message}`);
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
 
+          // Important: We must use a privileged client to check the profile, but the SESSION is already in responseHeaders via setAll
           const supabaseUrl = process.env['SUPABASE_URL']!;
+          const { createClient } = await import('@supabase/supabase-js');
           const supabaseAdmin = createClient(supabaseUrl, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
+          
           const { data: profile } = await supabaseAdmin
             .from('av_admin_profiles')
             .select('role, active, display_name')
@@ -98,6 +102,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             .single();
 
           if (!profile || !profile.active) {
+            console.warn(`[AV-ADMIN-LOGIN] Inactive or missing profile for user ${data.user.id}`);
             await supabase.auth.signOut();
             return new Response(JSON.stringify({ error: "INVALID_CREDENTIALS", correlation_id: correlationId }), { status: 401, headers: responseHeaders });
           }
@@ -109,7 +114,8 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // TanStack Start exige que o objeto Response use os headers manipulados pelo SSR adapter.
+          // Final response returning sanitized user data. 
+          // All Set-Cookie headers from @supabase/ssr are already in responseHeaders.
           return new Response(JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
@@ -123,6 +129,7 @@ export const Route = createFileRoute('/api/admin/auth/login')({
           console.error(`[AV-ADMIN-LOGIN] Fatal error:`, err);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: responseHeaders });
         }
+
       }
     }
   }
