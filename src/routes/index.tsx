@@ -1,42 +1,217 @@
 /**
- * ETAPA 8.0-R1 — PUBLICATION GATE FINAL
+ * ETAPA 9.0 — RELEASE DE PRODUÇÃO
  * 
- * PROJETO AUTORIZÁVEL PARA PUBLICAÇÃO.
+ * A ETAPA 8.0-R1 retornou:
  * 
- * AUDITORIA DE PRONTIDÃO:
- * 1. ADMIN LOGIN: IMPLEMENTED
- * 2. ADMIN DASHBOARD: PARTIAL
- * 3. LISTAR PEDIDOS: IMPLEMENTED
- * 4. VISUALIZAR DETALHES DO PEDIDO: IMPLEMENTED
- * 5. VISUALIZAR COMPROVANTE: IMPLEMENTED
- * 6. APROVAR PAGAMENTO: IMPLEMENTED
- * 7. REJEITAR PAGAMENTO: IMPLEMENTED
- * 8. ALTERAR STATUS PARA EM PRODUÇÃO: IMPLEMENTED
- * 9. ALTERAR STATUS PARA PRONTO: IMPLEMENTED
- * 10. MARCAR COMO ENTREGUE: IMPLEMENTED
- * 11. CANCELAR PEDIDO: IMPLEMENTED
- * 12. VISUALIZAR AUDIT LOGS: IMPLEMENTED
+ * PUBLICATION GATE: PASS
  * 
- * BUILD:
+ * CRITICAL BLOCKERS: NONE
+ * 
+ * O projeto está autorizado para publicação.
+ * 
+ * OBJETIVO:
+ * 
+ * Preparar o estado atual EXATAMENTE como release de produção.
+ * 
+ * NÃO desenvolver novas funcionalidades.
+ * 
+ * NÃO modificar design.
+ * 
+ * NÃO alterar banco.
+ * 
+ * NÃO alterar secrets.
+ * 
+ * NÃO alterar regras de negócio.
+ * 
+ * NÃO criar dados fictícios.
+ * 
+ * NÃO executar bootstrap.
+ * 
+ * ==================================================
+ * 
+ * 1. RELEASE STATE
+ * 
+ * ==================================================
+ * 
+ * Confirmar novamente antes da publicação:
+ * 
  * TYPECHECK: PASS
+ * 
  * BUILD: PASS
  * 
- * WORKING STATE:
- * UNCOMMITTED CRITICAL CHANGES: NO
- * TEMPORARY DEBUG CODE: NO
- * TEMPORARY BOOTSTRAP CODE: NO
- * TEST CREDENTIALS HARDCODED: NO
+ * CRITICAL BLOCKERS: NONE
  * 
- * SECRETS:
- * SUPABASE SERVICE ROLE: PRESENT
- * TURNSTILE SECRET: PRESENT
- * SENDGRID_API_KEY: PRESENT
- * EMAIL_FROM: PRESENT
- * ORDER-VIEW/HMAC SECRET: PRESENT
+ * TEMPORARY DEBUG CODE: NONE
+ * 
+ * BOOTSTRAP CODE: NONE
+ * 
  * SECRET CLIENT EXPOSURE: NONE
  * 
- * RESULTADO:
- * ETAPA 8.0-R1 — PUBLICATION GATE: PASS.
+ * ==================================================
+ * 
+ * 2. PRODUCTION ENVIRONMENT
+ * 
+ * ==================================================
+ * 
+ * Confirmar que o build de produção utiliza corretamente
+ * 
+ * as configurações server-side existentes para:
+ * 
+ * Supabase
+ * 
+ * SendGrid
+ * 
+ * Turnstile
+ * 
+ * Order-View/HMAC
+ * 
+ * Storage privado
+ * 
+ * Rate Limit
+ * 
+ * Nunca retornar valores de secrets.
+ * 
+ * ==================================================
+ * 
+ * 3. PUBLIC URL
+ * 
+ * ==================================================
+ * 
+ * O projeto será publicado inicialmente utilizando
+ * 
+ * o domínio fornecido pelo Lovable:
+ * 
+ * *.lovable.app
+ * 
+ * Não hardcodar domínio de preview.
+ * 
+ * Toda construção de URL server-side deve utilizar
+ * 
+ * a origem de produção configurada/confiável.
+ * 
+ * Verificar especialmente:
+ * 
+ * Order-View
+ * 
+ * Admin recovery callback
+ * 
+ * links enviados por e-mail.
+ * 
+ * ==================================================
+ * 
+ * 4. ADMIN RECOVERY — PRODUÇÃO
+ * 
+ * ==================================================
+ * 
+ * ATENÇÃO:
+ * 
+ * O recovery não pode continuar apontando para
+ * 
+ * host de preview após a publicação.
+ * 
+ * Confirmar que:
+ * 
+ * generateLink redirectTo
+ * 
+ * recovery callback
+ * 
+ * /admin/reset-password
+ * 
+ * utilizam a URL pública de produção.
+ * 
+ * Não registrar recovery URL ou tokens.
+ * 
+ * ==================================================
+ * 
+ * 5. ORIGIN POLICIES
+ * 
+ * ==================================================
+ * 
+ * Atualizar/validar allowlist para a URL oficial publicada.
+ * 
+ * Garantir que a aplicação aceite a própria origem de produção.
+ * 
+ * Preservar bloqueio a origins não autorizadas.
+ * 
+ * ==================================================
+ * 
+ * 6. TURNSTILE
+ * 
+ * ==================================================
+ * 
+ * Confirmar que o domínio/hostname de produção
+ * 
+ * é aceito pela configuração utilizada pelo Turnstile.
+ * 
+ * Não desabilitar Turnstile para facilitar deploy.
+ * 
+ * ==================================================
+ * 
+ * 7. SUPABASE REDIRECT URLS
+ * 
+ * ==================================================
+ * 
+ * Confirmar que a URL oficial de produção necessária para:
+ * 
+ * Admin Auth
+ * 
+ * Recovery callback
+ * 
+ * está permitida na configuração do Supabase.
+ * 
+ * Não depender exclusivamente de URL de preview.
+ * 
+ * ==================================================
+ * 
+ * 8. SEO
+ * 
+ * ==================================================
+ * 
+ * Confirmar:
+ * 
+ * TITLE
+ * 
+ * DESCRIPTION
+ * 
+ * FAVICON
+ * 
+ * OPEN GRAPH IMAGE
+ * 
+ * VIEWPORT
+ * 
+ * para:
+ * 
+ * 9º TORNEIO AMIGOS DO VÔLEI — ACS
+ * 
+ * Não indexar páginas administrativas desnecessariamente.
+ * 
+ * ==================================================
+ * 
+ * 9. RELEASE IDENTIFICATION
+ * 
+ * ==================================================
+ * 
+ * Registrar internamente, sem exibir ao público:
+ * 
+ * RELEASE: PRODUCTION-1
+ * 
+ * DATE: 2026-08-16
+ * 
+ * Não adicionar banner de teste/dev.
+ * 
+ * ==================================================
+ * 
+ * 10. NÃO PUBLICAR PELO CHAT
+ * 
+ * ==================================================
+ * 
+ * Após as validações retornar:
+ * 
+ * "ETAPA 9.0 — RELEASE PREPARADA.
+ * 
+ * AGUARDANDO PUBLICAÇÃO MANUAL PELO PROPRIETÁRIO."
+ * 
+ * Não realizar mudanças adicionais.
  */
 import { createFileRoute } from '@tanstack/react-router'
 
