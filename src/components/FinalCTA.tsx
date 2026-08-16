@@ -41,7 +41,7 @@ export function FinalCTA() {
             variant="secondary" 
             className="px-12 py-8 text-xl font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300 rounded-2xl"
           >
-            Personalizar minha camisa
+            PERSONALIZAR
           </Button>
         </div>
       </motion.div>
