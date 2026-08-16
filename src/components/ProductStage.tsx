@@ -58,7 +58,7 @@ export function ProductStage() {
              <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-gold/40" />
              
              <img 
-               src="/__l5e/assets-v1/9571fcf6-b9b9-4b52-b613-db20c3fa9b2e/tshirt-01-oficial.webp" 
+               src="/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp" 
                alt="Camisa Oficial 2026"
                className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(3,50,173,0.6)]"
              />
