@@ -100,7 +100,7 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
           >
             Camisa Garantida!
           </h2>
-          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Sua camisa oficial foi reservada com sucesso.</p>
+          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Sua CAMISA OFICIAL foi reservada com sucesso.</p>
         </div>
       </div>
 

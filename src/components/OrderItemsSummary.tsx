@@ -24,8 +24,8 @@ export function OrderItemsSummary({ items, eventInfo, onRemove, onEdit, disabled
           <div key={item.local_id} className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
-                <span className="font-black text-gold text-lg">{item.model_name}</span>
-                <span className="text-ice/40 text-xs uppercase">{item.category === 'tshirt' ? 'Camiseta' : 'Regata'}</span>
+                <span className="font-black text-gold text-lg">CAMISA OFICIAL</span>
+                <span className="text-ice/40 text-xs uppercase">{item.category === 'tshirt' ? 'CAMISA' : 'REGATA'}</span>
               </div>
               <div className="text-sm text-ice/60 space-x-2">
                 <span>Tam: {item.size_option}{item.custom_size ? ` (${item.custom_size})` : ''}</span>
