@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
+import { useOrderState } from "@/lib/order-state";
+
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -70,12 +72,13 @@ export function Header() {
             </a>
           ))}
           <Button 
-            onClick={() => document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => useOrderState.getState().setStep('configurator')}
             variant="secondary" 
             className="font-black uppercase tracking-[0.15em] px-6 py-5 rounded-xl glow-gold hover:scale-105 active:scale-95 transition-all duration-300 text-[11px]"
           >
             Escolher Camisa
           </Button>
+
         </nav>
 
         {/* Mobile Toggle */}

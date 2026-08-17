@@ -54,11 +54,19 @@ export type AdminOrderDetail = {
   };
   payment: {
     hasReceipt: boolean;
-    receiptUploadedAt: string | null;
-    reviewStatus: string | null;
-    reviewNotes: string | null;
+    receipts: Array<{
+      id: string;
+      uploadedAt: string;
+      reviewStatus: string;
+      reviewNotes: string | null;
+      mimeType: string | null;
+      sizeBytes: number | null;
+      originalFileName: string | null;
+    }>;
   };
 };
+
+
 
 /**
  * Converte o sequencial do pedido para o formato público AV-2026-XXXX
@@ -203,8 +211,21 @@ export async function getAdminOrderDetailInternal(orderId: string): Promise<Admi
   }
 
   const items = order.av_order_items as any[];
-  const receipts = order.av_payment_receipts as any[];
-  const receipt = receipts && receipts.length > 0 ? receipts[0] : null;
+  const rawReceipts = (order.av_payment_receipts as any[]) || [];
+  
+  // Ordenar recibos por data de envio (mais recente primeiro)
+  const receipts = rawReceipts.sort((a, b) => 
+    new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+  ).map(r => ({
+    id: r.id,
+    uploadedAt: r.uploaded_at,
+    reviewStatus: r.review_status,
+    reviewNotes: r.review_notes,
+    mimeType: r.mime_type,
+    sizeBytes: r.size_bytes,
+    originalFileName: r.original_file_name
+  }));
+
 
   return {
     id: order.id,
@@ -237,10 +258,54 @@ export async function getAdminOrderDetailInternal(orderId: string): Promise<Admi
       totalAmount: order.total_amount
     },
     payment: {
-      hasReceipt: !!receipt,
-      receiptUploadedAt: receipt?.uploaded_at || null,
-      reviewStatus: receipt?.review_status || null,
-      reviewNotes: receipt?.review_notes || null
+      hasReceipt: receipts.length > 0,
+      receipts
     }
   };
 }
+
+/**
+ * Gera uma Signed URL segura para visualização de um comprovante.
+ * Executa validação de IDOR e privilégios administrativos.
+ */
+export async function getAdminReceiptSignedUrlInternal(orderId: string, receiptId: string): Promise<string> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
+  // 1. Validar IDOR: O comprovante pertence ao pedido solicitado?
+  const { data: receipt, error: receiptError } = await supabaseAdmin
+    .from('av_payment_receipts')
+    .select('order_id, storage_path, mime_type')
+    .eq('id', receiptId)
+    .single();
+
+  if (receiptError || !receipt) {
+    throw new Error('RECEIPT_NOT_FOUND');
+  }
+
+  if (receipt.order_id !== orderId) {
+    throw new Error('IDOR_VIOLATION');
+  }
+
+  // 2. Validar tipo de conteúdo (segurança extra)
+  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+  if (!receipt.mime_type || !allowedTypes.includes(receipt.mime_type)) {
+    throw new Error('UNSUPPORTED_FILE_TYPE');
+  }
+
+  // 3. Gerar Signed URL (60 segundos de expiração)
+  const { data, error: storageError } = await supabaseAdmin
+    .storage
+    .from('av-payment-receipts')
+    .createSignedUrl(receipt.storage_path, 60);
+
+
+  if (storageError || !data?.signedUrl) {
+    throw new Error('FAILED_TO_GENERATE_SIGNED_URL');
+  }
+
+  return data.signedUrl;
+}
+
