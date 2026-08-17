@@ -453,7 +453,118 @@ function AdminOrderDetailPage() {
            </div>
         </div>
       )}
+
+      {/* Modal de Confirmação de Aprovação */}
+      {confirmingApproval && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 max-w-md w-full space-y-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Confirmar Pagamento?</h3>
+                <p className="text-sm text-slate-400">
+                  Você confirma que o comprovante foi analisado e o valor de <strong>{formatCurrency(order.summary.totalAmount)}</strong> foi recebido?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white/5 rounded-2xl space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Pedido:</span>
+                <span className="text-white font-mono">{order.publicId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Cliente:</span>
+                <span className="text-white font-bold">{order.customer.name}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmingApproval(null)}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleReview(confirmingApproval, 'approve')}
+                disabled={!!isReviewing}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald rounded-2xl"
+              >
+                {isReviewing ? 'Processando...' : 'Confirmar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Rejeição */}
+      {rejectingReceipt && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 max-w-md w-full space-y-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-rose-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Rejeitar Comprovante</h3>
+                <p className="text-sm text-slate-400">
+                  O cliente será notificado para enviar um novo comprovante.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Motivo da Rejeição</label>
+                <select
+                  value={rejectingReceipt.reason}
+                  onChange={(e) => setRejectingReceipt({ ...rejectingReceipt, reason: e.target.value })}
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white text-sm focus:ring-1 focus:ring-gold outline-none"
+                >
+                  <option value="Valor divergente">Valor divergente</option>
+                  <option value="Comprovante ilegível">Comprovante ilegível</option>
+                  <option value="Comprovante inválido">Comprovante inválido</option>
+                  <option value="Pagamento não localizado">Pagamento não localizado</option>
+                  <option value="Outro">Outro (especificar)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Observações Extras</label>
+                <textarea
+                  value={rejectingReceipt.notes}
+                  onChange={(e) => setRejectingReceipt({ ...rejectingReceipt, notes: e.target.value })}
+                  placeholder="Ex: O comprovante enviado pertence a outro torneio..."
+                  className="w-full min-h-[100px] bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:ring-1 focus:ring-gold outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setRejectingReceipt(null)}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleReview(rejectingReceipt.id, 'reject', rejectingReceipt.reason, rejectingReceipt.notes)}
+                disabled={!!isReviewing}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest bg-rose-500 hover:bg-rose-600 text-white rounded-2xl"
+              >
+                {isReviewing ? 'Processando...' : 'Rejeitar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
 
