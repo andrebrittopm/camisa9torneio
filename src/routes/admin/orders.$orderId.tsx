@@ -334,9 +334,10 @@ function AdminOrderDetailPage() {
                     { id: 'delivered', label: 'Entregue', icon: ShieldCheck }
                   ].map((step, idx, arr) => {
                     const statusOrder = ['confirmed', 'in_production', 'ready', 'delivered'];
-                    const currentIdx = statusOrder.indexOf(order.status.orderStatus);
+                    const currentIdx = statusOrder.indexOf(order.orderStatus);
                     const isCompleted = currentIdx >= idx;
-                    const isCurrent = order.status.orderStatus === step.id;
+                    const isCurrent = order.orderStatus === step.id;
+
 
                     return (
                       <div key={step.id} className="relative z-10 flex flex-col items-center gap-3 text-center w-1/4">
