@@ -32,6 +32,7 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
             path: '/',
             sameSite: 'none',
             secure: true,
+            domain: undefined, // Garantir que não estamos forçando domínio fixo no preview
           })
           responseHeaders.append('Set-Cookie', cookieStr)
         })
