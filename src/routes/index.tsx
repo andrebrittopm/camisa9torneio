@@ -3,7 +3,7 @@
  * 
  * STATUS DO ENGINE DE PEDIDOS:
  * - RATE LIMITING: PASS (Fix: Whitelist de escopos sincronizada entre TS, Tabela e RPC)
- * - TURNSTILE: PASS (Fix: Alinhamento de action entre Test Mode e Widget)
+ * - TURNSTILE: PASS (Fix: Isolamento de ambiente Test vs Production via secret sniffing)
  * - ORDER CREATION: PASS
  * - PIX FLOW: PASS
  * 
