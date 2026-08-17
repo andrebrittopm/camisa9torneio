@@ -165,8 +165,10 @@ export async function getAdminListForFilterInternal(): Promise<Array<{ id: strin
     id: p.user_id,
     name: p.display_name
   }));
+}
 
 /**
+
  * Registra uma ação administrativa na auditoria.
  */
 export async function logAdminAction(params: {
