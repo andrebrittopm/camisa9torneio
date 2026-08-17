@@ -65,8 +65,15 @@ export async function verifyTurnstileToken(
   let effectiveAction = expectedAction;
   let effectiveHostnames = expectedHostnames;
 
-  if (turnstileTestMode === "true") {
-    effectiveAction = "test";
+  // 11. DUMMY KEYS / ACTIONS
+  // As chaves de teste oficiais do Cloudflare (1x000...AA e 1x000...AAAA) retornam action vazia.
+  // Somente permitimos action vazia se estivermos usando explicitamente as chaves de teste.
+  const CLOUDFLARE_TEST_SECRET = "1x0000000000000000000000000000000AA";
+  const isTestSecret = finalSecret === CLOUDFLARE_TEST_SECRET;
+
+  if (turnstileTestMode === "true" || isTestSecret) {
+    // Se for chave de teste, a action retornada pelo Cloudflare será vazia
+    effectiveAction = isTestSecret ? "" : "test";
     effectiveHostnames = ["localhost"];
   }
 
