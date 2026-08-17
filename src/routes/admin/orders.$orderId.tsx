@@ -230,7 +230,8 @@ function AdminOrderDetailPage() {
                 </div>
                 <div className="flex gap-2">
                    <span className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-slate-400"
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10",
+                    order.orderStatus === 'cancelled' ? "text-rose-500 border-rose-500/20 bg-rose-500/5" : "text-slate-400"
                   )}>
                     {order.orderStatus}
                   </span>
