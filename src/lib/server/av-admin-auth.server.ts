@@ -32,7 +32,7 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
       message: authError?.message, 
       status: authError?.status,
       hasUser: !!user,
-      cookieHeader: request.headers.get('Cookie')?.substring(0, 20) + '...'
+      cookieHeader: request.headers.get('Cookie')?.substring(0, 30) + '...'
     });
     return { authenticated: false };
   }
