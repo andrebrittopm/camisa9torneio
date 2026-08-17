@@ -25,39 +25,53 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
   const supabase = createSupabaseSSR(request, headers);
 
   // 1. Obter usuário (Source of Truth)
+  // Hardened for preview: tenta cookies primeiro, depois Authorization header (Bearer)
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
-  if (authError || !user) {
+  if (!user || authError) {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const { data: { user: jwtUser }, error: jwtError } = await supabase.auth.getUser(token);
+      if (!jwtError && jwtUser) {
+        return await fetchAdminProfile(jwtUser.id, jwtUser.user_metadata?.display_name || jwtUser.email);
+      }
+    }
     return { authenticated: false };
   }
 
-  // 2. Buscar Perfil Administrativo (Service Role para garantir bypass de RLS na validação de permissão)
-  const supabaseUrl = process.env['SUPABASE_URL']!;
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
-  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+  return await fetchAdminProfile(user.id, user.user_metadata?.display_name);
+}
 
+/**
+ * Helper interno para buscar perfil administrativo via Service Role
+ */
+async function fetchAdminProfile(userId: string, defaultDisplayName?: string): Promise<AdminContext> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  
+  // Import dinâmico para evitar bundle bloat no client se este arquivo for importado (mesmo que via server helper)
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('av_admin_profiles')
     .select('role, active, display_name')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .single();
 
   if (profileError || !profile) {
-    console.warn(`[AV-ADMIN-AUTH] Profile fetch failed for user ${user.id}: ${profileError?.message || 'Not found'}`);
     return { authenticated: false };
   }
 
-  // 3. Validar Status Ativo
   if (!profile.active) {
     return { authenticated: false, active: false };
   }
 
   return {
     authenticated: true,
-    userId: user.id,
-    displayName: profile.display_name,
+    userId: userId,
+    displayName: profile.display_name || defaultDisplayName,
     role: profile.role as 'SUPERADMIN' | 'ADMIN',
     active: profile.active
   };
