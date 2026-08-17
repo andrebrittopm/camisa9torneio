@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
+import { useOrderState } from "@/lib/order-state";
+
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
