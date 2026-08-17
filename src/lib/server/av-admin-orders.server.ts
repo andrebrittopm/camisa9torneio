@@ -309,3 +309,37 @@ export async function getAdminReceiptSignedUrlInternal(orderId: string, receiptI
   return data.signedUrl;
 }
 
+/**
+ * Executa a revisão (aprovação ou rejeição) de um comprovante via RPC atômico.
+ */
+export async function reviewAdminReceiptInternal(params: {
+  orderId: string;
+  receiptId: string;
+  adminId: string;
+  action: 'approve' | 'reject';
+  reason?: string;
+  notes?: string;
+}): Promise<{ success: boolean; code?: string }> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
+  const { data, error } = await supabaseAdmin.rpc('av_admin_review_receipt', {
+    p_order_id: params.orderId,
+    p_receipt_id: params.receiptId,
+    p_admin_id: params.adminId,
+    p_action: params.action,
+    p_reason: params.reason || null,
+    p_notes: params.notes || null
+  });
+
+  if (error) {
+    console.error('[reviewAdminReceiptInternal] RPC Error:', error);
+    throw new Error('FAILED_TO_REVIEW_RECEIPT');
+  }
+
+  return data as { success: boolean; code?: string };
+}
+
+
