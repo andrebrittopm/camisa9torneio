@@ -10,7 +10,7 @@ import type { Database } from '@/integrations/supabase/types'
 
 export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
   const supabaseUrl = process.env['SUPABASE_URL']!
-  const supabaseAnonKey = process.env['VITE_SUPABASE_ANON_KEY'] || process.env['SUPABASE_PUBLISHABLE_KEY']!
+  const supabaseAnonKey = process.env['SUPABASE_PUBLISHABLE_KEY'] || process.env['VITE_SUPABASE_ANON_KEY']!
 
   return createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {

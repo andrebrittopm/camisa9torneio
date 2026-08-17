@@ -21,6 +21,7 @@ function getAllowedOrigins(request: Request): string[] {
   } catch {
     selfOrigin = '';
   }
+  // No ambiente de preview do Lovable, precisamos permitir o domínio do preview
   return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]));
 }
 
@@ -114,8 +115,9 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             correlationId
           });
 
-          // Final response returning sanitized user data. 
-          // All Set-Cookie headers from @supabase/ssr are already in responseHeaders.
+          // PRESERVE REDIRECT BEHAVIOR: 
+          // If we return a 200 with JSON, the browser fetch() receives it.
+          // The cookies are already in responseHeaders via setAll inside createSupabaseSSR.
           return new Response(JSON.stringify({
             success: true,
             user: { display_name: profile.display_name, role: profile.role },
