@@ -95,7 +95,11 @@ export const reviewAdminReceipt = createServerFn({ method: 'POST' })
     // 2. Executar Ação (IDOR validation inclusive no RPC)
     const { reviewAdminReceiptInternal } = await import('./server/av-admin-orders.server');
     return await reviewAdminReceiptInternal({
-      ...input,
+      orderId: input.orderId,
+      receiptId: input.receiptId,
+      action: input.action,
+      reason: input.reason ?? null,
+      notes: input.notes ?? null,
       adminId: adminContext.userId!
     });
   });

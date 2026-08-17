@@ -317,8 +317,8 @@ export async function reviewAdminReceiptInternal(params: {
   receiptId: string;
   adminId: string;
   action: 'approve' | 'reject';
-  reason?: string;
-  notes?: string;
+  reason?: string | null;
+  notes?: string | null;
 }): Promise<{ success: boolean; code?: string }> {
   const supabaseUrl = process.env['SUPABASE_URL']!;
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
@@ -330,8 +330,8 @@ export async function reviewAdminReceiptInternal(params: {
     p_receipt_id: params.receiptId,
     p_admin_id: params.adminId,
     p_action: params.action,
-    p_reason: params.reason || '',
-    p_notes: params.notes || ''
+    p_reason: params.reason ?? null,
+    p_notes: params.notes ?? null
   });
 
 
