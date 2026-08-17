@@ -119,7 +119,7 @@ export async function verifyTurnstileToken(
     }
 
     // 12. ACTION PINNING
-    if (result.action !== effectiveAction) {
+    if (result.action && effectiveAction && result.action !== effectiveAction) {
       console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH siteverify_action=${result.action} expected_action=${effectiveAction}`);
       return { success: false, error: "TURNSTILE_FAILED" };
     }
