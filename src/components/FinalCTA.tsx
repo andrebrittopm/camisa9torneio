@@ -1,11 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
+import { useOrderState } from "@/lib/order-state";
+
 export function FinalCTA() {
-  const scrollToSelection = () => {
-    const el = document.getElementById('camisas');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  const startOrder = () => {
+    useOrderState.getState().setStep('configurator');
   };
+
 
   return (
     <section id="pedido-final" className="py-24 relative overflow-hidden px-6 bg-navy">
@@ -36,7 +38,7 @@ export function FinalCTA() {
             Garanta sua camisa oficial do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span> e faça parte da elite desta temporada.
           </p>
           <Button 
-            onClick={scrollToSelection}
+            onClick={startOrder}
             size="lg" 
             variant="secondary" 
             className="px-12 py-8 text-xl font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300 rounded-2xl"

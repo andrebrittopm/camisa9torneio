@@ -1,17 +1,6 @@
 /**
  * AV - 9º Torneio Amigos do Vôlei
  * ETAPA 10.3A — VISUALIZAÇÃO SEGURA DE COMPROVANTES NO ADMIN — PASS
- * 
- * AUDITORIA FINAL DE SEGURANÇA (STAGE 10.3A):
- * - PRIVATE BUCKET: PASS (Bucket av-payment-receipts validado como privado)
- * - ADMIN RECEIPT LIST: PASS (Listagem múltipla e cronológica implementada)
- * - IMAGE VIEW: PASS (Modal administrativo com overlay seguro)
- * - PDF VIEW: PASS (Abertura segura em nova aba com signed URL)
- * - SIGNED ACCESS: PASS (URLs temporárias via service_role server-side)
- * - EXPIRATION: PASS (Expiração rigorosa de 60 segundos)
- * - IDOR PROTECTION: PASS (Validação receipt.order_id === order.id ativa)
- * - LOGGED OUT ACCESS: BLOCKED (requireAdmin() protegendo RPC)
- * - MOBILE: PASS (Visualizador responsivo e badges adaptados)
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useCallback, useMemo } from 'react'
@@ -21,10 +10,10 @@ import { ModelsSection } from '@/components/ModelsSection'
 import { HowItWorks } from '@/components/HowItWorks'
 import { FinalCTA } from '@/components/FinalCTA'
 import { Footer } from '@/components/Footer'
-import { fetchAvCatalog, type AvCatalogResponse, type AvShirtModel } from '@/lib/av-catalog-client'
+import { fetchAvCatalog, type AvCatalogResponse } from '@/lib/av-catalog-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCcw, ArrowRight } from 'lucide-react'
+import { Loader2, RefreshCcw } from 'lucide-react'
 import { useOrderState } from '@/lib/order-state'
 import { OrderConfigurator } from '@/components/OrderConfigurator'
 import { CustomerDataForm } from '@/components/CustomerDataForm'
@@ -50,7 +39,18 @@ export const Route = createFileRoute('/')({
 })
 
 function Index() {
-  const { currentStep, resetOrder } = useOrderState()
+  const currentStep = useOrderState(s => s.currentStep)
+  const items = useOrderState(s => s.items)
+  const customer = useOrderState(s => s.customer)
+  const editingItemId = useOrderState(s => s.editingItemId)
+  
+  const setStep = useOrderState(s => s.setStep)
+  const addItem = useOrderState(s => s.addItem)
+  const updateItem = useOrderState(s => s.updateItem)
+  const setCustomer = useOrderState(s => s.setCustomer)
+  const removeItem = useOrderState(s => s.removeItem)
+  const setEditingItemId = useOrderState(s => s.setEditingItemId)
+  const resetOrder = useOrderState(s => s.resetOrder)
 
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -76,10 +76,20 @@ function Index() {
 
   const activeModel = useMemo(() => {
     if (!catalog?.data?.models) return null
-    // Prioriza TSHIRT-01 conforme a regra de Single Model Flow
+    
+    if (editingItemId) {
+      const editingItem = items.find(i => i.local_id === editingItemId);
+      if (editingItem) {
+        return catalog.data.models.find(m => m.id === editingItem.shirt_model_id) || catalog.data.models[0];
+      }
+    }
+    
     return catalog.data.models.find(m => m.code === 'TSHIRT-01') || catalog.data.models[0]
+  }, [catalog, editingItemId, items])
 
-  }, [catalog])
+  const editingItem = useMemo(() => {
+    return items.find(i => i.local_id === editingItemId) || null;
+  }, [items, editingItemId]);
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
@@ -89,72 +99,96 @@ function Index() {
         {currentStep === 'idle' && (
           <>
             <HeroSection />
-            <ModelsSection 
-              models={catalog.data.models} 
-              isLoading={isLoading} 
-              selectedModelId={null}
-              onSelectModel={() => useOrderState.getState().setStep('configurator')}
-              eventInfo={catalog.data.event}
-            />
+            <div id="camisas">
+              <ModelsSection 
+                models={catalog?.data?.models || []} 
+                selectedModelId={null}
+                onSelectModel={() => setStep('configurator')}
+                eventInfo={catalog?.data?.event || {} as any}
+              />
+            </div>
             <HowItWorks />
-            <FinalCTA onAction={() => useOrderState.getState().setStep('configurator')} />
-
+            <FinalCTA />
           </>
         )}
 
         {currentStep === 'configurator' && activeModel && catalog && (
-          <OrderConfigurator 
-            selectedModel={activeModel} 
-            eventInfo={catalog.data.event}
-            onAddItem={(item) => {
-              useOrderState.getState().addItem(item);
-              useOrderState.getState().setStep('summary');
-            }}
-            editingItem={null}
-            onUpdateItem={() => {}}
-            onCancelEdit={() => useOrderState.getState().setStep('idle')}
-            onModelChange={() => {}}
-          />
+          <div className="pt-32 pb-24 px-6 max-w-4xl mx-auto">
+            <OrderConfigurator 
+              selectedModel={activeModel} 
+              eventInfo={catalog.data.event}
+              onAddItem={(item) => {
+                addItem(item);
+                setStep('summary');
+              }}
+              editingItem={editingItem}
+              onUpdateItem={(id, data) => {
+                updateItem(id, data);
+                setEditingItemId(null);
+                setStep('summary');
+              }}
+              onCancelEdit={() => {
+                setEditingItemId(null);
+                setStep('summary');
+              }}
+              onModelChange={() => {}}
+            />
+          </div>
         )}
 
         {currentStep === 'customer_data' && (
-          <CustomerDataForm 
-            data={useOrderState.getState().customer}
-            onChange={(data) => useOrderState.getState().setCustomer(data)}
-          />
+          <div className="pt-32 pb-24 px-6 max-w-4xl mx-auto space-y-8">
+            <CustomerDataForm 
+              data={customer}
+              onChange={setCustomer}
+            />
+            <div className="flex gap-4">
+              <Button variant="outline" onClick={() => setStep('summary')} className="flex-1 h-16 rounded-2xl border-white/10 uppercase font-black">Voltar</Button>
+              <Button onClick={() => setStep('review')} className="flex-[2] h-16 rounded-2xl glow-gold uppercase font-black">Revisar Pedido</Button>
+            </div>
+          </div>
         )}
 
         {currentStep === 'summary' && catalog && (
-          <OrderItemsSummary 
-            items={useOrderState.getState().items}
-            eventInfo={catalog.data.event}
-            onRemove={(id) => useOrderState.getState().removeItem(id)}
-            onEdit={(id) => {
-              useOrderState.getState().setEditingItemId(id);
-              useOrderState.getState().setStep('configurator');
-            }}
-          />
+          <div className="pt-32 pb-24 px-6 max-w-4xl mx-auto space-y-8">
+            <OrderItemsSummary 
+              items={items}
+              eventInfo={catalog.data.event}
+              onRemove={removeItem}
+              onEdit={(id) => {
+                setEditingItemId(id);
+                setStep('configurator');
+              }}
+            />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button variant="outline" onClick={() => setStep('idle')} className="h-16 rounded-2xl border-white/10 uppercase font-black">Continuar Comprando</Button>
+              <Button onClick={() => setStep('customer_data')} disabled={items.length === 0} className="flex-1 h-16 rounded-2xl glow-gold uppercase font-black">Próximo Passo</Button>
+            </div>
+          </div>
         )}
 
         {currentStep === 'review' && catalog && (
-          <OrderReview 
-            customer={useOrderState.getState().customer}
-            items={useOrderState.getState().items}
-            eventInfo={catalog.data.event}
-            onBack={() => useOrderState.getState().setStep('summary')}
-            onSuccess={() => useOrderState.getState().setStep('success')}
-          />
+          <div className="pt-32 pb-24">
+            <OrderReview 
+              customer={customer}
+              items={items}
+              eventInfo={catalog.data.event}
+              onBack={() => setStep('customer_data')}
+              onSuccess={() => setStep('success')}
+            />
+          </div>
         )}
 
         {currentStep === 'success' && catalog && (
-          <OrderSuccess 
-            order={{} as any} 
-            catalog={catalog.data}
-            localItems={useOrderState.getState().items}
-            onNewOrder={() => useOrderState.getState().resetOrder()}
-          />
+          <div className="pt-32 pb-24">
+            <OrderSuccess 
+              order={{} as any} 
+              catalog={catalog.data}
+              localItems={items}
+              onNewOrder={resetOrder}
+            />
+          </div>
         )}
-
 
         {isLoading && currentStep !== 'idle' && (
           <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">

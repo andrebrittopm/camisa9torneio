@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type OrderItem = {
   local_id: string;
@@ -37,9 +38,6 @@ interface OrderState {
   resetOrder: () => void;
 }
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
 export const useOrderState = create<OrderState>()(
   persist(
     (set) => ({
@@ -47,18 +45,18 @@ export const useOrderState = create<OrderState>()(
       customer: { name: '', whatsapp: '', email: '', notes: '' },
       editingItemId: null,
       currentStep: 'idle',
-      setStep: (step) => set({ currentStep: step }),
-      addItem: (item) => set((state) => ({ 
+      setStep: (step: OrderStep) => set({ currentStep: step }),
+      addItem: (item: Omit<OrderItem, 'local_id'>) => set((state) => ({ 
         items: [...state.items, { ...item, local_id: crypto.randomUUID() }] 
       })),
-      removeItem: (local_id) => set((state) => ({ 
+      removeItem: (local_id: string) => set((state) => ({ 
         items: state.items.filter(i => i.local_id !== local_id) 
       })),
-      updateItem: (local_id, item) => set((state) => ({
+      updateItem: (local_id: string, item: Omit<OrderItem, 'local_id'>) => set((state) => ({
         items: state.items.map(i => i.local_id === local_id ? { ...item, local_id } : i)
       })),
-      setCustomer: (customer) => set({ customer }),
-      setEditingItemId: (editingItemId) => set({ editingItemId }),
+      setCustomer: (customer: CustomerData) => set({ customer }),
+      setEditingItemId: (editingItemId: string | null) => set({ editingItemId }),
       clearOrder: () => set({ items: [], customer: { name: '', whatsapp: '', email: '', notes: '' }, editingItemId: null }),
       resetOrder: () => set({ currentStep: 'idle', items: [], customer: { name: '', whatsapp: '', email: '', notes: '' }, editingItemId: null }),
     }),
