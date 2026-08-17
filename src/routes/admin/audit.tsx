@@ -1,9 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { requireAdmin } from '@/lib/server/av-admin-auth.server'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
 
 export const Route = createFileRoute('/admin/audit')({
-  beforeLoad: async ({ request }) => {
-    await requireAdmin(request)
+  beforeLoad: async () => {
+    const context = await checkAdminAuth();
+    if (!context.authenticated || !context.active) {
+      throw redirect({ to: '/admin/login' });
+    }
   },
   component: AdminAuditPage,
 })
