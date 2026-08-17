@@ -1,5 +1,4 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { 
   ShoppingBag, 
@@ -28,8 +27,6 @@ const searchSchema = z.object({
   orderFilter: z.string().optional().catch('all'),
 })
 
-type OrderSearch = z.infer<typeof searchSchema>
-
 export const Route = createFileRoute('/admin/orders')({
   beforeLoad: async () => {
     const context = await checkAdminAuth();
@@ -43,7 +40,16 @@ export const Route = createFileRoute('/admin/orders')({
     const { search, page, paymentFilter, orderFilter } = deps.search
     await context.queryClient.ensureQueryData({
       queryKey: ['admin-orders', { page, search, paymentFilter, orderFilter }],
-      queryFn: () => getAdminOrders({ page, search, paymentFilter, orderFilter })
+      queryFn: () => getAdminOrders({ 
+        data: { 
+          page, 
+          pageSize: 20, 
+          search: search || null, 
+          paymentFilter: paymentFilter === 'all' ? null : paymentFilter, 
+          orderFilter: orderFilter === 'all' ? null : orderFilter,
+          sortOrder: 'desc'
+        } 
+      })
     })
   },
   component: AdminOrdersPage,
@@ -55,7 +61,16 @@ function AdminOrdersPage() {
 
   const { data: result } = useSuspenseQuery({
     queryKey: ['admin-orders', { page, search, paymentFilter, orderFilter }],
-    queryFn: () => getAdminOrders({ page, search, paymentFilter, orderFilter })
+    queryFn: () => getAdminOrders({ 
+      data: { 
+        page, 
+        pageSize: 20, 
+        search: search || null, 
+        paymentFilter: paymentFilter === 'all' ? null : paymentFilter, 
+        orderFilter: orderFilter === 'all' ? null : orderFilter,
+        sortOrder: 'desc'
+      } 
+    })
   })
 
   const handleSearch = (val: string) => {
@@ -163,7 +178,7 @@ function AdminOrdersPage() {
                         variant="ghost" 
                         size="sm"
                         className="text-gold hover:text-gold hover:bg-gold/5" 
-                        onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id } })}
+                        onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}
                       >
                         Detalhes <ArrowRight className="ml-2 w-4 h-4" />
                       </Button>
@@ -199,7 +214,7 @@ function AdminOrdersPage() {
                       <p className="text-[9px] text-white font-black uppercase mt-1">{o.orderStatus}</p>
                    </div>
                 </div>
-                <Button className="w-full bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id } })}>
+                <Button className="w-full bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}>
                   Ver Detalhes
                 </Button>
               </div>
