@@ -34,13 +34,13 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
       const token = authHeader.substring(7);
       const { data: { user: jwtUser }, error: jwtError } = await supabase.auth.getUser(token);
       if (!jwtError && jwtUser) {
-        return await fetchAdminProfile(jwtUser.id, jwtUser.user_metadata?.display_name || jwtUser.email);
+        return await fetchAdminProfile(jwtUser.id, (jwtUser.user_metadata as any)?.['display_name'] || jwtUser.email);
       }
     }
     return { authenticated: false };
   }
 
-  return await fetchAdminProfile(user.id, user.user_metadata?.display_name);
+  return await fetchAdminProfile(user.id, (user.user_metadata as any)?.['display_name']);
 }
 
 /**
@@ -71,9 +71,9 @@ async function fetchAdminProfile(userId: string, defaultDisplayName?: string): P
   return {
     authenticated: true,
     userId: userId,
-    displayName: profile.display_name || defaultDisplayName,
+    displayName: profile.display_name || defaultDisplayName || undefined,
     role: profile.role as 'SUPERADMIN' | 'ADMIN',
-    active: profile.active
+    active: !!profile.active
   };
 }
 
