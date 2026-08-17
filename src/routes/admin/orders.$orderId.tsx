@@ -356,7 +356,43 @@ function AdminOrderDetailPage() {
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 sm:p-8 space-y-8">
+                {/* Se cancelado, mostra alerta e motivo */}
+                {order.orderStatus === 'cancelled' && (
+                  <div className="p-6 bg-rose-500/5 border border-rose-500/10 rounded-2xl space-y-4">
+                    <div className="flex items-center gap-3 text-rose-500">
+                      <X className="w-5 h-5" />
+                      <h3 className="text-sm font-black uppercase tracking-widest">Pedido Cancelado</h3>
+                    </div>
+                    
+                    {order.paymentStatus === 'paid' && (
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                          <span className="text-[9px] text-amber-500 font-black uppercase">ALERTA FINANCEIRO</span>
+                        </div>
+                        <p className="text-[10px] text-amber-500/80 leading-relaxed italic">
+                          PAGAMENTO CONFIRMADO — PEDIDO CANCELADO. Verifique manualmente se existe necessidade de devolução ao cliente.
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Motivo</p>
+                        <p className="text-xs text-white bg-white/5 px-3 py-2 rounded-lg italic border border-white/5">
+                          {order.notes || 'Cancelamento administrativo.'}
+                        </p>
+                      </div>
+                      <div className="text-right sm:text-left">
+                         <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status do Pagamento</p>
+                         <p className="text-xs text-white font-bold">{order.paymentStatus === 'paid' ? 'Pago (Preservado)' : order.paymentStatus}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Stepper / Timeline */}
+
                 <div className="relative flex justify-between items-start">
                   {/* Linha de fundo */}
                   <div className="absolute top-4 left-0 w-full h-0.5 bg-white/5 z-0" />
