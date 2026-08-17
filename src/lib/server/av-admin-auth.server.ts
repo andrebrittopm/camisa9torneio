@@ -9,10 +9,10 @@ import { createSupabaseSSR } from './supabase-ssr.server';
 
 export interface AdminContext {
   authenticated: boolean;
-  userId?: string;
-  displayName?: string;
-  role?: 'SUPERADMIN' | 'ADMIN';
-  active?: boolean;
+  userId?: string | undefined;
+  displayName?: string | undefined;
+  role?: 'SUPERADMIN' | 'ADMIN' | undefined;
+  active?: boolean | undefined;
 }
 
 /**
@@ -72,7 +72,7 @@ async function fetchAdminProfile(userId: string, defaultDisplayName?: string): P
     authenticated: true,
     userId: userId,
     displayName: profile.display_name || defaultDisplayName || undefined,
-    role: profile.role as 'SUPERADMIN' | 'ADMIN',
+    role: (profile.role as 'SUPERADMIN' | 'ADMIN') || undefined,
     active: !!profile.active
   };
 }
