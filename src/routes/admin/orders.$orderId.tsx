@@ -382,7 +382,10 @@ function AdminOrderDetailPage() {
                    src={viewingReceipt.url} 
                    alt="Comprovante" 
                    className="w-full h-auto max-h-[80vh] object-contain mx-auto"
+                   onLoad={() => console.log('Image loaded successfully')}
+                   onError={() => toast.error("Erro ao carregar imagem.")}
                  />
+
               </div>
               <p className="mt-4 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
                 O acesso expira em 60 segundos

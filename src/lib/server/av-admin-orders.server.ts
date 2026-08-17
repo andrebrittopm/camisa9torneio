@@ -59,12 +59,13 @@ export type AdminOrderDetail = {
       uploadedAt: string;
       reviewStatus: string;
       reviewNotes: string | null;
-      fileType: string;
-      fileSize: number;
-      fileName: string;
+      mimeType: string | null;
+      sizeBytes: number | null;
+      originalFileName: string | null;
     }>;
   };
 };
+
 
 
 /**
@@ -220,10 +221,11 @@ export async function getAdminOrderDetailInternal(orderId: string): Promise<Admi
     uploadedAt: r.uploaded_at,
     reviewStatus: r.review_status,
     reviewNotes: r.review_notes,
-    fileType: r.file_type,
-    fileSize: r.file_size,
-    fileName: r.file_name
+    mimeType: r.mime_type,
+    sizeBytes: r.size_bytes,
+    originalFileName: r.original_file_name
   }));
+
 
   return {
     id: order.id,
@@ -275,7 +277,7 @@ export async function getAdminReceiptSignedUrlInternal(orderId: string, receiptI
   // 1. Validar IDOR: O comprovante pertence ao pedido solicitado?
   const { data: receipt, error: receiptError } = await supabaseAdmin
     .from('av_payment_receipts')
-    .select('order_id, storage_path, file_type')
+    .select('order_id, storage_path, mime_type')
     .eq('id', receiptId)
     .single();
 
@@ -289,7 +291,7 @@ export async function getAdminReceiptSignedUrlInternal(orderId: string, receiptI
 
   // 2. Validar tipo de conteúdo (segurança extra)
   const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-  if (!allowedTypes.includes(receipt.file_type)) {
+  if (!receipt.mime_type || !allowedTypes.includes(receipt.mime_type)) {
     throw new Error('UNSUPPORTED_FILE_TYPE');
   }
 
@@ -298,6 +300,7 @@ export async function getAdminReceiptSignedUrlInternal(orderId: string, receiptI
     .storage
     .from('av-payment-receipts')
     .createSignedUrl(receipt.storage_path, 60);
+
 
   if (storageError || !data?.signedUrl) {
     throw new Error('FAILED_TO_GENERATE_SIGNED_URL');
