@@ -1,0 +1,287 @@
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { 
+  ArrowLeft, 
+  ShoppingBag, 
+  User, 
+  Package, 
+  CreditCard,
+  AlertCircle,
+  ShieldCheck,
+  Calendar,
+  Phone,
+  Mail,
+  FileText
+} from 'lucide-react'
+import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
+import { getAdminOrderDetail } from '@/lib/av-admin-orders.functions'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+export const Route = createFileRoute('/admin/orders/$orderId')({
+  beforeLoad: async () => {
+    const context = await checkAdminAuth();
+    if (!context.authenticated || !context.active) {
+      throw redirect({ to: '/admin/login' });
+    }
+  },
+  loader: async ({ context, params }) => {
+    await context.queryClient.ensureQueryData({
+      queryKey: ['admin-order-detail', params.orderId],
+      queryFn: () => getAdminOrderDetail({ data: { orderId: params.orderId } })
+    })
+  },
+  component: AdminOrderDetailPage,
+})
+
+function AdminOrderDetailPage() {
+  const { orderId } = Route.useParams()
+  
+  const { data: order } = useSuspenseQuery({
+    queryKey: ['admin-order-detail', orderId],
+    queryFn: () => getAdminOrderDetail({ data: { orderId } })
+  })
+
+  const formatCurrency = (val: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  if (!order) {
+    return (
+      <div className="py-24 text-center space-y-6">
+        <AlertCircle className="w-16 h-16 text-rose-500 mx-auto" />
+        <h2 className="text-2xl font-heading font-black text-white uppercase">Pedido não encontrado</h2>
+        <Link to="/admin/orders" search={{ page: 1 }}>
+          <Button variant="ghost" className="text-gold">
+            <ArrowLeft className="mr-2 w-4 h-4" /> Voltar para listagem
+          </Button>
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between">
+        <Link to="/admin/orders" search={{ page: 1 }}>
+          <Button variant="ghost" className="text-slate-400 hover:text-white">
+            <ArrowLeft className="mr-2 w-4 h-4" /> Voltar
+          </Button>
+        </Link>
+        <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-2xl">
+          <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Identificador Interno:</span>
+          <span className="text-[10px] text-white font-mono ml-2">{order.id}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Main Column */}
+        <div className="md:col-span-2 space-y-8">
+          {/* Header Info */}
+          <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[40px] space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 blur-[80px] -translate-y-1/2 translate-x-1/2" />
+            <div className="relative z-10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-2">Detalhes do Pedido</h2>
+                  <h1 className="text-3xl font-heading font-black text-white uppercase">{order.publicId}</h1>
+                </div>
+                <div className="flex gap-2">
+                   <span className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-slate-400"
+                  )}>
+                    {order.orderStatus}
+                  </span>
+                   <span className={cn(
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest",
+                    order.paymentStatus === 'paid' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                  )}>
+                    {order.paymentStatus}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Items Section */}
+          <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[40px] space-y-6">
+            <div className="flex items-center gap-3">
+              <ShoppingBag className="w-5 h-5 text-gold" />
+              <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Itens do Pedido</h3>
+            </div>
+
+            <div className="space-y-4">
+              {order.items.map((item) => (
+                <div key={item.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-bold text-white text-lg">{item.modelName}</h4>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{item.shirtType}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gold font-black">{item.quantity}x</p>
+                      <p className="text-xs text-slate-500">{formatCurrency(item.unitPrice)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase">Tamanho</p>
+                      <p className="text-xs text-white font-bold">{item.sizeOption === 'OUTRO' ? item.customSize : item.sizeOption}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase">Nome</p>
+                      <p className="text-xs text-white font-bold">{item.customName || 'Sem personalização'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase">Número</p>
+                      <p className="text-xs text-white font-bold font-mono">{item.customNumber || 'Sem número'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[8px] text-slate-500 font-black uppercase">Subtotal</p>
+                      <p className="text-xs text-white font-bold">{formatCurrency(item.lineTotal)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-6 border-t border-white/5 flex flex-col items-end space-y-2">
+               <div className="flex justify-between w-full max-w-xs text-sm">
+                  <span className="text-slate-500 uppercase font-black text-[10px] tracking-widest">Subtotal</span>
+                  <span className="text-white font-bold">{formatCurrency(order.summary.subtotal)}</span>
+               </div>
+               <div className="flex justify-between w-full max-w-xs text-xl">
+                  <span className="text-gold uppercase font-black tracking-widest">Total</span>
+                  <span className="text-white font-black">{formatCurrency(order.summary.totalAmount)}</span>
+               </div>
+            </div>
+          </section>
+
+          {/* Customer Info */}
+          <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[40px] space-y-6">
+            <div className="flex items-center gap-3">
+              <User className="w-5 h-5 text-gold" />
+              <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Dados do Cliente</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <User className="w-4 h-4 text-slate-500 mt-1" />
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase">Nome Completo</p>
+                      <p className="text-sm text-white font-bold">{order.customer.name}</p>
+                    </div>
+                 </div>
+                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <Phone className="w-4 h-4 text-slate-500 mt-1" />
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase">WhatsApp</p>
+                      <p className="text-sm text-white font-bold font-mono">{order.customer.whatsapp}</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="space-y-4">
+                 <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                    <Mail className="w-4 h-4 text-slate-500 mt-1" />
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase">E-mail</p>
+                      <p className="text-sm text-white font-bold truncate">{order.customer.email}</p>
+                    </div>
+                 </div>
+                 {order.notes && (
+                   <div className="flex items-start gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <FileText className="w-4 h-4 text-slate-500 mt-1" />
+                      <div>
+                        <p className="text-[8px] text-slate-500 font-black uppercase">Observações</p>
+                        <p className="text-sm text-white italic">{order.notes}</p>
+                      </div>
+                   </div>
+                 )}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-8">
+           {/* Info Sidebar Section */}
+           <section className="p-8 bg-white/[0.02] border border-white/5 rounded-[40px] space-y-6">
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gold" />
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Fluxo</h3>
+              </div>
+              <div className="space-y-6">
+                 <div>
+                    <p className="text-[8px] text-slate-500 font-black uppercase mb-2">Criado em</p>
+                    <p className="text-sm text-white font-mono">{format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}</p>
+                 </div>
+                 <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-2">
+                       <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                       <span className="text-[8px] text-emerald-500 font-black uppercase">Segurança</span>
+                    </div>
+                    <p className="text-[9px] text-emerald-500/60 leading-relaxed italic">
+                      Todos os dados foram validados e processados em ambiente seguro.
+                    </p>
+                 </div>
+              </div>
+           </section>
+
+           {/* Payment Sidebar Section */}
+           <section className={cn(
+             "p-8 border rounded-[40px] space-y-6",
+             order.payment.hasReceipt ? "bg-emerald-500/5 border-emerald-500/10" : "bg-white/[0.02] border-white/5"
+           )}>
+              <div className="flex items-center gap-3">
+                <CreditCard className="w-5 h-5 text-gold" />
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Pagamento</h3>
+              </div>
+              <div className="space-y-6">
+                 <div>
+                    <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status Global</p>
+                    <p className="text-lg text-white font-black uppercase">{order.paymentStatus}</p>
+                 </div>
+                 
+                 <div className="space-y-4 pt-4 border-t border-white/5">
+                    <div>
+                      <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Comprovante</p>
+                      <p className="text-xs text-white font-bold">
+                        {order.payment.hasReceipt ? 'Enviado' : 'Não enviado'}
+                      </p>
+                    </div>
+                    {order.payment.hasReceipt && (
+                      <>
+                        <div>
+                          <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Data de Envio</p>
+                          <p className="text-xs text-white font-mono">
+                            {order.payment.receiptUploadedAt ? format(new Date(order.payment.receiptUploadedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '---'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status da Análise</p>
+                          <span className={cn(
+                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                            order.payment.reviewStatus === 'approved' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
+                            order.payment.reviewStatus === 'pending' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                            "bg-rose-500/10 text-rose-500 border border-rose-500/20"
+                          )}>
+                            {order.payment.reviewStatus}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                 </div>
+                 
+                 <div className="p-4 bg-white/5 border border-white/5 rounded-2xl italic text-[10px] text-slate-500 leading-relaxed">
+                   A visualização segura do arquivo binário e as ações de aprovação serão habilitadas na próxima etapa.
+                 </div>
+              </div>
+           </section>
+        </div>
+      </div>
+    </div>
+  )
+}

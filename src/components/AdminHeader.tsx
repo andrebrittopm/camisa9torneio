@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Menu, X, Shield, Home, LayoutDashboard, LogOut } from "lucide-react";
+import { Menu, X, Shield, Home, LayoutDashboard, LogOut, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,9 @@ export function AdminHeader() {
   const navLinks = [
     { label: "Voltar para a Página Inicial", href: "/", icon: Home, highlight: true },
     { label: "Painel", href: "/admin", icon: LayoutDashboard },
+    { label: "Pedidos", href: "/admin/orders", icon: ShoppingBag },
   ];
+
 
   const isActive = (path: string) => {
     if (path === '/admin') {

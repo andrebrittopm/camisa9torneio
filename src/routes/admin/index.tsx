@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, redirect, Link } from '@tanstack/react-router'
 import { 
   ShoppingBag, 
   Receipt, 
@@ -179,7 +179,11 @@ function AdminDashboard() {
              </div>
           </div>
 
-          <div className="p-8 bg-gold/5 border border-gold/10 rounded-[40px] flex flex-col justify-between group cursor-pointer hover:bg-gold/10 transition-all">
+          <Link 
+            to="/admin/orders" 
+            search={{ page: 1 }}
+            className="p-8 bg-gold/5 border border-gold/10 rounded-[40px] flex flex-col justify-between group cursor-pointer hover:bg-gold/10 transition-all"
+          >
             <div className="space-y-4">
                <Shield className="w-10 h-10 text-gold" />
                <h3 className="text-xl font-heading font-black uppercase tracking-tight text-gold">Gestão de Pedidos</h3>
@@ -190,7 +194,7 @@ function AdminDashboard() {
             <div className="pt-8 flex items-center text-gold font-black uppercase tracking-widest text-[10px] gap-2">
               Ver todos os pedidos <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
