@@ -30,7 +30,7 @@ export const Route = createFileRoute('/admin/orders/$orderId')({
   loader: async ({ context, params }) => {
     await context.queryClient.ensureQueryData({
       queryKey: ['admin-order-detail', params.orderId],
-      queryFn: () => getAdminOrderDetail({ orderId: params.orderId })
+      queryFn: () => getAdminOrderDetail({ data: { orderId: params.orderId } })
     })
   },
   component: AdminOrderDetailPage,
@@ -39,9 +39,9 @@ export const Route = createFileRoute('/admin/orders/$orderId')({
 function AdminOrderDetailPage() {
   const { orderId } = Route.useParams()
   
-  const { data: order, error } = useSuspenseQuery({
+  const { data: order } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
-    queryFn: () => getAdminOrderDetail({ orderId })
+    queryFn: () => getAdminOrderDetail({ data: { orderId } })
   })
 
   const formatCurrency = (val: number) => 
@@ -52,7 +52,7 @@ function AdminOrderDetailPage() {
       <div className="py-24 text-center space-y-6">
         <AlertCircle className="w-16 h-16 text-rose-500 mx-auto" />
         <h2 className="text-2xl font-heading font-black text-white uppercase">Pedido não encontrado</h2>
-        <Link to="/admin/orders">
+        <Link to="/admin/orders" search={{ page: 1 }}>
           <Button variant="ghost" className="text-gold">
             <ArrowLeft className="mr-2 w-4 h-4" /> Voltar para listagem
           </Button>
@@ -64,7 +64,7 @@ function AdminOrderDetailPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center justify-between">
-        <Link to="/admin/orders">
+        <Link to="/admin/orders" search={{ page: 1 }}>
           <Button variant="ghost" className="text-slate-400 hover:text-white">
             <ArrowLeft className="mr-2 w-4 h-4" /> Voltar
           </Button>
