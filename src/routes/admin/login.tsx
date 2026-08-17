@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +15,7 @@ function AdminLogin() {
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
+  const router = useRouter()
 
 
 
@@ -40,10 +41,13 @@ function AdminLogin() {
 
       toast.success(`Bem-vindo, ${data.user.display_name}!`)
       
+      // Imediately invalidate router state to reflect session change
+      router.invalidate()
+      
       // Pequeno atraso para garantir que os cookies sejam processados pelo browser
       // antes da navegação que aciona o guard SSR
       setTimeout(() => {
-        navigate({ to: '/admin' })
+        navigate({ to: '/admin', replace: true })
       }, 500);
 
     } catch (err: any) {
