@@ -24,7 +24,7 @@ export const Route = createFileRoute('/admin/')({
     const context = await checkAdminAuth();
     
     if (!context.authenticated || !context.active) {
-      console.warn(`[AV-ADMIN-GUARD] Unauthorized, redirecting.`);
+      console.warn(`[AV-ADMIN-GUARD] Unauthorized at /admin, redirecting to /admin/login.`, context);
       throw redirect({
         to: '/admin/login',
       });
