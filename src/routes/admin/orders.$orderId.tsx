@@ -387,7 +387,7 @@ function AdminOrderDetailPage() {
                   </div>
                 )}
 
-                {order.status.paymentStatus !== 'payment_confirmed' && (
+                {order.paymentStatus !== 'payment_confirmed' && (
                   <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl flex items-center gap-3">
                     <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                     <p className="text-[10px] text-rose-500 italic leading-relaxed">
