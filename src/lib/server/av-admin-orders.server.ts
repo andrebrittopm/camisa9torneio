@@ -70,11 +70,12 @@ export function formatPublicId(orderSeq: number): string {
 export async function getAdminOrdersInternal(params: {
   page: number;
   pageSize: number;
-  search?: string | null;
-  paymentFilter?: string | null;
-  orderFilter?: string | null;
+  search?: string | null | undefined;
+  paymentFilter?: string | null | undefined;
+  orderFilter?: string | null | undefined;
   sortOrder?: 'asc' | 'desc';
 }): Promise<AdminOrderListResponse> {
+
 
   const supabaseUrl = process.env['SUPABASE_URL']!;
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
