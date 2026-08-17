@@ -420,7 +420,22 @@ function AdminOrderDetailPage() {
                   </div>
                 )}
 
-                {order.paymentStatus !== 'payment_confirmed' && (
+                {/* Ação de Cancelamento (Ação Secundária) */}
+                {order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
+                  <div className="pt-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setCancellingOrder({ id: order.id, reasonCode: 'customer_request', reasonText: '' })}
+                      disabled={!!isCancelling}
+                      className="w-full h-10 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all duration-300 rounded-xl"
+                    >
+                      {isCancelling ? 'Processando...' : 'CANCELAR PEDIDO'}
+                    </Button>
+                  </div>
+                )}
+
+                {order.paymentStatus !== 'payment_confirmed' && order.orderStatus !== 'cancelled' && (
+
                   <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl flex items-center gap-3">
                     <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                     <p className="text-[10px] text-rose-500 italic leading-relaxed">
