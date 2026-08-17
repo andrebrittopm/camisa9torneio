@@ -1,6 +1,8 @@
 /**
  * AV - 9º Torneio Amigos do Vôlei
  * ETAPA 10.4A — FLUXO DE PRODUÇÃO E ENTREGA IMPLEMENTADO.
+ * ETAPA 10.5 — DIAGNÓSTICO E HARDENING DO AUTH ADMIN CONCLUÍDO.
+
  */
 
 import { createFileRoute } from '@tanstack/react-router'
