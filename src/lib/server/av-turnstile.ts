@@ -114,7 +114,7 @@ export async function verifyTurnstileToken(
 
     // 7. SUCCESS FALSE
     if (result.success !== true) {
-      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED siteverify_response=${JSON.stringify(result)}`);
       return { success: false, error: "TURNSTILE_FAILED" };
     }
 
