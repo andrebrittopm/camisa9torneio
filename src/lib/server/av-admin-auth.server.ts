@@ -31,7 +31,7 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
   if (!user || authError) {
     const authHeader = request.headers.get('Authorization');
     const cookieHeader = request.headers.get('Cookie');
-    console.log(`[AV-ADMIN-AUTH-DEBUG] getUser failed. AuthHeader: ${!!authHeader}, CookieHeader: ${!!cookieHeader}`);
+    console.warn(`[AV-ADMIN-AUTH] getUser failed. AuthHeader: ${!!authHeader}, CookieHeader: ${!!cookieHeader}`);
     
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
