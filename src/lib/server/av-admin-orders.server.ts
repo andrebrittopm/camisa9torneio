@@ -30,6 +30,7 @@ export type AdminOrderDetail = {
   orderStatus: string;
   paymentStatus: string;
   notes: string | null;
+  cancellationReason: string | null;
   customer: {
     name: string;
     whatsapp: string;
@@ -235,6 +236,7 @@ export async function getAdminOrderDetailInternal(orderId: string): Promise<Admi
     orderStatus: order.order_status,
     paymentStatus: order.payment_status,
     notes: order.notes,
+    cancellationReason: order.order_status === 'cancelled' ? order.notes : null,
     customer: {
       name: order.customer_name,
       whatsapp: order.whatsapp,
@@ -370,6 +372,36 @@ export async function updateAdminOrderStatusInternal(params: {
 
   return data as { success: boolean; code?: string };
 }
+
+/**
+ * Executa o cancelamento administrativo de um pedido via RPC atômico.
+ */
+export async function cancelAdminOrderInternal(params: {
+  orderId: string;
+  adminId: string;
+  reasonCode: string;
+  reasonText?: string | null;
+}): Promise<{ success: boolean; code?: string }> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
+  const { data, error } = await supabaseAdmin.rpc('av_admin_cancel_order' as any, {
+    p_order_id: params.orderId,
+    p_admin_id: params.adminId,
+    p_reason_code: params.reasonCode,
+    p_reason_text: params.reasonText || null
+  });
+
+  if (error) {
+    console.error('[cancelAdminOrderInternal] RPC Error:', error);
+    throw new Error('FAILED_TO_CANCEL_ORDER');
+  }
+
+  return data as { success: boolean; code?: string };
+}
+
 
 
 

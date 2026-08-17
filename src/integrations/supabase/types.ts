@@ -459,6 +459,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      av_admin_cancel_order: {
+        Args: {
+          p_admin_id: string
+          p_order_id: string
+          p_reason_code: string
+          p_reason_text?: string
+        }
+        Returns: Json
+      }
       av_admin_review_receipt: {
         Args: {
           p_action: string

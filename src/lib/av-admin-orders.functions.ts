@@ -128,7 +128,34 @@ export const updateAdminOrderStatus = createServerFn({ method: 'POST' })
     });
   });
 
+/**
+ * RPC para cancelar administrativamente um pedido.
+ */
+export const cancelAdminOrder = createServerFn({ method: 'POST' })
+  .inputValidator((data) => z.object({
+    orderId: z.string(),
+    reasonCode: z.string().min(1),
+    reasonText: z.string().max(500).nullable().optional()
+  }).parse(data))
+  .handler(async ({ data: input }) => {
+    const request = (globalThis as any).getRequest?.();
+    if (!request) throw new Error('Request Context Missing');
+    
+    // 1. Validar Guard Administrativo
+    const adminContext = await requireAdmin(request);
+    
+    // 2. Executar Ação (IDOR e Transition validation inclusive no RPC)
+    const { cancelAdminOrderInternal } = await import('./server/av-admin-orders.server');
+    return await cancelAdminOrderInternal({
+      orderId: input.orderId,
+      reasonCode: input.reasonCode,
+      reasonText: input.reasonText ?? null,
+      adminId: adminContext.userId!
+    });
+  });
+
 export type { AdminOrderListResponse, AdminOrderDetail };
+
 
 
 

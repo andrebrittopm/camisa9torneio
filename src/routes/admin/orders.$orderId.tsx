@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt, updateAdminOrderStatus } from '@/lib/av-admin-orders.functions'
+import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt, updateAdminOrderStatus, cancelAdminOrder } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -57,6 +57,8 @@ function AdminOrderDetailPage() {
   const [rejectingReceipt, setRejectingReceipt] = useState<{ id: string, reason: string, notes: string } | null>(null)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null)
   const [confirmingStatus, setConfirmingStatus] = useState<string | null>(null)
+  const [cancellingOrder, setCancellingOrder] = useState<{ id: string, reasonCode: string, reasonText: string } | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
   
   const { data: order, refetch } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
@@ -66,6 +68,7 @@ function AdminOrderDetailPage() {
   const getReceiptUrl = useServerFn(getAdminReceiptViewUrl)
   const reviewReceipt = useServerFn(reviewAdminReceipt)
   const updateStatus = useServerFn(updateAdminOrderStatus)
+  const cancelOrder = useServerFn(cancelAdminOrder)
 
 
 
@@ -135,6 +138,36 @@ function AdminOrderDetailPage() {
     }
   };
 
+  const handleCancelOrder = async (reasonCode: string, reasonText?: string) => {
+    try {
+      setIsCancelling(true);
+      const res = await cancelOrder({
+        data: {
+          orderId,
+          reasonCode,
+          reasonText
+        }
+      });
+
+      if (res.success) {
+        toast.success('Pedido cancelado com sucesso.');
+        setCancellingOrder(null);
+        await refetch();
+      } else {
+        const errorMsg = 
+          res.code === 'ORDER_DELIVERED_BLOCK' ? 'Pedidos entregues não podem ser cancelados.' :
+          res.code === 'ORDER_ALREADY_CANCELLED' ? 'Este pedido já foi cancelado.' :
+          'Não foi possível cancelar o pedido.';
+        toast.error(`Erro: ${errorMsg}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Ocorreu um erro ao cancelar o pedido.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const getNextStatusLabel = (currentStatus: string) => {
     switch (currentStatus) {
       case 'confirmed': return 'INICIAR PRODUÇÃO';
@@ -166,8 +199,10 @@ function AdminOrderDetailPage() {
           </Button>
         </Link>
       </div>
-    )
+    );
   }
+
+
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -197,7 +232,8 @@ function AdminOrderDetailPage() {
                 </div>
                 <div className="flex gap-2">
                    <span className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-slate-400"
+                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10",
+                    order.orderStatus === 'cancelled' ? "text-rose-500 border-rose-500/20 bg-rose-500/5" : "text-slate-400"
                   )}>
                     {order.orderStatus}
                   </span>
@@ -322,7 +358,43 @@ function AdminOrderDetailPage() {
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 sm:p-8 space-y-8">
+                {/* Se cancelado, mostra alerta e motivo */}
+                {order.orderStatus === 'cancelled' && (
+                  <div className="p-6 bg-rose-500/5 border border-rose-500/10 rounded-2xl space-y-4">
+                    <div className="flex items-center gap-3 text-rose-500">
+                      <X className="w-5 h-5" />
+                      <h3 className="text-sm font-black uppercase tracking-widest">Pedido Cancelado</h3>
+                    </div>
+                    
+                    {order.paymentStatus === 'paid' && (
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                          <span className="text-[9px] text-amber-500 font-black uppercase">ALERTA FINANCEIRO</span>
+                        </div>
+                        <p className="text-[10px] text-amber-500/80 leading-relaxed italic">
+                          PAGAMENTO CONFIRMADO — PEDIDO CANCELADO. Verifique manualmente se existe necessidade de devolução ao cliente.
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Motivo</p>
+                        <p className="text-xs text-white bg-white/5 px-3 py-2 rounded-lg italic border border-white/5">
+                          {order.cancellationReason || 'Cancelamento administrativo.'}
+                        </p>
+                      </div>
+                      <div className="text-right sm:text-left">
+                         <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status do Pagamento</p>
+                         <p className="text-xs text-white font-bold">{order.paymentStatus === 'paid' ? 'Pago (Preservado)' : order.paymentStatus}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Stepper / Timeline */}
+
                 <div className="relative flex justify-between items-start">
                   {/* Linha de fundo */}
                   <div className="absolute top-4 left-0 w-full h-0.5 bg-white/5 z-0" />
@@ -387,7 +459,22 @@ function AdminOrderDetailPage() {
                   </div>
                 )}
 
-                {order.paymentStatus !== 'payment_confirmed' && (
+                {/* Ação de Cancelamento (Ação Secundária) */}
+                {order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
+                  <div className="pt-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setCancellingOrder({ id: order.id, reasonCode: 'customer_request', reasonText: '' })}
+                      disabled={!!isCancelling}
+                      className="w-full h-10 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all duration-300 rounded-xl"
+                    >
+                      {isCancelling ? 'Processando...' : 'CANCELAR PEDIDO'}
+                    </Button>
+                  </div>
+                )}
+
+                {order.paymentStatus !== 'payment_confirmed' && order.orderStatus !== 'cancelled' && (
+
                   <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl flex items-center gap-3">
                     <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
                     <p className="text-[10px] text-rose-500 italic leading-relaxed">
@@ -767,9 +854,116 @@ function AdminOrderDetailPage() {
           </div>
         </div>
       )}
-    </div>
 
+      {/* Modal de Cancelamento de Pedido */}
+      {cancellingOrder && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 max-w-md w-full space-y-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center">
+                <X className="w-8 h-8 text-rose-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">
+                  Cancelar Pedido?
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Tem certeza de que deseja cancelar este pedido?
+                </p>
+                <p className="text-[10px] text-rose-500/70 italic text-center px-4">
+                  Esta ação ficará registrada no histórico administrativo.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white/5 rounded-2xl space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Pedido:</span>
+                <span className="text-white font-mono">{order.publicId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Cliente:</span>
+                <span className="text-white font-bold">{order.customer.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Status Atual:</span>
+                <span className="text-white font-bold uppercase">{order.orderStatus}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Pagamento:</span>
+                <span className="text-white font-bold uppercase">{order.paymentStatus}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-white/5">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Total:</span>
+                <span className="text-white font-black">{formatCurrency(order.summary.totalAmount)}</span>
+              </div>
+            </div>
+
+            {order.paymentStatus === 'paid' && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-[9px] text-amber-500 font-black uppercase">ATENÇÃO</p>
+                  <p className="text-[10px] text-amber-500/80 leading-relaxed italic">
+                    Este pedido possui pagamento confirmado. O cancelamento não realiza estorno financeiro automaticamente.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest ml-1">Motivo do Cancelamento</label>
+                <select 
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-gold/20"
+                  value={cancellingOrder.reasonCode}
+                  onChange={(e) => setCancellingOrder({ ...cancellingOrder, reasonCode: e.target.value })}
+                >
+                  <option value="customer_request">Solicitação do cliente</option>
+                  <option value="duplicate_order">Pedido duplicado</option>
+                  <option value="payment_issue">Problema com pagamento</option>
+                  <option value="order_error">Erro no pedido</option>
+                  <option value="out_of_stock">Indisponibilidade</option>
+                  <option value="other">Outro</option>
+                </select>
+              </div>
+
+              {cancellingOrder.reasonCode === 'other' && (
+                <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                  <label className="text-[9px] text-slate-500 font-black uppercase tracking-widest ml-1">Descrição Complementar</label>
+                  <textarea 
+                    className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-gold/20 resize-none"
+                    placeholder="Descreva o motivo..."
+                    value={cancellingOrder.reasonText}
+                    onChange={(e) => setCancellingOrder({ ...cancellingOrder, reasonText: e.target.value })}
+                    maxLength={500}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setCancellingOrder(null)}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+              >
+                Voltar
+              </Button>
+              <Button
+                onClick={() => handleCancelOrder(cancellingOrder.reasonCode, cancellingOrder.reasonText)}
+                disabled={isCancelling || (cancellingOrder.reasonCode === 'other' && !cancellingOrder.reasonText.trim())}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest bg-rose-500 text-white hover:bg-rose-600 rounded-2xl"
+              >
+                {isCancelling ? 'Processando...' : 'Confirmar Cancelamento'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
+
 
 
