@@ -16,43 +16,54 @@ export type OrderItem = {
 export type CustomerData = {
   name: string;
   whatsapp: string;
-  email: string; // Adicionado na Etapa 4.3C
+  email: string;
   notes: string;
 };
 
-export const useOrderState = () => {
-  const [items, setItems] = useState<OrderItem[]>([]);
-  const [customer, setCustomer] = useState<CustomerData>({ name: '', whatsapp: '', email: '', notes: '' });
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+export type OrderStep = 'idle' | 'configurator' | 'customer_data' | 'summary' | 'review' | 'success';
 
-  const addItem = (item: Omit<OrderItem, 'local_id'>) => {
-    setItems(prev => [...prev, { ...item, local_id: crypto.randomUUID() }]);
-  };
+interface OrderState {
+  items: OrderItem[];
+  customer: CustomerData;
+  editingItemId: string | null;
+  currentStep: OrderStep;
+  setStep: (step: OrderStep) => void;
+  addItem: (item: Omit<OrderItem, 'local_id'>) => void;
+  removeItem: (local_id: string) => void;
+  updateItem: (local_id: string, item: Omit<OrderItem, 'local_id'>) => void;
+  setCustomer: (data: CustomerData) => void;
+  setEditingItemId: (id: string | null) => void;
+  clearOrder: () => void;
+  resetOrder: () => void;
+}
 
-  const removeItem = (local_id: string) => {
-    setItems(prev => prev.filter(i => i.local_id !== local_id));
-  };
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-  const updateItem = (local_id: string, item: Omit<OrderItem, 'local_id'>) => {
-    setItems(prev => prev.map(i => i.local_id === local_id ? { ...item, local_id } : i));
-  };
-
-  const clearOrder = () => {
-    setItems([]);
-    setCustomer({ name: '', whatsapp: '', email: '', notes: '' });
-    setEditingItemId(null);
-  };
-
-  return {
-    items,
-    setItems,
-    customer,
-    setCustomer,
-    editingItemId,
-    setEditingItemId,
-    addItem,
-    removeItem,
-    updateItem,
-    clearOrder
-  };
-};
+export const useOrderState = create<OrderState>()(
+  persist(
+    (set) => ({
+      items: [],
+      customer: { name: '', whatsapp: '', email: '', notes: '' },
+      editingItemId: null,
+      currentStep: 'idle',
+      setStep: (step) => set({ currentStep: step }),
+      addItem: (item) => set((state) => ({ 
+        items: [...state.items, { ...item, local_id: crypto.randomUUID() }] 
+      })),
+      removeItem: (local_id) => set((state) => ({ 
+        items: state.items.filter(i => i.local_id !== local_id) 
+      })),
+      updateItem: (local_id, item) => set((state) => ({
+        items: state.items.map(i => i.local_id === local_id ? { ...item, local_id } : i)
+      })),
+      setCustomer: (customer) => set({ customer }),
+      setEditingItemId: (editingItemId) => set({ editingItemId }),
+      clearOrder: () => set({ items: [], customer: { name: '', whatsapp: '', email: '', notes: '' }, editingItemId: null }),
+      resetOrder: () => set({ currentStep: 'idle', items: [], customer: { name: '', whatsapp: '', email: '', notes: '' }, editingItemId: null }),
+    }),
+    {
+      name: 'av-order-storage',
+    }
+  )
+);

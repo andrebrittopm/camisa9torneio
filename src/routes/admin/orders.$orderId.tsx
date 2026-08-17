@@ -278,7 +278,7 @@ function AdminOrderDetailPage() {
                                    <p className="text-[8px] text-gold font-black uppercase mb-1">Comprovante {order.payment.receipts.length - idx}</p>
                                    <div className="flex items-center gap-2">
                                       <FileIcon className="w-3 h-3 text-slate-400" />
-                                      <span className="text-[10px] text-white font-mono truncate max-w-[120px]">{r.fileName}</span>
+                                      <span className="text-[10px] text-white font-mono truncate max-w-[120px]">{r.originalFileName || 'comprovante'}</span>
                                    </div>
                                 </div>
                                 <span className={cn(
@@ -299,7 +299,7 @@ function AdminOrderDetailPage() {
                                 </div>
                                 <div>
                                    <p className="mb-0.5">Tamanho / Tipo</p>
-                                   <p className="text-white font-mono">{(r.fileSize / 1024 / 1024).toFixed(2)}MB / {r.fileType.split('/')[1].toUpperCase()}</p>
+                                   <p className="text-white font-mono">{((r.sizeBytes || 0) / 1024 / 1024).toFixed(2)}MB / {(r.mimeType || '').split('/')[1]?.toUpperCase() || '---'}</p>
                                 </div>
                              </div>
 
@@ -309,11 +309,12 @@ function AdminOrderDetailPage() {
                                    setIsGeneratingUrl(r.id);
                                    const { signedUrl } = await getReceiptUrl({ data: { orderId: order.id, receiptId: r.id } });
                                    
-                                   if (r.fileType === 'application/pdf') {
+                                   if (r.mimeType === 'application/pdf') {
                                      window.open(signedUrl, '_blank');
                                    } else {
-                                     setViewingReceipt({ url: signedUrl, type: r.fileType });
+                                     setViewingReceipt({ url: signedUrl, type: r.mimeType || 'image/jpeg' });
                                    }
+
                                  } catch (err) {
                                    console.error(err);
                                    toast.error("Erro ao gerar acesso ao comprovante.");

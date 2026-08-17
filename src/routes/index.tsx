@@ -51,6 +51,7 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   const { currentStep, resetOrder } = useOrderState()
+
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -74,9 +75,10 @@ function Index() {
   }, [loadCatalog])
 
   const activeModel = useMemo(() => {
-    if (!catalog?.models) return null
+    if (!catalog?.data?.models) return null
     // Prioriza TSHIRT-01 conforme a regra de Single Model Flow
-    return catalog.models.find(m => m.code === 'TSHIRT-01') || catalog.models[0]
+    return catalog.data.models.find(m => m.code === 'TSHIRT-01') || catalog.data.models[0]
+
   }, [catalog])
 
   return (
@@ -87,31 +89,72 @@ function Index() {
         {currentStep === 'idle' && (
           <>
             <HeroSection />
-            <ModelsSection models={catalog?.models || []} isLoading={isLoading} />
+            <ModelsSection 
+              models={catalog.data.models} 
+              isLoading={isLoading} 
+              selectedModelId={null}
+              onSelectModel={() => useOrderState.getState().setStep('configurator')}
+              eventInfo={catalog.data.event}
+            />
             <HowItWorks />
             <FinalCTA onAction={() => useOrderState.getState().setStep('configurator')} />
+
           </>
         )}
 
-        {currentStep === 'configurator' && activeModel && (
-          <OrderConfigurator model={activeModel} />
+        {currentStep === 'configurator' && activeModel && catalog && (
+          <OrderConfigurator 
+            selectedModel={activeModel} 
+            eventInfo={catalog.data.event}
+            onAddItem={(item) => {
+              useOrderState.getState().addItem(item);
+              useOrderState.getState().setStep('summary');
+            }}
+            editingItem={null}
+            onUpdateItem={() => {}}
+            onCancelEdit={() => useOrderState.getState().setStep('idle')}
+            onModelChange={() => {}}
+          />
         )}
 
         {currentStep === 'customer_data' && (
-          <CustomerDataForm />
+          <CustomerDataForm 
+            data={useOrderState.getState().customer}
+            onChange={(data) => useOrderState.getState().setCustomer(data)}
+          />
         )}
 
-        {currentStep === 'summary' && (
-          <OrderItemsSummary />
+        {currentStep === 'summary' && catalog && (
+          <OrderItemsSummary 
+            items={useOrderState.getState().items}
+            eventInfo={catalog.data.event}
+            onRemove={(id) => useOrderState.getState().removeItem(id)}
+            onEdit={(id) => {
+              useOrderState.getState().setEditingItemId(id);
+              useOrderState.getState().setStep('configurator');
+            }}
+          />
         )}
 
-        {currentStep === 'review' && (
-          <OrderReview />
+        {currentStep === 'review' && catalog && (
+          <OrderReview 
+            customer={useOrderState.getState().customer}
+            items={useOrderState.getState().items}
+            eventInfo={catalog.data.event}
+            onBack={() => useOrderState.getState().setStep('summary')}
+            onSuccess={() => useOrderState.getState().setStep('success')}
+          />
         )}
 
-        {currentStep === 'success' && (
-          <OrderSuccess />
+        {currentStep === 'success' && catalog && (
+          <OrderSuccess 
+            order={{} as any} 
+            catalog={catalog.data}
+            localItems={useOrderState.getState().items}
+            onNewOrder={() => useOrderState.getState().resetOrder()}
+          />
         )}
+
 
         {isLoading && currentStep !== 'idle' && (
           <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
