@@ -11,8 +11,9 @@ import { AdminHeader } from '@/components/AdminHeader'
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: ({ location }) => {
+    // Evita loop infinito: se já estamos em /admin/ (com barra), não redireciona
     if (location.pathname === '/admin') {
-      throw redirect({ to: '/admin', replace: true });
+      throw redirect({ to: '/admin/', replace: true });
     }
   },
   component: AdminLayout,
