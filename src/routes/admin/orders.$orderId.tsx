@@ -364,12 +364,13 @@ function AdminOrderDetailPage() {
                 </div>
 
                 {/* Ação de Avanço */}
-                {order.status.paymentStatus === 'payment_confirmed' && order.status.orderStatus !== 'delivered' && order.status.orderStatus !== 'cancelled' && (
+                {order.paymentStatus === 'payment_confirmed' && order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
                   <div className="pt-4 border-t border-white/5">
                     <Button
-                      onClick={() => setConfirmingStatus(getNextStatusValue(order.status.orderStatus))}
+                      onClick={() => setConfirmingStatus(getNextStatusValue(order.orderStatus))}
                       disabled={!!isUpdatingStatus}
                       className="w-full h-14 text-[10px] font-black uppercase tracking-widest bg-white text-navy hover:bg-gold hover:text-navy transition-all duration-300 rounded-2xl group"
+
                     >
                       {isUpdatingStatus ? (
                         <span className="flex items-center gap-2">
