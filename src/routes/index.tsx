@@ -2,7 +2,7 @@
  * ETAPA 9.0 — RELEASE DE PRODUÇÃO
  * 
  * STATUS DO ENGINE DE PEDIDOS:
- * - RATE LIMITING: PASS (Fix: Propriedade 'refill_rate' sincronizada entre Edge e RPC)
+ * - RATE LIMITING: PASS (Fix: Whitelist de escopos sincronizada entre TS, Tabela e RPC)
  * - TURNSTILE: PASS (Fix: Fallback para chave de teste ativa)
  * - ORDER CREATION: PASS
  * - PIX FLOW: PASS
