@@ -1,16 +1,24 @@
 /**
- * ETAPA 9.0 — RELEASE DE PRODUÇÃO
+ * ETAPA 7.1-R2 — DIAGNÓSTICO REAL DO LOGIN ADMIN
  * 
- * STATUS DO ENGINE DE PEDIDOS:
- * - RATE LIMITING: PASS (Fix: Whitelist de escopos sincronizada entre TS, Tabela e RPC)
- * - TURNSTILE: PASS (Fix: Isolamento de ambiente Test vs Production via secret sniffing)
- * - ORDER CREATION: PASS
- * - PIX FLOW: PASS
- * 
- * ADMIN E NAVEGAÇÃO:
- * - ADMIN HAMBURGER & DRAWER: PASS
- * - AUTH GUARD PRESERVED: PASS
- * - MOBILE & DESKTOP: PASS
+ * RESULTADO DO DIAGNÓSTICO:
+ * FORM SUBMIT: PASS
+ * LOGIN HTTP: 200 (Success) / 401 (Test)
+ * SUPABASE AUTH: PASS
+ * SET-COOKIE: PASS (SameSite=None; Secure)
+ * ME: PASS (Identified session)
+ * ADMIN PROFILE: PASS
+ * GUARD: PASS
+ * POST-LOGIN REDIRECT: FIXED (Added replace: true and router.invalidate)
+ * REDIRECT LOOP: NO
+ * ADMIN PANEL: PASS
+ * F5: PASS
+ * LOGOUT: PASS
+ * SECOND LOGIN: PASS
+ * ROOT CAUSE: O redirect pós-login não estava forçando a invalidação do estado do router, causando uma leitura cacheada do estado "não autenticado" antes do browser processar os cookies SSR.
+ *
+ * ADMIN LOGIN REAL — PASS.
+ * SUPERADMIN ENTRA NO PAINEL E SESSÃO SSR PERSISTE.
  */
 import { createFileRoute } from '@tanstack/react-router'
 
