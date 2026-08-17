@@ -16,8 +16,11 @@ import {
   FileIcon,
   Download,
   ExternalLink,
-  X
+  X,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react'
+
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
 import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
@@ -49,17 +52,52 @@ function AdminOrderDetailPage() {
   const { orderId } = Route.useParams()
   const [viewingReceipt, setViewingReceipt] = useState<{ url: string; type: string } | null>(null)
   const [isGeneratingUrl, setIsGeneratingUrl] = useState<string | null>(null)
+  const [isReviewing, setIsReviewing] = useState<string | null>(null)
+  const [confirmingApproval, setConfirmingApproval] = useState<string | null>(null)
+  const [rejectingReceipt, setRejectingReceipt] = useState<{ id: string, reason: string, notes: string } | null>(null)
   
-  const { data: order } = useSuspenseQuery({
+  const { data: order, refetch } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
     queryFn: () => getAdminOrderDetail({ data: { orderId } })
   })
 
   const getReceiptUrl = useServerFn(getAdminReceiptViewUrl)
+  const reviewReceipt = useServerFn(reviewAdminReceipt)
+
 
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const handleReview = async (receiptId: string, action: 'approve' | 'reject', reason?: string, notes?: string) => {
+    try {
+      setIsReviewing(receiptId);
+      const res = await reviewReceipt({
+        data: {
+          orderId,
+          receiptId,
+          action,
+          reason,
+          notes
+        }
+      });
+
+      if (res.success) {
+        toast.success(action === 'approve' ? 'Pagamento aprovado com sucesso!' : 'Comprovante rejeitado.');
+        setConfirmingApproval(null);
+        setRejectingReceipt(null);
+        await refetch();
+      } else {
+        toast.error(`Erro: ${res.code || 'Não foi possível completar a ação.'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Ocorreu um erro ao processar a revisão.');
+    } finally {
+      setIsReviewing(null);
+    }
+  };
+
 
   if (!order) {
     return (
@@ -337,16 +375,37 @@ function AdminOrderDetailPage() {
                                    Visualizar Comprovante
                                  </>
                                )}
-                             </Button>
-                          </div>
+                              </Button>
+
+                              {r.reviewStatus === 'pending' && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                    onClick={() => setConfirmingApproval(r.id)}
+                                    disabled={!!isReviewing}
+                                    className="h-8 text-[9px] font-black uppercase tracking-widest bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl"
+                                  >
+                                    Aprovar
+                                  </Button>
+                                  <Button
+                                    onClick={() => setRejectingReceipt({ id: r.id, reason: 'Valor divergente', notes: '' })}
+                                    disabled={!!isReviewing}
+                                    variant="outline"
+                                    className="h-8 text-[9px] font-black uppercase tracking-widest bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl"
+                                  >
+                                    Rejeitar
+                                  </Button>
+                                </div>
+                              )}
+                           </div>
                         ))}
                       </div>
                     )}
                  </div>
                  
                  <div className="p-4 bg-white/5 border border-white/5 rounded-2xl italic text-[10px] text-slate-500 leading-relaxed">
-                   A visualização é temporária (60s). As ações de aprovação serão habilitadas na próxima etapa.
+                   A visualização é temporária (60s). As ações de aprovação e rejeição são definitivas e auditadas.
                  </div>
+
               </div>
            </section>
         </div>
