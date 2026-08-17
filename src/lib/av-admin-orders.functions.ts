@@ -15,11 +15,12 @@ export const getAdminOrders = createServerFn({ method: 'GET' })
   .inputValidator((data) => z.object({
     page: z.number().default(1),
     pageSize: z.number().default(20),
-    search: z.string().optional(),
-    paymentFilter: z.string().optional(),
-    orderFilter: z.string().optional(),
+    search: z.string().nullable().optional(),
+    paymentFilter: z.string().nullable().optional(),
+    orderFilter: z.string().nullable().optional(),
     sortOrder: z.enum(['asc', 'desc']).default('desc')
   }).parse(data))
+
   .handler(async ({ data: input }) => {
 
     const request = (globalThis as any).getRequest?.();
