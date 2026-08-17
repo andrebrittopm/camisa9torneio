@@ -47,7 +47,7 @@ function AdminLogin() {
       // Pequeno atraso para garantir que os cookies sejam processados pelo browser
       // antes da navegação que aciona o guard SSR
       setTimeout(() => {
-        window.location.href = '/admin';
+        window.location.href = '/admin/';
       }, 100);
 
     } catch (err: any) {
