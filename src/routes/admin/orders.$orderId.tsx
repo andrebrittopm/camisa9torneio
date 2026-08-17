@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt } from '@/lib/av-admin-orders.functions'
+import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt, updateAdminOrderStatus } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -55,6 +55,8 @@ function AdminOrderDetailPage() {
   const [isReviewing, setIsReviewing] = useState<string | null>(null)
   const [confirmingApproval, setConfirmingApproval] = useState<string | null>(null)
   const [rejectingReceipt, setRejectingReceipt] = useState<{ id: string, reason: string, notes: string } | null>(null)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null)
+  const [confirmingStatus, setConfirmingStatus] = useState<string | null>(null)
   
   const { data: order, refetch } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
@@ -63,6 +65,8 @@ function AdminOrderDetailPage() {
 
   const getReceiptUrl = useServerFn(getAdminReceiptViewUrl)
   const reviewReceipt = useServerFn(reviewAdminReceipt)
+  const updateStatus = useServerFn(updateAdminOrderStatus)
+
 
 
 
@@ -97,6 +101,58 @@ function AdminOrderDetailPage() {
       setIsReviewing(null);
     }
   };
+
+  const handleUpdateStatus = async (newStatus: 'in_production' | 'ready' | 'delivered') => {
+    try {
+      setIsUpdatingStatus(newStatus);
+      const res = await updateStatus({
+        data: {
+          orderId,
+          newStatus
+        }
+      });
+
+      if (res.success) {
+        toast.success(`Pedido atualizado para: ${
+          newStatus === 'in_production' ? 'Em Produção' : 
+          newStatus === 'ready' ? 'Pronto' : 'Entregue'
+        }`);
+        setConfirmingStatus(null);
+        await refetch();
+      } else {
+        const errorMsg = 
+          res.code === 'ORDER_STATUS_TRANSITION_INVALID' ? 'Esta alteração de status não é permitida.' :
+          res.code === 'ORDER_STATUS_CHANGED' ? 'Este pedido foi atualizado por outro administrador. Atualize a página.' :
+          res.code === 'PAYMENT_NOT_CONFIRMED' ? 'Pagamento não confirmado. Fail closed.' :
+          'Não foi possível completar a ação.';
+        toast.error(`Erro: ${errorMsg}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Ocorreu um erro ao atualizar o status.');
+    } finally {
+      setIsUpdatingStatus(null);
+    }
+  };
+
+  const getNextStatusLabel = (currentStatus: string) => {
+    switch (currentStatus) {
+      case 'confirmed': return 'INICIAR PRODUÇÃO';
+      case 'in_production': return 'MARCAR COMO PRONTO';
+      case 'ready': return 'MARCAR COMO ENTREGUE';
+      default: return null;
+    }
+  };
+
+  const getNextStatusValue = (currentStatus: string): 'in_production' | 'ready' | 'delivered' | null => {
+    switch (currentStatus) {
+      case 'confirmed': return 'in_production';
+      case 'in_production': return 'ready';
+      case 'ready': return 'delivered';
+      default: return null;
+    }
+  };
+
 
 
   if (!order) {
@@ -254,7 +310,94 @@ function AdminOrderDetailPage() {
                  )}
               </div>
             </div>
-          </section>
+            </section>
+
+            {/* Andamento do Pedido */}
+            <section className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gold/20 rounded-xl flex items-center justify-center">
+                  <Package className="w-4 h-4 text-gold" />
+                </div>
+                <h2 className="text-sm font-heading font-black text-white uppercase tracking-wider">Andamento do Pedido</h2>
+              </div>
+
+              <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 sm:p-8 space-y-8">
+                {/* Stepper / Timeline */}
+                <div className="relative flex justify-between items-start">
+                  {/* Linha de fundo */}
+                  <div className="absolute top-4 left-0 w-full h-0.5 bg-white/5 z-0" />
+                  
+                  {[
+                    { id: 'confirmed', label: 'Confirmado', icon: CheckCircle2 },
+                    { id: 'in_production', label: 'Produção', icon: Package },
+                    { id: 'ready', label: 'Pronto', icon: ShoppingBag },
+                    { id: 'delivered', label: 'Entregue', icon: ShieldCheck }
+                  ].map((step, idx, arr) => {
+                    const statusOrder = ['confirmed', 'in_production', 'ready', 'delivered'];
+                    const currentIdx = statusOrder.indexOf(order.orderStatus);
+                    const isCompleted = currentIdx >= idx;
+                    const isCurrent = order.orderStatus === step.id;
+
+
+                    return (
+                      <div key={step.id} className="relative z-10 flex flex-col items-center gap-3 text-center w-1/4">
+                        <div className={`
+                          w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500
+                          ${isCompleted ? 'bg-gold text-navy scale-110 shadow-lg shadow-gold/20' : 'bg-slate-800 text-slate-500'}
+                          ${isCurrent ? 'ring-4 ring-gold/20 animate-pulse' : ''}
+                        `}>
+                          <step.icon className="w-4 h-4" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className={`text-[9px] font-black uppercase tracking-widest ${isCompleted ? 'text-white' : 'text-slate-500'}`}>
+                            {step.label}
+                          </p>
+                          {isCurrent && (
+                            <span className="inline-block px-2 py-0.5 bg-gold/10 text-gold text-[7px] font-black uppercase rounded-full">
+                              Atual
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Ação de Avanço */}
+                {order.paymentStatus === 'payment_confirmed' && order.orderStatus !== 'delivered' && order.orderStatus !== 'cancelled' && (
+                  <div className="pt-4 border-t border-white/5">
+                    <Button
+                      onClick={() => setConfirmingStatus(getNextStatusValue(order.orderStatus))}
+                      disabled={!!isUpdatingStatus}
+                      className="w-full h-14 text-[10px] font-black uppercase tracking-widest bg-white text-navy hover:bg-gold hover:text-navy transition-all duration-300 rounded-2xl group"
+
+                    >
+                      {isUpdatingStatus ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-3 h-3 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
+                          Processando...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          {getNextStatusLabel(order.orderStatus)}
+                          <ArrowLeft className="w-3 h-3 rotate-180 group-hover:translate-x-1 transition-transform" />
+                        </span>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {order.paymentStatus !== 'payment_confirmed' && (
+                  <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl flex items-center gap-3">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <p className="text-[10px] text-rose-500 italic leading-relaxed">
+                      O fluxo operacional está bloqueado. É necessário confirmar o pagamento antes de iniciar a produção.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+
         </div>
 
         {/* Sidebar */}
@@ -563,7 +706,69 @@ function AdminOrderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmação de Status Operacional */}
+      {confirmingStatus && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 max-w-md w-full space-y-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-gold/20 rounded-full flex items-center justify-center">
+                <Package className="w-8 h-8 text-gold" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">
+                  {confirmingStatus === 'delivered' ? 'Confirmar Entrega?' : 
+                   confirmingStatus === 'in_production' ? 'Iniciar Produção?' : 'Marcar como Pronto?'}
+                </h3>
+                <p className="text-sm text-slate-400">
+                  {confirmingStatus === 'delivered' ? 
+                    'Esta ação registra que o pedido foi entregue ao cliente.' : 
+                    `Deseja alterar o status do pedido para ${
+                      confirmingStatus === 'in_production' ? 'Em Produção' : 'Pronto para Retirada'
+                    }?`}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white/5 rounded-2xl space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Pedido:</span>
+                <span className="text-white font-mono">{order.publicId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Cliente:</span>
+                <span className="text-white font-bold">{order.customer.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Itens:</span>
+                <span className="text-white font-bold">{order.summary.totalQuantity} Camisa(s)</span>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmingStatus(null)}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleUpdateStatus(confirmingStatus as any)}
+                disabled={!!isUpdatingStatus}
+                className={`flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-white rounded-2xl ${
+                  confirmingStatus === 'delivered' ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gold text-navy hover:bg-white'
+                }`}
+              >
+                {isUpdatingStatus ? 'Processando...' : 
+                 confirmingStatus === 'delivered' ? 'Confirmar Entrega' : 'Confirmar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   )
 }
 

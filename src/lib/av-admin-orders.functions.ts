@@ -104,6 +104,31 @@ export const reviewAdminReceipt = createServerFn({ method: 'POST' })
     });
   });
 
+/**
+ * RPC para atualizar o status operacional de um pedido.
+ */
+export const updateAdminOrderStatus = createServerFn({ method: 'POST' })
+  .inputValidator((data) => z.object({
+    orderId: z.string(),
+    newStatus: z.enum(['in_production', 'ready', 'delivered'])
+  }).parse(data))
+  .handler(async ({ data: input }) => {
+    const request = (globalThis as any).getRequest?.();
+    if (!request) throw new Error('Request Context Missing');
+    
+    // 1. Validar Guard Administrativo
+    const adminContext = await requireAdmin(request);
+    
+    // 2. Executar Ação (IDOR e Transition Map validation inclusive no RPC)
+    const { updateAdminOrderStatusInternal } = await import('./server/av-admin-orders.server');
+    return await updateAdminOrderStatusInternal({
+      orderId: input.orderId,
+      newStatus: input.newStatus,
+      adminId: adminContext.userId!
+    });
+  });
+
 export type { AdminOrderListResponse, AdminOrderDetail };
+
 
 

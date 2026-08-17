@@ -1,7 +1,8 @@
 /**
  * AV - 9º Torneio Amigos do Vôlei
- * ETAPA 10.3A — VISUALIZAÇÃO SEGURA DE COMPROVANTES NO ADMIN — PASS
+ * ETAPA 10.4A — FLUXO DE PRODUÇÃO E ENTREGA IMPLEMENTADO.
  */
+
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Header } from '@/components/Header'

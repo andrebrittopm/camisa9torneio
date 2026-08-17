@@ -470,6 +470,10 @@ export type Database = {
         }
         Returns: Json
       }
+      av_admin_update_order_status: {
+        Args: { p_admin_id: string; p_new_status: string; p_order_id: string }
+        Returns: Json
+      }
       av_check_rate_limits: { Args: { p_specs: Json }; Returns: Json }
       av_cleanup_rate_limit_buckets: {
         Args: { p_limit?: number }
