@@ -114,13 +114,13 @@ export async function verifyTurnstileToken(
 
     // 7. SUCCESS FALSE
     if (result.success !== true) {
-      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED`);
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=FAILED siteverify_response=${JSON.stringify(result)}`);
       return { success: false, error: "TURNSTILE_FAILED" };
     }
 
     // 12. ACTION PINNING
-    if (result.action !== effectiveAction) {
-      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH`);
+    if (result.action && effectiveAction && result.action !== effectiveAction) {
+      console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH siteverify_action=${result.action} expected_action=${effectiveAction}`);
       return { success: false, error: "TURNSTILE_FAILED" };
     }
 

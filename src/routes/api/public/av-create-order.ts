@@ -375,7 +375,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             turnstileSecret,
             correlationId,
             expectedHostnames,
-            process.env['TURNSTILE_TEST_MODE'] === 'true' ? "test" : "create_order"
+            process.env['TURNSTILE_TEST_MODE'] === 'true' ? "" : "create_order"
           )
 
           if (!turnstileResult.success) {
