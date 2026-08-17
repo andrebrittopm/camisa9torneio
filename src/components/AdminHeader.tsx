@@ -41,6 +41,7 @@ export function AdminHeader() {
     { label: "Voltar para a Página Inicial", href: "/", icon: Home, highlight: true },
     { label: "Painel", href: "/admin", icon: LayoutDashboard },
     { label: "Pedidos", href: "/admin/orders", icon: ShoppingBag },
+    { label: "Auditoria", href: "/admin/audit", icon: Shield },
   ];
 
 
