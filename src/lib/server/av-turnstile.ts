@@ -126,7 +126,9 @@ export async function verifyTurnstileToken(
     }
 
     // 12. ACTION PINNING
-    if (result.action && effectiveAction && result.action !== effectiveAction) {
+    // Em produção, a action deve ser exatamente a esperada (ex: create_order).
+    // Para chaves de teste, validamos a action conforme definido no bloco 11.
+    if (result.action !== effectiveAction) {
       console.warn(`[AV] correlation=${correlationId} stage=turnstile code=ACTION_MISMATCH siteverify_action=${result.action} expected_action=${effectiveAction}`);
       return { success: false, error: "TURNSTILE_FAILED" };
     }
