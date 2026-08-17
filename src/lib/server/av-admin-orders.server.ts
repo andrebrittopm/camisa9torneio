@@ -100,9 +100,10 @@ export async function getAdminOrdersInternal(params: {
     const search = params.search.trim();
     // Tenta detectar se é um Public ID (AV-2026-XXXX)
     const matchPublicId = search.match(/AV-2026-(\d+)/i);
-    if (matchPublicId) {
+    if (matchPublicId && matchPublicId[1]) {
       const seq = parseInt(matchPublicId[1]);
       query = query.eq('order_seq', seq);
+
     } else {
       query = query.or(`customer_name.ilike.%${search}%,whatsapp.ilike.%${search}%`);
     }
