@@ -741,7 +741,7 @@ function AdminOrderDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Itens:</span>
-                <span className="text-white font-bold">{order.summary.totalItems} Camisa(s)</span>
+                <span className="text-white font-bold">{order.summary.totalQuantity} Camisa(s)</span>
               </div>
             </div>
 
