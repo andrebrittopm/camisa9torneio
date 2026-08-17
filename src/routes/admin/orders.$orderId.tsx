@@ -382,7 +382,7 @@ function AdminOrderDetailPage() {
                       <div>
                         <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Motivo</p>
                         <p className="text-xs text-white bg-white/5 px-3 py-2 rounded-lg italic border border-white/5">
-                          {order.notes || 'Cancelamento administrativo.'}
+                          {order.cancellationReason || 'Cancelamento administrativo.'}
                         </p>
                       </div>
                       <div className="text-right sm:text-left">

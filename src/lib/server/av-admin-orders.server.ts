@@ -235,6 +235,7 @@ export async function getAdminOrderDetailInternal(orderId: string): Promise<Admi
     orderStatus: order.order_status,
     paymentStatus: order.payment_status,
     notes: order.notes,
+    cancellationReason: order.order_status === 'cancelled' ? order.notes : null,
     customer: {
       name: order.customer_name,
       whatsapp: order.whatsapp,
