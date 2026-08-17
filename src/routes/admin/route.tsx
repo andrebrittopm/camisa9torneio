@@ -10,6 +10,11 @@ import { AdminHeader } from '@/components/AdminHeader'
  */
 
 export const Route = createFileRoute('/admin')({
+  beforeLoad: ({ location }) => {
+    if (location.pathname === '/admin') {
+      throw redirect({ to: '/admin/', replace: true });
+    }
+  },
   component: AdminLayout,
 })
 

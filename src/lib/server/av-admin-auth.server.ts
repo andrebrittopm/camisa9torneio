@@ -28,9 +28,6 @@ export async function getAdminContext(request: Request, responseHeaders?: Header
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
-    const cookieHeader = request.headers.get('Cookie') || 'NONE';
-    const authHeader = request.headers.get('Authorization') || 'NONE';
-    console.warn(`[AV-ADMIN-AUTH] auth.getUser() failed. User: ${!!user}, Error: ${authError?.message}, Cookies: ${cookieHeader.substring(0, 40)}..., Auth: ${authHeader.substring(0, 20)}...`);
     return { authenticated: false };
   }
 

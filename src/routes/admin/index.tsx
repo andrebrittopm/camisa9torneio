@@ -20,11 +20,10 @@ import { ptBR } from 'date-fns/locale'
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async () => {
-    // Temporariamente desativado para depurar o loop de redirecionamento no preview
-    return {
-      adminContext: { authenticated: true, active: true, displayName: 'Debug Admin' }
-    };
-  },
+    // RPC Bridge para evitar import-protection violation no bundle client
+    const context = await checkAdminAuth();
+    
+    if (!context.authenticated || !context.active) {
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
       queryKey: ['admin-stats'],
