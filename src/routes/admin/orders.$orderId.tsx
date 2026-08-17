@@ -22,7 +22,7 @@ import {
 } from 'lucide-react'
 
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt, updateAdminOrderStatus } from '@/lib/av-admin-orders.functions'
+import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt, updateAdminOrderStatus, cancelAdminOrder } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -57,6 +57,8 @@ function AdminOrderDetailPage() {
   const [rejectingReceipt, setRejectingReceipt] = useState<{ id: string, reason: string, notes: string } | null>(null)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null)
   const [confirmingStatus, setConfirmingStatus] = useState<string | null>(null)
+  const [cancellingOrder, setCancellingOrder] = useState<{ id: string, reasonCode: string, reasonText: string } | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
   
   const { data: order, refetch } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
@@ -66,6 +68,7 @@ function AdminOrderDetailPage() {
   const getReceiptUrl = useServerFn(getAdminReceiptViewUrl)
   const reviewReceipt = useServerFn(reviewAdminReceipt)
   const updateStatus = useServerFn(updateAdminOrderStatus)
+  const cancelOrder = useServerFn(cancelAdminOrder)
 
 
 
@@ -132,6 +135,36 @@ function AdminOrderDetailPage() {
       toast.error('Ocorreu um erro ao atualizar o status.');
     } finally {
       setIsUpdatingStatus(null);
+    }
+  };
+
+  const handleCancelOrder = async (reasonCode: string, reasonText?: string) => {
+    try {
+      setIsCancelling(true);
+      const res = await cancelOrder({
+        data: {
+          orderId,
+          reasonCode,
+          reasonText
+        }
+      });
+
+      if (res.success) {
+        toast.success('Pedido cancelado com sucesso.');
+        setCancellingOrder(null);
+        await refetch();
+      } else {
+        const errorMsg = 
+          res.code === 'ORDER_DELIVERED_BLOCK' ? 'Pedidos entregues não podem ser cancelados.' :
+          res.code === 'ORDER_ALREADY_CANCELLED' ? 'Este pedido já foi cancelado.' :
+          'Não foi possível cancelar o pedido.';
+        toast.error(`Erro: ${errorMsg}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Ocorreu um erro ao cancelar o pedido.');
+    } finally {
+      setIsCancelling(false);
     }
   };
 

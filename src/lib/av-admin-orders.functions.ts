@@ -149,7 +149,7 @@ export const cancelAdminOrder = createServerFn({ method: 'POST' })
     return await cancelAdminOrderInternal({
       orderId: input.orderId,
       reasonCode: input.reasonCode,
-      reasonText: input.reasonText,
+      reasonText: input.reasonText ?? null,
       adminId: adminContext.userId!
     });
   });
