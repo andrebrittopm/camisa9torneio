@@ -459,6 +459,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      av_admin_review_receipt: {
+        Args: {
+          p_action: string
+          p_admin_id: string
+          p_notes?: string
+          p_order_id: string
+          p_reason?: string
+          p_receipt_id: string
+        }
+        Returns: Json
+      }
       av_check_rate_limits: { Args: { p_specs: Json }; Returns: Json }
       av_cleanup_rate_limit_buckets: {
         Args: { p_limit?: number }

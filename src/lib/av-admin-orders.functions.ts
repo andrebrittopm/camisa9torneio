@@ -74,5 +74,36 @@ export const getAdminReceiptViewUrl = createServerFn({ method: 'GET' })
     return { signedUrl };
   });
 
+/**
+ * RPC para aprovar ou rejeitar um comprovante de pagamento.
+ */
+export const reviewAdminReceipt = createServerFn({ method: 'POST' })
+  .inputValidator((data) => z.object({
+    orderId: z.string(),
+    receiptId: z.string(),
+    action: z.enum(['approve', 'reject']),
+    reason: z.string().optional(),
+    notes: z.string().max(500).optional()
+  }).parse(data))
+  .handler(async ({ data: input }) => {
+    const request = (globalThis as any).getRequest?.();
+    if (!request) throw new Error('Request Context Missing');
+    
+    // 1. Validar Guard Administrativo
+    const adminContext = await requireAdmin(request);
+    
+    // 2. Executar Ação (IDOR validation inclusive no RPC)
+    const { reviewAdminReceiptInternal } = await import('./server/av-admin-orders.server');
+    return await reviewAdminReceiptInternal({
+      orderId: input.orderId,
+      receiptId: input.receiptId,
+      action: input.action,
+      reason: input.reason ?? null,
+      notes: input.notes ?? null,
+      adminId: adminContext.userId!
+    });
+  });
+
 export type { AdminOrderListResponse, AdminOrderDetail };
+
 

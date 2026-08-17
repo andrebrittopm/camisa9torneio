@@ -16,10 +16,13 @@ import {
   FileIcon,
   Download,
   ExternalLink,
-  X
+  X,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react'
+
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrderDetail, getAdminReceiptViewUrl } from '@/lib/av-admin-orders.functions'
+import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
@@ -49,17 +52,52 @@ function AdminOrderDetailPage() {
   const { orderId } = Route.useParams()
   const [viewingReceipt, setViewingReceipt] = useState<{ url: string; type: string } | null>(null)
   const [isGeneratingUrl, setIsGeneratingUrl] = useState<string | null>(null)
+  const [isReviewing, setIsReviewing] = useState<string | null>(null)
+  const [confirmingApproval, setConfirmingApproval] = useState<string | null>(null)
+  const [rejectingReceipt, setRejectingReceipt] = useState<{ id: string, reason: string, notes: string } | null>(null)
   
-  const { data: order } = useSuspenseQuery({
+  const { data: order, refetch } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
     queryFn: () => getAdminOrderDetail({ data: { orderId } })
   })
 
   const getReceiptUrl = useServerFn(getAdminReceiptViewUrl)
+  const reviewReceipt = useServerFn(reviewAdminReceipt)
+
 
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const handleReview = async (receiptId: string, action: 'approve' | 'reject', reason?: string, notes?: string) => {
+    try {
+      setIsReviewing(receiptId);
+      const res = await reviewReceipt({
+        data: {
+          orderId,
+          receiptId,
+          action,
+          reason,
+          notes
+        }
+      });
+
+      if (res.success) {
+        toast.success(action === 'approve' ? 'Pagamento aprovado com sucesso!' : 'Comprovante rejeitado.');
+        setConfirmingApproval(null);
+        setRejectingReceipt(null);
+        await refetch();
+      } else {
+        toast.error(`Erro: ${res.code || 'Não foi possível completar a ação.'}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Ocorreu um erro ao processar a revisão.');
+    } finally {
+      setIsReviewing(null);
+    }
+  };
+
 
   if (!order) {
     return (
@@ -337,16 +375,37 @@ function AdminOrderDetailPage() {
                                    Visualizar Comprovante
                                  </>
                                )}
-                             </Button>
-                          </div>
+                              </Button>
+
+                              {r.reviewStatus === 'pending' && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button
+                                    onClick={() => setConfirmingApproval(r.id)}
+                                    disabled={!!isReviewing}
+                                    className="h-8 text-[9px] font-black uppercase tracking-widest bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-xl"
+                                  >
+                                    Aprovar
+                                  </Button>
+                                  <Button
+                                    onClick={() => setRejectingReceipt({ id: r.id, reason: 'Valor divergente', notes: '' })}
+                                    disabled={!!isReviewing}
+                                    variant="outline"
+                                    className="h-8 text-[9px] font-black uppercase tracking-widest bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl"
+                                  >
+                                    Rejeitar
+                                  </Button>
+                                </div>
+                              )}
+                           </div>
                         ))}
                       </div>
                     )}
                  </div>
                  
                  <div className="p-4 bg-white/5 border border-white/5 rounded-2xl italic text-[10px] text-slate-500 leading-relaxed">
-                   A visualização é temporária (60s). As ações de aprovação serão habilitadas na próxima etapa.
+                   A visualização é temporária (60s). As ações de aprovação e rejeição são definitivas e auditadas.
                  </div>
+
               </div>
            </section>
         </div>
@@ -394,7 +453,118 @@ function AdminOrderDetailPage() {
            </div>
         </div>
       )}
+
+      {/* Modal de Confirmação de Aprovação */}
+      {confirmingApproval && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 max-w-md w-full space-y-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Confirmar Pagamento?</h3>
+                <p className="text-sm text-slate-400">
+                  Você confirma que o comprovante foi analisado e o valor de <strong>{formatCurrency(order.summary.totalAmount)}</strong> foi recebido?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white/5 rounded-2xl space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Pedido:</span>
+                <span className="text-white font-mono">{order.publicId}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 uppercase font-black text-[9px]">Cliente:</span>
+                <span className="text-white font-bold">{order.customer.name}</span>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmingApproval(null)}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleReview(confirmingApproval, 'approve')}
+                disabled={!!isReviewing}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest bg-emerald-500 hover:bg-emerald-600 text-white glow-emerald rounded-2xl"
+              >
+                {isReviewing ? 'Processando...' : 'Confirmar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Rejeição */}
+      {rejectingReceipt && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-navy/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 max-w-md w-full space-y-6 shadow-2xl ring-1 ring-white/10">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-rose-500/20 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-rose-500" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-black text-white uppercase tracking-tight">Rejeitar Comprovante</h3>
+                <p className="text-sm text-slate-400">
+                  O cliente será notificado para enviar um novo comprovante.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Motivo da Rejeição</label>
+                <select
+                  value={rejectingReceipt.reason}
+                  onChange={(e) => setRejectingReceipt({ ...rejectingReceipt, reason: e.target.value })}
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white text-sm focus:ring-1 focus:ring-gold outline-none"
+                >
+                  <option value="Valor divergente">Valor divergente</option>
+                  <option value="Comprovante ilegível">Comprovante ilegível</option>
+                  <option value="Comprovante inválido">Comprovante inválido</option>
+                  <option value="Pagamento não localizado">Pagamento não localizado</option>
+                  <option value="Outro">Outro (especificar)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase tracking-widest text-slate-500">Observações Extras</label>
+                <textarea
+                  value={rejectingReceipt.notes}
+                  onChange={(e) => setRejectingReceipt({ ...rejectingReceipt, notes: e.target.value })}
+                  placeholder="Ex: O comprovante enviado pertence a outro torneio..."
+                  className="w-full min-h-[100px] bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:ring-1 focus:ring-gold outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                variant="ghost"
+                onClick={() => setRejectingReceipt(null)}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleReview(rejectingReceipt.id, 'reject', rejectingReceipt.reason, rejectingReceipt.notes)}
+                disabled={!!isReviewing}
+                className="flex-1 h-14 text-[10px] font-black uppercase tracking-widest bg-rose-500 hover:bg-rose-600 text-white rounded-2xl"
+              >
+                {isReviewing ? 'Processando...' : 'Rejeitar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
 
