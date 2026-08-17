@@ -23,7 +23,7 @@ export const Route = createFileRoute('/admin/')({
     // RPC Bridge para evitar import-protection violation no bundle client
     const context = await checkAdminAuth();
     
-    if (!context.authenticated || !context.active) {
+    console.log('[AV-DEBUG] /admin beforeLoad context:', context);
       throw redirect({
         to: '/admin/login',
       });
