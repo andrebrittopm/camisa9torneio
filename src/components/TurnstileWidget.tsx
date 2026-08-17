@@ -137,7 +137,9 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidget
         theme: 'dark',
         appearance: 'always',
         // 9. Configurar para não criar campo de resposta automático se possível
-        'response-field': false, 
+        'response-field': false,
+        'retry': 'auto',
+        'retry-interval': 1000,
         callback: (token: string) => {
           if (isMounted) callbacksRef.current.onTokenChange(token);
         },

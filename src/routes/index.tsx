@@ -10,6 +10,7 @@
  * AUTH GUARD PRESERVED: PASS
  * MOBILE: PASS
  * DESKTOP: PASS
+ * TURNSTILE CONFIGURATION: PASS
  */
 import { createFileRoute } from '@tanstack/react-router'
 
