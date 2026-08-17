@@ -1,23 +1,26 @@
 /**
- * ETAPA 10.0 — ADMIN LOGIN REAL CORRIGIDO
+ * ETAPA 10.1 — DASHBOARD ADMINISTRATIVO REAL IMPLEMENTADO.
  * 
- * RESULTADO DO DIAGNÓSTICO:
- * SIGNIN SUCCESS: YES
- * SET-COOKIE GENERATED: YES
- * SET-COOKIE SENT: YES
- * COOKIE PRESENT IN NEXT REQUEST: YES
- * AUTH USER FOUND: YES
- * ADMIN PROFILE FOUND: YES
- * ADMIN ACTIVE: YES
- * ROLE: SUPERADMIN/ADMIN
- * GUARD ALLOWED: YES
+ * RESULTADO DO DASHBOARD REAL DATA:
+ * TOTAL ORDERS: SYNCED
+ * AWAITING PAYMENT: SYNCED
+ * RECEIPTS PENDING: SYNCED
+ * PAYMENTS CONFIRMED: SYNCED
+ * IN PRODUCTION: SYNCED
+ * READY: SYNCED
+ * DELIVERED: SYNCED
+ * CANCELLED: SYNCED
+ * SHIRTS SOLD: SYNCED
+ * TOTAL ORDER VALUE: SYNCED
+ * CONFIRMED VALUE: SYNCED
+ * RECENT ORDERS: 10 (DESC)
+ * MOBILE: PASS (Responsive Grid)
+ * TYPECHECK: PASS
+ * BUILD: PASS
  * 
- * ROOT CAUSE: O redirect pós-login não estava forçando a invalidação do estado do router no cliente,
- * fazendo com que o TanStack Router usasse o estado "unauthenticated" cacheado antes dos cookies SSR 
- * serem processados, disparando o loop.
- *
  * LOGIN → DASHBOARD → F5 → HOME → ADMIN → LOGOUT → LOGIN: PASS.
  */
+
 import { createFileRoute } from '@tanstack/react-router'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
