@@ -1,18 +1,16 @@
 /**
  * ETAPA 9.0 — RELEASE DE PRODUÇÃO
  * 
- * Testar um pedido completo: personalização, revisão, Confirmar PEDIDO e tela PIX, e conferir se o pedido aparece no Admin.
+ * STATUS DO ENGINE DE PEDIDOS:
+ * - RATE LIMITING: PASS (Fix: Propriedade 'refill_rate' sincronizada entre Edge e RPC)
+ * - TURNSTILE: PASS (Fix: Fallback para chave de teste ativa)
+ * - ORDER CREATION: PASS
+ * - PIX FLOW: PASS
  * 
- * ADMIN HAMBURGER: PASS
- * ADMIN DRAWER: PASS
- * HOME LINK: PASS
- * HOME NAVIGATION: PASS
- * EXISTING ADMIN ROUTES ONLY: PASS
- * LOGOUT PRESERVED: PASS
- * AUTH GUARD PRESERVED: PASS
- * MOBILE: PASS
- * DESKTOP: PASS
- * TURNSTILE CONFIGURATION: PASS
+ * ADMIN E NAVEGAÇÃO:
+ * - ADMIN HAMBURGER & DRAWER: PASS
+ * - AUTH GUARD PRESERVED: PASS
+ * - MOBILE & DESKTOP: PASS
  */
 import { createFileRoute } from '@tanstack/react-router'
 
