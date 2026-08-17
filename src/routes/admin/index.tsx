@@ -24,6 +24,15 @@ export const Route = createFileRoute('/admin/')({
     const context = await checkAdminAuth();
     
     if (!context.authenticated || !context.active) {
+      throw redirect({
+        to: '/admin/login',
+      });
+    }
+
+    return {
+      adminContext: context
+    };
+  },
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
       queryKey: ['admin-stats'],
