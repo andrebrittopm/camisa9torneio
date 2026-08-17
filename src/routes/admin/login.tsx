@@ -47,8 +47,8 @@ function AdminLogin() {
       // Pequeno atraso para garantir que os cookies sejam processados pelo browser
       // antes da navegação que aciona o guard SSR
       setTimeout(() => {
-        navigate({ to: '/admin', replace: true })
-      }, 500);
+        window.location.href = '/admin/';
+      }, 100);
 
     } catch (err: any) {
       console.error('[AV-ADMIN-LOGIN] Error:', err)

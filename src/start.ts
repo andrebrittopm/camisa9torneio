@@ -1,14 +1,12 @@
 import { createStart, createCsrfMiddleware, createMiddleware } from "@tanstack/react-start";
 import { renderErrorPage } from "./lib/error-page";
+import { attachSupabaseAuth } from "./integrations/supabase/auth-attacher";
 
 /**
  * ATENÇÃO: 
- * O global functionMiddleware 'attachSupabaseAuth' foi removido propositalmente 
- * para evitar interferência com o fluxo de autenticação via cookies (SSR) 
- * no ambiente administrativo.
- * 
- * O Painel Administrativo utiliza @supabase/ssr com cookies HttpOnly/SameSite=None.
- * A camada pública/cliente continua usando o cliente Supabase padrão para operações anônimas.
+ * O Painel Administrativo utiliza @supabase/ssr com cookies.
+ * Adicionamos attachSupabaseAuth para garantir que chamadas via Client (como checkAdminAuth no beforeLoad)
+ * também carreguem o token quando disponíveis, mitigando loops em ambientes de preview.
  */
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
@@ -32,4 +30,5 @@ const csrfMiddleware = createCsrfMiddleware({
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware, csrfMiddleware],
+  functionMiddleware: [attachSupabaseAuth],
 }));
