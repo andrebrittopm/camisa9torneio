@@ -330,9 +330,10 @@ export async function reviewAdminReceiptInternal(params: {
     p_receipt_id: params.receiptId,
     p_admin_id: params.adminId,
     p_action: params.action,
-    p_reason: params.reason || null,
-    p_notes: params.notes || null
+    p_reason: params.reason || '',
+    p_notes: params.notes || ''
   });
+
 
   if (error) {
     console.error('[reviewAdminReceiptInternal] RPC Error:', error);
