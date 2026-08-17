@@ -30,7 +30,7 @@ export function createSupabaseSSR(request: Request, responseHeaders: Headers) {
           const cookieStr = serialize(name, value, {
             ...options,
             path: '/',
-            sameSite: 'lax',
+            sameSite: 'none',
             secure: true,
           })
           responseHeaders.append('Set-Cookie', cookieStr)
