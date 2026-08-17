@@ -325,14 +325,15 @@ export async function reviewAdminReceiptInternal(params: {
   const { createClient } = await import('@supabase/supabase-js');
   const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
 
-  const { data, error } = await supabaseAdmin.rpc('av_admin_review_receipt', {
+  const { data, error } = await supabaseAdmin.rpc('av_admin_review_receipt' as any, {
     p_order_id: params.orderId,
     p_receipt_id: params.receiptId,
     p_admin_id: params.adminId,
     p_action: params.action,
-    p_reason: params.reason || undefined,
-    p_notes: params.notes || undefined
+    p_reason: params.reason || null,
+    p_notes: params.notes || null
   });
+
 
 
   if (error) {
