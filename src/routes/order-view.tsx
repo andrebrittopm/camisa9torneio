@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/order-view' as any)({
+export const Route = createFileRoute('/order-view')({
   validateSearch: (search: Record<string, unknown>) => ({
     handle: search['handle'] as string,
     token: search['token'] as string,
