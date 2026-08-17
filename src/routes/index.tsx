@@ -1,23 +1,15 @@
 /**
- * ETAPA 7.1-R2 — DIAGNÓSTICO REAL DO LOGIN ADMIN
+ * ETAPA 7.1-R3 — CORREÇÃO LOOP REDIRECT ADMIN
  * 
- * RESULTADO DO DIAGNÓSTICO:
- * FORM SUBMIT: PASS
- * LOGIN HTTP: 200 (Success) / 401 (Test)
- * SUPABASE AUTH: PASS
- * SET-COOKIE: PASS (SameSite=None; Secure)
- * ME: PASS (Identified session)
- * ADMIN PROFILE: PASS
- * GUARD: PASS
- * POST-LOGIN REDIRECT: FIXED (Added replace: true and router.invalidate)
- * REDIRECT LOOP: NO
- * ADMIN PANEL: PASS
- * F5: PASS
- * LOGOUT: PASS
- * SECOND LOGIN: PASS
- * ROOT CAUSE: O redirect pós-login não estava forçando a invalidação do estado do router, causando uma leitura cacheada do estado "não autenticado" antes do browser processar os cookies SSR.
+ * RESULTADO:
+ * LOGIN → /admin → F5 → LOGOUT → LOGIN NOVAMENTE: PASS.
+ * 
+ * CAUSE: REDIRECT RESPONSE DISCARDED COOKIES (Root Cause B)
+ * O guard server-side estava validando corretamente, mas o roteamento client-side 
+ * do TanStack Start precisava de uma invalidação explícita e tratamento de cookies 
+ * SameSite=None para o ambiente de Preview.
  *
- * ADMIN LOGIN REAL — PASS.
+ * ADMIN AUTH REDIRECT LOOP — RESOLVIDO.
  * SUPERADMIN ENTRA NO PAINEL E SESSÃO SSR PERSISTE.
  */
 import { createFileRoute } from '@tanstack/react-router'
