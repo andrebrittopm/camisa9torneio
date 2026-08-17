@@ -29,12 +29,13 @@ export type AdminAuditListResponse = {
 export async function getAdminAuditLogsInternal(params: {
   page: number;
   pageSize: number;
-  search?: string | null;
-  adminFilter?: string | null;
-  actionFilter?: string | null;
-  dateFrom?: string | null;
-  dateTo?: string | null;
+  search?: string | null | undefined;
+  adminFilter?: string | null | undefined;
+  actionFilter?: string | null | undefined;
+  dateFrom?: string | null | undefined;
+  dateTo?: string | null | undefined;
 }): Promise<AdminAuditListResponse> {
+
   const supabaseUrl = process.env['SUPABASE_URL']!;
   const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
   const { createClient } = await import('@supabase/supabase-js');
