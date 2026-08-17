@@ -40,7 +40,9 @@ export function AdminHeader() {
   const navLinks = [
     { label: "Voltar para a Página Inicial", href: "/", icon: Home, highlight: true },
     { label: "Painel", href: "/admin", icon: LayoutDashboard },
+    { label: "Pedidos", href: "/admin/orders", icon: ShoppingBag },
   ];
+
 
   const isActive = (path: string) => {
     if (path === '/admin') {
