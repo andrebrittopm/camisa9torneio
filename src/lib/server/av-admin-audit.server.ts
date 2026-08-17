@@ -129,7 +129,7 @@ export async function getAdminAuditLogsInternal(params: {
       action: r.action,
       resourceType: r.resource_type,
       resourceId: r.resource_id,
-      resourcePublicId: r.resource_type === 'order' && r.resource_id ? orderMap[r.resource_id] : null,
+      resourcePublicId: r.resource_type === 'order' && r.resource_id ? (orderMap[r.resource_id] || null) : null,
       correlationId: r.correlation_id,
       createdAt: r.created_at,
       metadata: r.metadata
