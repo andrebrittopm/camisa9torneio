@@ -21,6 +21,7 @@ function getAllowedOrigins(request: Request): string[] {
   } catch {
     selfOrigin = '';
   }
+  // No ambiente de preview do Lovable, precisamos permitir o domínio do preview
   return Array.from(new Set([...fromEnv, ...(selfOrigin ? [selfOrigin] : [])]));
 }
 

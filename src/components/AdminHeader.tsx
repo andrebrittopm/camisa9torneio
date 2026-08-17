@@ -24,7 +24,10 @@ export function AdminHeader() {
       });
       if (response.ok) {
         toast.success("Sessão encerrada.");
-        navigate({ to: '/admin/login' });
+        // Invalida o router antes de navegar para limpar o estado autenticado do cache client-side
+        navigate({ to: '/admin/login' }).then(() => {
+          window.location.reload();
+        });
       } else {
         toast.error("Erro ao sair.");
       }
