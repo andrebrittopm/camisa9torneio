@@ -344,4 +344,32 @@ export async function reviewAdminReceiptInternal(params: {
   return data as { success: boolean; code?: string };
 }
 
+/**
+ * Executa a transição de status operacional de um pedido via RPC atômico.
+ */
+export async function updateAdminOrderStatusInternal(params: {
+  orderId: string;
+  adminId: string;
+  newStatus: string;
+}): Promise<{ success: boolean; code?: string }> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
+  const { data, error } = await supabaseAdmin.rpc('av_admin_update_order_status' as any, {
+    p_order_id: params.orderId,
+    p_admin_id: params.adminId,
+    p_new_status: params.newStatus
+  });
+
+  if (error) {
+    console.error('[updateAdminOrderStatusInternal] RPC Error:', error);
+    throw new Error('FAILED_TO_UPDATE_ORDER_STATUS');
+  }
+
+  return data as { success: boolean; code?: string };
+}
+
+
 
