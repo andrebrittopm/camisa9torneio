@@ -30,6 +30,7 @@ export type AdminOrderDetail = {
   orderStatus: string;
   paymentStatus: string;
   notes: string | null;
+  cancellationReason: string | null;
   customer: {
     name: string;
     whatsapp: string;
