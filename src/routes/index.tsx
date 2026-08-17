@@ -1,5 +1,7 @@
 /**
- * ETAPA 9.0 — RELEASE DE PRODUÇÃO (MODIFIED)
+ * ETAPA 9.0 — RELEASE DE PRODUÇÃO
+ * 
+ * Testar um pedido completo: personalização, revisão, Confirmar PEDIDO e tela PIX, e conferir se o pedido aparece no Admin.
  * 
  * ADMIN HAMBURGER: PASS
  * ADMIN DRAWER: PASS
