@@ -77,7 +77,7 @@ function OrderViewPage() {
   }
 
   const order = data.order
-  const statusInfo = ORDER_STATUS_MAP[order.order_status] || ORDER_STATUS_MAP['received']
+  const statusInfo = (ORDER_STATUS_MAP[order.order_status] || ORDER_STATUS_MAP['received'])!;
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy pb-24">
