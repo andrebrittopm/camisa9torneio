@@ -19,7 +19,7 @@ import {
   X
 } from 'lucide-react'
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrderDetail, getAdminReceiptViewUrl } from '@/lib/av-admin-orders.functions'
+import { getAdminOrderDetail, getAdminReceiptViewUrl, reviewAdminReceipt } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
