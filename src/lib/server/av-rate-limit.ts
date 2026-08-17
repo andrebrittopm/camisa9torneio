@@ -151,7 +151,7 @@ export async function checkRateLimit(
       bucket_key_hash: await generateHMAC(secret, `${scopePrefix}:account`, identifier, endpoint),
       scope: `${scopePrefix}:account`,
       capacity: 5,
-      refill_rate_per_second: 5 / 900, // 5 a cada 15m
+      refill_rate: 5 / 900, // 5 a cada 15m
       ttl_seconds: 3600
     });
 
@@ -159,7 +159,7 @@ export async function checkRateLimit(
       bucket_key_hash: await generateHMAC(secret, `${scopePrefix}:global`, 'global', endpoint),
       scope: `${scopePrefix}:global`,
       capacity: 100,
-      refill_rate_per_second: 100 / 900,
+      refill_rate: 100 / 900,
       ttl_seconds: 3600
     });
   } else {
@@ -169,7 +169,7 @@ export async function checkRateLimit(
         bucket_key_hash: await generateHMAC(secret, 'order:client:burst', identifier, endpoint),
         scope: 'order:client:burst',
         capacity: 5,
-        refill_rate_per_second: 5 / 60,
+        refill_rate: 5 / 60,
         ttl_seconds: 86400
       });
 
@@ -177,7 +177,7 @@ export async function checkRateLimit(
         bucket_key_hash: await generateHMAC(secret, 'order:client:sustained', identifier, endpoint),
         scope: 'order:client:sustained',
         capacity: 20,
-        refill_rate_per_second: 20 / 900,
+        refill_rate: 20 / 900,
         ttl_seconds: 86400
       });
     }
@@ -186,7 +186,7 @@ export async function checkRateLimit(
       bucket_key_hash: await generateHMAC(secret, 'order:global', 'global', endpoint),
       scope: 'order:global',
       capacity: 100,
-      refill_rate_per_second: 100 / 60,
+      refill_rate: 100 / 60,
       ttl_seconds: 86400
     });
   }
@@ -253,7 +253,7 @@ export async function checkRateLimit(
     if (data.allowed) {
       return { allowed: true };
     } else {
-      const retryAfter = data.retry_after_seconds;
+      const retryAfter = data.wait_time;
       if (!Number.isFinite(retryAfter) || retryAfter <= 0) {
         console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=INVALID_RPC_RESPONSE`);
         throw new Error('INVALID_RPC_RESPONSE');
