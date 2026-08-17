@@ -379,7 +379,7 @@ function AdminOrderDetailPage() {
                         </span>
                       ) : (
                         <span className="flex items-center gap-2">
-                          {getNextStatusLabel(order.status.orderStatus)}
+                          {getNextStatusLabel(order.orderStatus)}
                           <ArrowLeft className="w-3 h-3 rotate-180 group-hover:translate-x-1 transition-transform" />
                         </span>
                       )}
