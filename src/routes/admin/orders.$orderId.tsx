@@ -11,14 +11,23 @@ import {
   Calendar,
   Phone,
   Mail,
-  FileText
+  FileText,
+  Eye,
+  FileIcon,
+  Download,
+  ExternalLink,
+  X
 } from 'lucide-react'
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrderDetail } from '@/lib/av-admin-orders.functions'
+import { getAdminOrderDetail, getAdminReceiptViewUrl } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useState } from 'react'
+import { useServerFn } from '@tanstack/react-start'
+import { toast } from 'sonner'
+
 
 export const Route = createFileRoute('/admin/orders/$orderId')({
   beforeLoad: async () => {
@@ -38,11 +47,16 @@ export const Route = createFileRoute('/admin/orders/$orderId')({
 
 function AdminOrderDetailPage() {
   const { orderId } = Route.useParams()
+  const [viewingReceipt, setViewingReceipt] = useState<{ url: string; type: string } | null>(null)
+  const [isGeneratingUrl, setIsGeneratingUrl] = useState<string | null>(null)
   
   const { data: order } = useSuspenseQuery({
     queryKey: ['admin-order-detail', orderId],
     queryFn: () => getAdminOrderDetail({ data: { orderId } })
   })
+
+  const getReceiptUrl = useServerFn(getAdminReceiptViewUrl)
+
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -246,42 +260,137 @@ function AdminOrderDetailPage() {
                  </div>
                  
                  <div className="space-y-4 pt-4 border-t border-white/5">
-                    <div>
-                      <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Comprovante</p>
-                      <p className="text-xs text-white font-bold">
-                        {order.payment.hasReceipt ? 'Enviado' : 'Não enviado'}
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[8px] text-slate-500 font-black uppercase">Comprovantes</p>
+                      <span className="text-[10px] text-white font-bold bg-white/5 px-2 py-0.5 rounded-full">
+                        {order.payment.receipts.length}
+                      </span>
                     </div>
-                    {order.payment.hasReceipt && (
-                      <>
-                        <div>
-                          <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Data de Envio</p>
-                          <p className="text-xs text-white font-mono">
-                            {order.payment.receiptUploadedAt ? format(new Date(order.payment.receiptUploadedAt), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '---'}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status da Análise</p>
-                          <span className={cn(
-                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                            order.payment.reviewStatus === 'approved' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
-                            order.payment.reviewStatus === 'pending' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                            "bg-rose-500/10 text-rose-500 border border-rose-500/20"
-                          )}>
-                            {order.payment.reviewStatus}
-                          </span>
-                        </div>
-                      </>
+
+                    {!order.payment.hasReceipt ? (
+                      <p className="text-xs text-slate-500 italic">Nenhum comprovante enviado.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {order.payment.receipts.map((r, idx) => (
+                          <div key={r.id} className="p-4 bg-white/5 border border-white/5 rounded-2xl space-y-3">
+                             <div className="flex justify-between items-start">
+                                <div>
+                                   <p className="text-[8px] text-gold font-black uppercase mb-1">Comprovante {order.payment.receipts.length - idx}</p>
+                                   <div className="flex items-center gap-2">
+                                      <FileIcon className="w-3 h-3 text-slate-400" />
+                                      <span className="text-[10px] text-white font-mono truncate max-w-[120px]">{r.fileName}</span>
+                                   </div>
+                                </div>
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                                  r.reviewStatus === 'approved' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
+                                  r.reviewStatus === 'pending' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                                  "bg-rose-500/10 text-rose-500 border border-rose-500/20"
+                                )}>
+                                  {r.reviewStatus === 'pending' ? 'Pendente' : 
+                                   r.reviewStatus === 'approved' ? 'Aprovado' : 'Rejeitado'}
+                                </span>
+                             </div>
+
+                             <div className="grid grid-cols-2 gap-2 text-[8px] text-slate-500 font-black uppercase tracking-tighter">
+                                <div>
+                                   <p className="mb-0.5">Enviado em</p>
+                                   <p className="text-white font-mono">{format(new Date(r.uploadedAt), 'dd/MM/yy HH:mm')}</p>
+                                </div>
+                                <div>
+                                   <p className="mb-0.5">Tamanho / Tipo</p>
+                                   <p className="text-white font-mono">{(r.fileSize / 1024 / 1024).toFixed(2)}MB / {r.fileType.split('/')[1].toUpperCase()}</p>
+                                </div>
+                             </div>
+
+                             <Button 
+                               onClick={async () => {
+                                 try {
+                                   setIsGeneratingUrl(r.id);
+                                   const { signedUrl } = await getReceiptUrl({ data: { orderId: order.id, receiptId: r.id } });
+                                   
+                                   if (r.fileType === 'application/pdf') {
+                                     window.open(signedUrl, '_blank');
+                                   } else {
+                                     setViewingReceipt({ url: signedUrl, type: r.fileType });
+                                   }
+                                 } catch (err) {
+                                   console.error(err);
+                                   toast.error("Erro ao gerar acesso ao comprovante.");
+                                 } finally {
+                                   setIsGeneratingUrl(null);
+                                 }
+                               }}
+                               disabled={isGeneratingUrl === r.id}
+                               variant="outline" 
+                               className="w-full h-8 text-[9px] font-black uppercase tracking-widest bg-gold/5 border-gold/20 text-gold hover:bg-gold hover:text-navy transition-all duration-300"
+                             >
+                               {isGeneratingUrl === r.id ? (
+                                 <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
+                                    Processando...
+                                 </div>
+                               ) : (
+                                 <>
+                                   <Eye className="w-3 h-3 mr-2" />
+                                   Visualizar Comprovante
+                                 </>
+                               )}
+                             </Button>
+                          </div>
+                        ))}
+                      </div>
                     )}
                  </div>
                  
                  <div className="p-4 bg-white/5 border border-white/5 rounded-2xl italic text-[10px] text-slate-500 leading-relaxed">
-                   A visualização segura do arquivo binário e as ações de aprovação serão habilitadas na próxima etapa.
+                   A visualização é temporária (60s). As ações de aprovação serão habilitadas na próxima etapa.
                  </div>
               </div>
            </section>
         </div>
       </div>
+
+      {/* Modal de Visualização de Imagem */}
+      {viewingReceipt && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+           <div 
+             className="absolute inset-0 bg-navy/95 backdrop-blur-xl" 
+             onClick={() => setViewingReceipt(null)}
+           />
+           <div className="relative z-10 w-full max-w-4xl max-h-full flex flex-col items-center">
+              <div className="absolute -top-12 right-0 flex gap-4">
+                 <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="text-white hover:bg-white/10"
+                   onClick={() => window.open(viewingReceipt.url, '_blank')}
+                 >
+                    <ExternalLink className="w-5 h-5" />
+                 </Button>
+                 <Button 
+                   variant="ghost" 
+                   size="icon" 
+                   className="text-white hover:bg-white/10"
+                   onClick={() => setViewingReceipt(null)}
+                 >
+                    <X className="w-5 h-5" />
+                 </Button>
+              </div>
+              <div className="w-full bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                 <img 
+                   src={viewingReceipt.url} 
+                   alt="Comprovante" 
+                   className="w-full h-auto max-h-[80vh] object-contain mx-auto"
+                 />
+              </div>
+              <p className="mt-4 text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">
+                O acesso expira em 60 segundos
+              </p>
+           </div>
+        </div>
+      )}
     </div>
   )
 }
+

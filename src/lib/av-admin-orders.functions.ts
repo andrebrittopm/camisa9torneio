@@ -52,4 +52,27 @@ export const getAdminOrderDetail = createServerFn({ method: 'GET' })
     return await getAdminOrderDetailInternal(input.orderId);
   });
 
+/**
+ * RPC para gerar uma URL temporária e segura para visualização do comprovante.
+ */
+export const getAdminReceiptViewUrl = createServerFn({ method: 'GET' })
+  .inputValidator((data) => z.object({
+    orderId: z.string(),
+    receiptId: z.string()
+  }).parse(data))
+  .handler(async ({ data: input }) => {
+    const request = (globalThis as any).getRequest?.();
+    if (!request) throw new Error('Request Context Missing');
+    
+    // 1. Validar Guard Administrativo
+    await requireAdmin(request);
+    
+    // 2. Gerar URL com internal helper (IDOR validation inclusive)
+    const { getAdminReceiptSignedUrlInternal } = await import('./server/av-admin-orders.server');
+    const signedUrl = await getAdminReceiptSignedUrlInternal(input.orderId, input.receiptId);
+    
+    return { signedUrl };
+  });
+
 export type { AdminOrderListResponse, AdminOrderDetail };
+
