@@ -165,4 +165,35 @@ export async function getAdminListForFilterInternal(): Promise<Array<{ id: strin
     id: p.user_id,
     name: p.display_name
   }));
+
+/**
+ * Registra uma ação administrativa na auditoria.
+ */
+export async function logAdminAction(params: {
+  adminUserId?: string;
+  action: string;
+  resourceType?: string;
+  resourceId?: string;
+  metadata?: any;
+  correlationId: string;
+}): Promise<void> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
+  const { error } = await supabaseAdmin.from('av_admin_audit_logs').insert({
+    admin_user_id: params.adminUserId || null,
+    action: params.action,
+    resource_type: params.resourceType || null,
+    resource_id: params.resourceId || null,
+    metadata: params.metadata || {},
+    correlation_id: params.correlationId
+  });
+
+  if (error) {
+    console.error(`[logAdminAction] Error inserting audit log:`, error);
+    // Não lançamos erro aqui para não interromper o fluxo principal por falha na auditoria
+  }
 }
+
