@@ -3,15 +3,13 @@ import { useQuery } from '@tanstack/react-query'
 import { Loader2, AlertCircle, ShoppingBag, Clock, CheckCircle2, Truck, XCircle, Shirt, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Link } from '@tanstack/react-router'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
-export const Route = createFileRoute('/api/public/av-order-view')({
+export const Route = createFileRoute('/order-view' as any)({
   validateSearch: (search: Record<string, unknown>) => ({
-    handle: search.handle as string,
-    token: search.token as string,
-    expires: search.expires as string,
+    handle: search['handle'] as string,
+    token: search['token'] as string,
+    expires: search['expires'] as string,
   }),
   component: OrderViewPage,
 })
@@ -27,7 +25,10 @@ async function fetchOrderData(handle: string, token: string, expires: string) {
 }
 
 function OrderViewPage() {
-  const { handle, token, expires } = Route.useSearch()
+  const search = Route.useSearch() as any
+  const handle = search['handle']
+  const token = search['token']
+  const expires = search['expires']
   
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-order-view', handle],
@@ -76,7 +77,7 @@ function OrderViewPage() {
   }
 
   const order = data.order
-  const statusInfo = ORDER_STATUS_MAP[order.order_status] || ORDER_STATUS_MAP.received
+  const statusInfo = ORDER_STATUS_MAP[order.order_status] || ORDER_STATUS_MAP['received']
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy pb-24">
