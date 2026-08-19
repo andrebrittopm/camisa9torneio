@@ -7,6 +7,7 @@
 
 
 import { createFileRoute } from '@tanstack/react-router'
+import { AlertCircle, Loader2, RefreshCcw } from 'lucide-react'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
@@ -17,7 +18,7 @@ import { Footer } from '@/components/Footer'
 import { fetchAvCatalog, type AvCatalogResponse } from '@/lib/av-catalog-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useOrderState } from '@/lib/order-state'
 import { OrderConfigurator } from '@/components/OrderConfigurator'
 import { CustomerDataForm } from '@/components/CustomerDataForm'
