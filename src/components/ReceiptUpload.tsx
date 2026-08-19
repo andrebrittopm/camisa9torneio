@@ -209,7 +209,7 @@ export function ReceiptUpload({
                     {isUploading ? (
                       <>
                         <Loader2 className="w-6 h-6 animate-spin" />
-                        Enviando...
+                        Enviando Comprovante...
                       </>
                     ) : (
                       <>

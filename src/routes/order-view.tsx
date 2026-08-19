@@ -174,7 +174,7 @@ function OrderViewPage() {
         </div>
 
         <div className="text-center p-8 border border-white/5 rounded-[32px] bg-white/[0.01]">
-          <p className="text-xs text-slate-500 leading-relaxed italic">
+          <p className="text-xs text-slate-400 leading-relaxed italic">
             Este é um link de visualização segura. Para sua segurança, ele expira periodicamente. <br/>
             Dúvidas? Entre em contato com a organização do torneio.
           </p>
