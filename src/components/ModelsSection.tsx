@@ -430,7 +430,7 @@ export function ModelsSection({
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
-                {tab === 'tshirt' ? `Camisetas (${counts.tshirt})` : `Regatas (${counts.tank})`}
+                {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
               </button>
             ))}
           </div>
