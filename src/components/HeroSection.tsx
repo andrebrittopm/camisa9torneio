@@ -43,7 +43,7 @@ export function HeroSection() {
             
             <div className="flex flex-col sm:flex-row gap-5 w-full sm:w-auto">
               <Button 
-                onClick={() => document.getElementById('pedido')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' })}
                 size="lg" 
                 variant="secondary" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300"

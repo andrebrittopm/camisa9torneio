@@ -98,9 +98,9 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
             tabIndex={-1}
             className="text-5xl md:text-7xl font-heading font-black uppercase tracking-tighter outline-none"
           >
-            Camisa Garantida!
+            Pedido recebido!
           </h2>
-          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Sua CAMISA OFICIAL foi reservada com sucesso.</p>
+          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Seu pedido foi criado! Agora faça o PIX e envie o comprovante.</p>
         </div>
       </div>
 
@@ -158,24 +158,24 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-12 border-t border-white/5">
                 <div className="space-y-8">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/20">Cliente</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/40">Cliente</span>
                     <p className="text-2xl font-black text-ice uppercase">{order.customer_name}</p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/20">Total de Peças</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/40">Total de Peças</span>
                     <p className="text-2xl font-black text-ice">{order.total_quantity}</p>
                   </div>
                 </div>
 
                 <div className="space-y-8">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/20">Status do Pedido</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/40">Status do Pedido</span>
                     <p className="text-xl font-black text-gold uppercase">
                       {ORDER_STATUS_MAP[order.order_status || 'received'] || order.order_status}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/20">Pagamento</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-ice/40">Pagamento</span>
                     <p className="text-xl font-black text-ice uppercase">
                       {PAYMENT_STATUS_MAP[order.payment_status || 'awaiting_payment'] || order.payment_status}
                     </p>

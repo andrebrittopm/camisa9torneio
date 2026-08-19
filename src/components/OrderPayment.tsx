@@ -168,9 +168,11 @@ export function OrderPayment({ totalAmount }: OrderPaymentProps) {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-2 py-4 border-t border-white/5">
-                <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10">
-                  <span className="text-[8px] font-black text-ice/40 uppercase tracking-[0.2em]">Envio de Comprovante — Próxima Etapa</span>
+              <div className="flex flex-col items-center gap-4 py-6 border-t border-white/5">
+                <div className="bg-gold/10 border border-gold/20 px-6 py-4 rounded-2xl max-w-md text-center">
+                  <p className="text-[11px] font-black text-gold uppercase tracking-widest leading-relaxed">
+                    IMPORTANTE: Após fazer o PIX, volte para esta página e envie o comprovante. Seu pagamento será confirmado após a conferência.
+                  </p>
                 </div>
               </div>
             </motion.div>

@@ -24,19 +24,25 @@ export function CustomerDataForm({ data, onChange, disabled }: CustomerDataFormP
       <h3 className="text-2xl font-heading font-black uppercase tracking-tight">Dados do Pedido</h3>
       
       <div>
-        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">Nome Completo</Label>
+        <Label htmlFor="customer-name" className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">Nome Completo</Label>
         <Input 
+          id="customer-name"
           placeholder="Ex: André Silva" 
           value={data.name}
           disabled={disabled}
+          autoComplete="name"
           onChange={(e) => onChange({ ...data, name: e.target.value })}
           className="h-16 bg-white/[0.02] border-white/10 rounded-xl font-black text-lg placeholder:text-ice/10 focus:border-gold/50 transition-all"
         />
       </div>
 
       <div>
-        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">WhatsApp</Label>
+        <Label htmlFor="customer-whatsapp" className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">WhatsApp</Label>
         <Input 
+          id="customer-whatsapp"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
           placeholder="(67) 99999-9999" 
           value={data.whatsapp}
           disabled={disabled}
@@ -46,9 +52,11 @@ export function CustomerDataForm({ data, onChange, disabled }: CustomerDataFormP
       </div>
 
       <div>
-        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">E-mail (para confirmação)</Label>
+        <Label htmlFor="customer-email" className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">E-mail (para confirmação)</Label>
         <Input 
+          id="customer-email"
           type="email"
+          autoComplete="email"
           placeholder="Ex: seu@email.com" 
           value={data.email}
           disabled={disabled}
@@ -58,9 +66,10 @@ export function CustomerDataForm({ data, onChange, disabled }: CustomerDataFormP
       </div>
 
       <div>
-        <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-3 block">Observações (Opcional)</Label>
+        <Label htmlFor="customer-notes" className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 mb-1 block">Observações (Opcional)</Label>
+        <p className="text-[9px] text-ice/20 font-black uppercase tracking-widest mb-3">Observações adicionais. Para alterar tamanho, nome ou número, volte aos campos da camisa.</p>
         <Textarea 
-          placeholder="Ex: Gostaria de retirar no ginásio..."
+          id="customer-notes"
           value={data.notes}
           disabled={disabled}
           onChange={(e) => onChange({ ...data, notes: e.target.value })}

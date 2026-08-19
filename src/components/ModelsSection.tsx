@@ -197,7 +197,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                 onClick={() => {
                   onSelect();
                   onClose();
-                  document.getElementById('pedido')?.scrollIntoView({ behavior: 'smooth' });
+                  document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className={cn(
                   "w-full h-20 text-lg font-black uppercase tracking-widest rounded-2xl transition-all",
@@ -430,7 +430,7 @@ export function ModelsSection({
                     transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                   />
                 )}
-                {tab === 'tshirt' ? `Camisetas (${counts.tshirt})` : `Regatas (${counts.tank})`}
+                {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
               </button>
             ))}
           </div>

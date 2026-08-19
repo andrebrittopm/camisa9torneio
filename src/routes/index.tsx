@@ -1,12 +1,13 @@
 /**
  * AV - 9º Torneio Amigos do Vôlei
- * ETAPA 11.1 — REFINAMENTO PREMIUM VISUAL/TEXTUAL
- * ESTADO ATUAL: ETAPA 11.0 — AUDITORIA VISUAL: PASS
+ * ETAPA 11.3 — CORREÇÕES DIRIGIDAS PÓS-ANTIGRAVITY
+ * BLOCKERS + POLIMENTO CONFIRMADO
  */
 
 
 
 import { createFileRoute } from '@tanstack/react-router'
+import { AlertCircle, Loader2, RefreshCcw } from 'lucide-react'
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Header } from '@/components/Header'
 import { HeroSection } from '@/components/HeroSection'
@@ -17,7 +18,6 @@ import { Footer } from '@/components/Footer'
 import { fetchAvCatalog, type AvCatalogResponse } from '@/lib/av-catalog-client'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Loader2, RefreshCcw } from 'lucide-react'
 import { useOrderState } from '@/lib/order-state'
 import { OrderConfigurator } from '@/components/OrderConfigurator'
 import { CustomerDataForm } from '@/components/CustomerDataForm'
@@ -55,6 +55,25 @@ function Index() {
   const removeItem = useOrderState(s => s.removeItem)
   const setEditingItemId = useOrderState(s => s.setEditingItemId)
   const resetOrder = useOrderState(s => s.resetOrder)
+
+  // ESTADO EM MEMÓRIA (Fix NEW-01)
+  const [createdOrder, setCreatedOrder] = useState<any>(null)
+  const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null)
+  const [orderViewToken, setOrderViewToken] = useState<string | null>(null)
+
+  const handleSuccess = (order: any, receiptToken: string | null, viewToken: string | null) => {
+    setCreatedOrder(order)
+    setReceiptAccessToken(receiptToken)
+    setOrderViewToken(viewToken)
+    setStep('success')
+  }
+
+  const handleNewOrder = () => {
+    setCreatedOrder(null)
+    setReceiptAccessToken(null)
+    setOrderViewToken(null)
+    resetOrder()
+  }
 
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -178,19 +197,36 @@ function Index() {
               items={items}
               eventInfo={catalog.data.event}
               onBack={() => setStep('customer_data')}
-              onSuccess={() => setStep('success')}
+              onSuccess={handleSuccess}
             />
           </div>
         )}
 
         {currentStep === 'success' && catalog && (
           <div className="pt-32 pb-24">
-            <OrderSuccess 
-              order={{} as any} 
-              catalog={catalog.data}
-              localItems={items}
-              onNewOrder={resetOrder}
-            />
+            {createdOrder ? (
+              <OrderSuccess 
+                order={createdOrder} 
+                catalog={catalog.data}
+                localItems={items}
+                receiptAccessToken={receiptAccessToken}
+                orderViewToken={orderViewToken}
+                onNewOrder={handleNewOrder}
+              />
+            ) : (
+              <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-6 px-4 text-center">
+                <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-full">
+                  <AlertCircle className="w-8 h-8 text-rose-500" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-heading font-black uppercase text-white">Dados Indisponíveis</h2>
+                  <p className="text-slate-400 text-sm max-w-xs">Não foi possível carregar os dados deste pedido.</p>
+                </div>
+                <Button onClick={handleNewOrder} variant="outline" className="border-white/10">
+                  Voltar ao Início
+                </Button>
+              </div>
+            )}
           </div>
         )}
 
