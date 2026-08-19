@@ -24,7 +24,7 @@ export function Header() {
     { label: "Início", href: "#inicio" },
     { label: "Camisa", href: "#camisa" },
     { label: "Como funciona", href: "#como-funciona" },
-    { label: "Pedido", href: "#pedido" },
+    { label: "Como funciona", href: "#como-funciona" },
   ];
 
   return (
@@ -119,7 +119,7 @@ export function Header() {
             </Link>
             <Button 
               onClick={() => {
-                document.getElementById('pedido')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' });
                 setIsMobileMenuOpen(false);
               }}
               variant="secondary" 

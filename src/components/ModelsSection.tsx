@@ -197,7 +197,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                 onClick={() => {
                   onSelect();
                   onClose();
-                  document.getElementById('pedido')?.scrollIntoView({ behavior: 'smooth' });
+                  document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 className={cn(
                   "w-full h-20 text-lg font-black uppercase tracking-widest rounded-2xl transition-all",

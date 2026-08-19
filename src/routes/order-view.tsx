@@ -109,23 +109,23 @@ function OrderViewPage() {
               {statusInfo.label}
             </h2>
             <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-              Olá <span className="text-white font-bold">{order.customer_name}</span>, 
+              Olá, 
               seu pedido está em nossa base e sendo processado conforme o cronograma oficial.
             </p>
           </div>
 
           <div className="pt-8 border-t border-white/5 grid grid-cols-2 gap-4 text-left">
             <div>
-              <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest block mb-1">Pagamento</span>
+              <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-1">Pagamento</span>
               <span className={cn(
                 "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border",
                 order.payment_status === 'paid' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
               )}>
-                {order.payment_status === 'paid' ? 'Confirmado' : 'Pendente / Em Análise'}
+                {order.payment_status === 'paid' ? 'Confirmado' : (order.payment_status === 'receipt_rejected' ? 'Comprovante Rejeitado' : 'Pendente / Em Análise')}
               </span>
             </div>
             <div className="text-right">
-              <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest block mb-1">Total</span>
+              <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-1">Total</span>
               <span className="text-xl font-heading font-black text-gold">{formatCurrency(order.total_amount)}</span>
             </div>
           </div>
@@ -174,7 +174,7 @@ function OrderViewPage() {
         </div>
 
         <div className="text-center p-8 border border-white/5 rounded-[32px] bg-white/[0.01]">
-          <p className="text-xs text-slate-400 leading-relaxed italic">
+          <p className="text-xs text-slate-300 leading-relaxed italic">
             Este é um link de visualização segura. Para sua segurança, ele expira periodicamente. <br/>
             Dúvidas? Entre em contato com a organização do torneio.
           </p>

@@ -28,7 +28,7 @@ export function Footer() {
                 { label: 'Início', href: '#inicio' },
                 { label: 'Camisa', href: '#camisa' },
                 { label: 'Como funciona', href: '#como-funciona' },
-                { label: 'Pedido', href: '#pedido' }
+                { label: 'Como funciona', href: '#como-funciona' }
               ].map((item) => (
                 <a 
                   key={item.label} 
@@ -44,7 +44,7 @@ export function Footer() {
               <p className="text-ice/30 text-[10px] uppercase tracking-[0.2em] font-black">
                 9º Torneio Amigos do Vôlei – ACS
               </p>
-              <p className="text-ice/10 text-[9px] font-black uppercase tracking-[0.1em]">
+              <p className="text-ice/30 text-[9px] font-black uppercase tracking-[0.1em]">
                 © 2026 Todos os direitos reservados • Desenvolvido com foco em performance
               </p>
             </div>
