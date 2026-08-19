@@ -4,7 +4,7 @@ import { ProductStage } from "./ProductStage";
 
 export function HeroSection() {
   const scrollToSelection = () => {
-    const el = document.getElementById('camisas');
+    const el = document.getElementById('camisa');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -31,13 +31,13 @@ export function HeroSection() {
               9º TORNEIO • ACS • COXIM-MS • 2026
             </div>
             
-            <h1 className="text-5xl md:text-6xl lg:text-8xl font-heading font-black leading-[0.9] uppercase mb-8 tracking-tighter">
+            <h1 className="text-5xl md:text-6xl lg:text-8xl font-heading font-black leading-[0.9] md:leading-[0.85] uppercase mb-8 tracking-tighter">
               Vista a <span className="text-white">história.</span><br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-gold-dark to-gold animate-gradient-x drop-shadow-[0_0_15px_rgba(252,195,7,0.3)]">Jogue como um campeão.</span>
             </h1>
             
-            <p className="text-lg md:text-xl text-ice/70 max-w-lg mb-12 leading-relaxed font-medium">
-              Apresentamos a <span className="text-ice font-bold">camisa oficial</span> do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span>. 
+            <p className="text-base md:text-xl text-ice/70 max-w-lg mb-12 leading-relaxed md:leading-normal font-medium">
+              Apresentamos a <span className="text-ice font-bold">Camisa Oficial</span> do <span className="text-ice font-bold">9º Torneio Amigos do Vôlei</span>. 
               Design de elite, performance profissional e a alma do esporte em cada fibra.
             </p>
             
@@ -48,10 +48,10 @@ export function HeroSection() {
                 variant="secondary" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
               >
-                Personalizar minha camisa
+                QUERO MINHA CAMISA
               </Button>
               <Button 
-                onClick={() => document.getElementById('camisas')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => document.getElementById('camisa')?.scrollIntoView({ behavior: 'smooth' })}
                 size="lg" 
                 variant="outline" 
                 className="px-10 py-8 text-lg font-black uppercase tracking-widest border-ice/10 hover:bg-ice/5 hover:border-gold/30 active:scale-95 transition-all duration-300 backdrop-blur-sm"
