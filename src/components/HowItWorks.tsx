@@ -6,7 +6,7 @@ export function HowItWorks() {
     {
       number: "01",
       title: "Conheça",
-      description: "Confira os detalhes da Camiseta Oficial exclusiva do torneio.",
+      description: "Confira os detalhes da Camisa Oficial exclusiva do torneio.",
       icon: <MousePointer2 className="w-6 h-6" />,
     },
     {

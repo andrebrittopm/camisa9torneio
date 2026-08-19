@@ -374,11 +374,11 @@ export function ModelsSection({
   if (models.length === 1 && models[0]) {
     const singleModel = models[0];
     return (
-      <section id="camisas" className="py-24 relative overflow-hidden">
+      <section id="camisa" className="py-24 relative overflow-hidden">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
-              Conheça a Camiseta Oficial
+              Conheça a Camisa Oficial
             </h2>
             <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
               9º Torneio Amigos do Vôlei — ACS
@@ -399,7 +399,7 @@ export function ModelsSection({
   }
 
   return (
-    <section id="camisas" className="py-24 relative overflow-hidden">
+    <section id="camisa" className="py-24 relative overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">

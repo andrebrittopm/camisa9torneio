@@ -1,7 +1,7 @@
 /**
  * AV - 9º Torneio Amigos do Vôlei
- * ETAPA 11.0 — CONGELAMENTO TÉCNICO E REVISÃO VISUAL/TEXTUAL
- * ESTADO ATUAL: ETAPA 10.6 — FINAL ADMIN AUDIT: PASS
+ * ETAPA 11.1 — REFINAMENTO PREMIUM VISUAL/TEXTUAL
+ * ESTADO ATUAL: ETAPA 11.0 — AUDITORIA VISUAL: PASS
  */
 
 
@@ -103,7 +103,7 @@ function Index() {
         {currentStep === 'idle' && (
           <>
             <HeroSection />
-            <div id="camisas">
+            <div id="camisa">
               <ModelsSection 
                 models={catalog?.data?.models || []} 
                 selectedModelId={null}

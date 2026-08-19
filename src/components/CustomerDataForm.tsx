@@ -20,7 +20,7 @@ export function CustomerDataForm({ data, onChange, disabled }: CustomerDataFormP
   };
 
   return (
-    <div className="space-y-6 bg-white/[0.02] backdrop-blur-xl p-10 rounded-[32px] border border-white/5">
+    <div className="space-y-6 bg-white/[0.02] backdrop-blur-xl p-6 md:p-10 rounded-[32px] border border-white/5">
       <h3 className="text-2xl font-heading font-black uppercase tracking-tight">Dados do Pedido</h3>
       
       <div>
