@@ -22,7 +22,7 @@ const ALLOWED_FIELDS = [
   'notes',
   'idempotency_key',
   'items',
-  'turnstile_token',
+  // 'turnstile_token', // TURNSTILE TEMPORARILY DISABLED
 ]
 
 const PROHIBITED_FIELDS = [
@@ -267,17 +267,19 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          const { event_id, customer_name, whatsapp, customer_email, notes, idempotency_key, items, turnstile_token } = payload
+          const { event_id, customer_name, whatsapp, customer_email, notes, idempotency_key, items /*, turnstile_token */ } = payload
 
           // 6. event_id UUID
           if (!isValidUuid(event_id)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           // 7. idempotency_key UUID
           if (!isValidUuid(idempotency_key)) return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           
-          // 8. turnstile_token: string, trim, <= 2048
+          // 8. turnstile_token: string, trim, <= 2048 (TURNSTILE TEMPORARILY DISABLED)
+          /*
           if (typeof turnstile_token !== "string" || turnstile_token.trim() === "" || turnstile_token.length > 2048) {
              return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
+          */
 
           // 9. customer_name
           if (typeof customer_name !== "string" || customer_name.trim() === "") return new Response(JSON.stringify({ error: "INVALID_REQUEST", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
@@ -363,7 +365,8 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             })
           }
 
-          // 21. TURNSTILE Siteverify (Só ocorre se permitido pelo Rate Limit ou Fail-Open)
+          // 21. TURNSTILE Siteverify (TURNSTILE TEMPORARILY DISABLED)
+          /*
           const turnstileSecret = process.env['TURNSTILE_SECRET_KEY']
           const expectedHostnames = (process.env['TURNSTILE_EXPECTED_HOSTNAMES'] || '')
             .split(',')
@@ -391,6 +394,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             
             return new Response(JSON.stringify({ error, correlation_id: correlationId }), { status, headers: corsHeaders })
           }
+          */
 
           // 22. fingerprint (Excludes turnstile_token)
           const sortedItems = [...validatedItems].sort((a, b) => {

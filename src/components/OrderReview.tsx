@@ -61,7 +61,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
   }, [currentPayloadHash, lastPayloadHash]);
 
   const handleConfirm = async () => {
-    if (!turnstileToken || status === 'submitting' || !eventInfo.orders_available) return;
+    if (/* !turnstileToken || */ status === 'submitting' || !eventInfo.orders_available) return; // TURNSTILE TEMPORARILY DISABLED
 
     setStatus('submitting');
     setErrorMsg(null);
@@ -83,7 +83,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
       customer_email: customer.email,
       notes: customer.notes || null,
       idempotency_key: currentKey,
-      turnstile_token: turnstileToken,
+      // turnstile_token: turnstileToken, // TURNSTILE TEMPORARILY DISABLED
       items: items.map(i => ({
         shirt_model_id: i.shirt_model_id,
         size_option: i.size_option,
@@ -148,7 +148,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
     }
   };
 
-  const isButtonDisabled = status === 'submitting' || status === 'success' || !turnstileToken || !eventInfo.orders_available;
+  const isButtonDisabled = status === 'submitting' || status === 'success' || /* !turnstileToken || */ !eventInfo.orders_available; // TURNSTILE TEMPORARILY DISABLED
 
   return (
     <motion.div 
@@ -190,6 +190,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
           <OrderItemsSummary items={items} eventInfo={eventInfo} onRemove={() => {}} onEdit={() => {}} disabled />
           
           <div className="bg-royal/10 border border-royal/20 p-8 rounded-[32px] space-y-8 overflow-hidden">
+            {/* TURNSTILE TEMPORARILY DISABLED
             <div className="flex flex-col items-center">
               <div className="w-full max-w-[300px]">
                 <TurnstileWidget 
@@ -202,6 +203,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
                 />
               </div>
             </div>
+            */}
 
             <AnimatePresence>
               {errorMsg && (
