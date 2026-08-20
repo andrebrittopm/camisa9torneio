@@ -1,37 +1,36 @@
 /**
- * ETAPA 12.1-P4 — SITEVERIFY FORENSIC
+ * ETAPA 12.1-P5 — TURNSTILE PAIR REVALIDATION
  * 
- * SITEVERIFY CALLED: YES
- * HTTP STATUS: 200
- * SUCCESS: FALSE
- * ERROR CODES: ["invalid-input-secret"]
+ * A TURNSTILE_SECRET_KEY foi substituída pela Secret Key do mesmo
+ * widget de produção utilizado por:
+ * VITE_TURNSTILE_SITE_KEY
  * 
+ * Production URL:
+ * https://camisa9torneio.lovable.app
+ * 
+ * NÃO revelar valores.
+ * 
+ * Validar:
  * SITE KEY MODE: PRODUCTION
- * SECRET MODE: INVALID
- * PAIR MATCH: NO
+ * SECRET MODE: PRODUCTION
+ * PAIR MATCH: YES/NO
  * 
- * CLIENT ACTION: create_order
- * RECEIVED ACTION: n/a (Verification failed)
+ * TURNSTILE_TEST_MODE: DISABLED
  * EXPECTED ACTION: create_order
- * ACTION MATCH: NO (Verification failed)
- * 
- * RECEIVED HOSTNAME: n/a (Verification failed)
  * EXPECTED HOSTNAME: camisa9torneio.lovable.app
- * HOSTNAME MATCH: NO (Verification failed)
  * 
- * WIDGET RESET AFTER FAILURE: NO (Finding)
- * TOKEN REUSE RISK: YES
+ * CORS: PASS/FAIL
+ * RATE LIMIT: PASS/FAIL
+ * SITEVERIFY CONFIG: READY/FAIL
+ * REPUBLISH STATUS: APPLIED/NOT APPLIED
  * 
- * CORS: PASS
- * RATE LIMIT: PASS
- * RPC REACHED: NO
+ * FINAL VERDICT:
+ * A) TURNSTILE PRODUCTION PAIR READY — LIVE RETEST
+ * B) PAIR STILL INVALID
+ * C) OTHER CONFIGURATION ISSUE
  * 
- * TURNSTILE_FAILED LAYER: A) Siteverify success=false
- * 
- * ROOT CAUSE: Secret Key does not match production Site Key (invalid-input-secret)
- * RECOMMENDED MINIMAL FIX: Update TURNSTILE_SECRET_KEY in Cloud Secrets to match production widget.
- * 
- * FINAL VERDICT: A) SECRET/SITEKEY PAIR PROBLEM
+ * Não alterar código.
+ * Não revelar secrets.
  */
 
 
