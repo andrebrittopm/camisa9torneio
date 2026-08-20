@@ -44,7 +44,7 @@ export interface AvCreateOrderPayload {
   customer_email: string;
   notes: string | null;
   idempotency_key: string;
-  turnstile_token: string;
+  // turnstile_token: string; // TURNSTILE TEMPORARILY DISABLED
   items: {
     shirt_model_id: string;
     size_option: string;
