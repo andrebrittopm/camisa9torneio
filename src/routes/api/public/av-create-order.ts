@@ -182,7 +182,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
 
         // 1. Origin
         if (allowedOrigins.length === 0) {
-          console.error(`[AV] correlation=${correlationId} stage=config code=CONFIG_MISSING`)
+          console.error(`[AV] correlation=${correlationId} stage=config code=ALLOWED_ORIGINS_MISSING is_production=${process.env['NODE_ENV'] === 'production'}`);
           return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

@@ -45,7 +45,7 @@ export async function verifyTurnstileToken(
   }
 
   if (!finalSecret) {
-    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING`);
+    console.error(`[AV] correlation=${correlationId} stage=turnstile_config code=CONFIG_MISSING is_production=${isProduction}`);
     return { success: false, error: "CONFIG_MISSING" };
   }
 

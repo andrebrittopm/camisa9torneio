@@ -111,7 +111,17 @@ export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidget
     callbacksRef.current = { onTokenChange, onTimeout, onError };
   }, [onTokenChange, onTimeout, onError]);
 
-  const siteKey = import.meta.env['VITE_TURNSTILE_SITE_KEY'] || "1x00000000000000000000AA";
+  const siteKey = import.meta.env['VITE_TURNSTILE_SITE_KEY'];
+
+  useEffect(() => {
+    const isProduction = import.meta.env.PROD;
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const isPreview = typeof window !== 'undefined' && window.location.hostname.includes('lovable.app') && window.location.hostname.includes('preview');
+
+    if (!siteKey && isProduction && !isLocalhost && !isPreview) {
+      console.error("[AV] Turnstile Site Key is missing in production. Orders will fail.");
+    }
+  }, [siteKey]);
 
   useImperativeHandle(ref, () => ({
     reset: () => {
