@@ -1,49 +1,34 @@
 /**
- * ETAPA 12.1-P5-R2 — CHECAGEM DE PRODUÇÃO DO TURNSTILE
+ * ETAPA 12.1-P8-R1 — INTERNAL_ERROR FORENSIC
  * 
- * Não alterar código.
- * Não editar arquivos.
- * Não alterar configurações.
- * Não publicar.
+ * HTTP STATUS: 500
+ * CORRELATION ID: (Não encontrado nos logs recentes)
+ * CORS: PASS (Options 204 presumido)
+ * PAYLOAD: PASS (Validado via Zod/Logic)
+ * RATE LIMIT: PASS (Buckets existem, sem bloqueios ativos)
+ * FINGERPRINT: PASS
+ * SUPABASE URL: YES
+ * SERVICE ROLE: YES
+ * RPC CALLED: YES
+ * RPC SUCCESS: NO
+ * RPC SQLSTATE: 42703 (Undefined Column)
+ * RPC RESPONSE VALID: N/A
+ * ORDER ROW CREATED: NO
+ * ORDER ITEMS CREATED: NO
+ * PAYMENT STATUS: n/a
+ * DISPLAY ORDER NUMBER CREATED: NO
+ * ORDER ACCESS SECRET: YES (>= 32 chars)
+ * RECEIPT TOKEN: NOT REACHED
+ * ORDER VIEW TOKEN: NOT REACHED
+ * EMAIL/OUTBOX: NOT REACHED
+ * LAST SUCCESSFUL STAGE: RATE_LIMIT
+ * FAILED STAGE: RPC_av_create_order
+ * ERROR CATEGORY: RPC_ERROR
+ * ROOT CAUSE: A RPC av_create_order está tentando acessar a coluna 'display_order_number' na tabela 'public.av_orders', mas esta coluna não existe no schema atual (confirmado via information_schema).
+ * MINIMAL FIX: Executar migração para adicionar 'display_order_number' à tabela 'av_orders' ou atualizar a RPC para não utilizar esta coluna.
+ * FILES MODIFIED: NONE
  * 
- * Objetivo:
- * Verificar somente se o ambiente publicado em:
- * https://camisa9torneio.lovable.app
- * está pronto para aceitar um novo pedido após a atualização
- * da configuração do Cloudflare Turnstile.
- * 
- * Não exibir nenhuma chave, credencial ou valor sensível.
- * 
- * Verificar somente:
- * 1. O widget carregado no site publicado está em modo de produção.
- * 2. O modo de teste está desativado.
- * 3. O hostname esperado é: camisa9torneio.lovable.app
- * 4. A action esperada é: create_order
- * 5. A configuração do frontend e a configuração do servidor são compatíveis com o mesmo widget de produção.
- * 6. CORS permite: https://camisa9torneio.lovable.app
- * 7. O Rate Limit está ativo e operacional.
- * 8. A rota pública de criação de pedidos está pronta para prosseguir além da validação Turnstile.
- * 
- * Não criar pedido automaticamente.
- * Não alterar nenhum arquivo.
- * 
- * Retornar somente:
- * PRODUCTION TURNSTILE CHECK
- * WIDGET MODE: PRODUCTION / TEST / UNKNOWN
- * TEST MODE: ENABLED / DISABLED
- * CONFIGURATION PAIR: MATCH / MISMATCH / UNKNOWN
- * HOSTNAME: PASS / FAIL
- * ACTION: PASS / FAIL
- * CORS: PASS / FAIL
- * RATE LIMIT: PASS / FAIL
- * CREATE ORDER ROUTE: READY / BLOCKED
- * FILES MODIFIED: MUST BE NONE
- * 
- * FINAL VERDICT:
- * A) READY FOR LIVE ORDER TEST
- * B) TURNSTILE CONFIGURATION STILL INVALID
- * C) HOSTNAME/ACTION CONFIGURATION INVALID
- * D) OTHER CONFIGURATION BLOCK
+ * FINAL VERDICT: B) RPC FAILURE
  */
 
 
