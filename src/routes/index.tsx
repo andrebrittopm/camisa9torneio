@@ -1,36 +1,49 @@
 /**
- * ETAPA 12.1-P5 — TURNSTILE PAIR REVALIDATION
- * 
- * A TURNSTILE_SECRET_KEY foi substituída pela Secret Key do mesmo
- * widget de produção utilizado por:
- * VITE_TURNSTILE_SITE_KEY
- * 
- * Production URL:
- * https://camisa9torneio.lovable.app
- * 
- * NÃO revelar valores.
- * 
- * Validar:
- * SITE KEY MODE: PRODUCTION
- * SECRET MODE: PRODUCTION
- * PAIR MATCH: YES/NO
- * 
- * TURNSTILE_TEST_MODE: DISABLED
- * EXPECTED ACTION: create_order
- * EXPECTED HOSTNAME: camisa9torneio.lovable.app
- * 
- * CORS: PASS/FAIL
- * RATE LIMIT: PASS/FAIL
- * SITEVERIFY CONFIG: READY/FAIL
- * REPUBLISH STATUS: APPLIED/NOT APPLIED
- * 
- * FINAL VERDICT:
- * A) TURNSTILE PRODUCTION PAIR READY — LIVE RETEST
- * B) PAIR STILL INVALID
- * C) OTHER CONFIGURATION ISSUE
+ * ETAPA 12.1-P5-R2 — CHECAGEM DE PRODUÇÃO DO TURNSTILE
  * 
  * Não alterar código.
- * Não revelar secrets.
+ * Não editar arquivos.
+ * Não alterar configurações.
+ * Não publicar.
+ * 
+ * Objetivo:
+ * Verificar somente se o ambiente publicado em:
+ * https://camisa9torneio.lovable.app
+ * está pronto para aceitar um novo pedido após a atualização
+ * da configuração do Cloudflare Turnstile.
+ * 
+ * Não exibir nenhuma chave, credencial ou valor sensível.
+ * 
+ * Verificar somente:
+ * 1. O widget carregado no site publicado está em modo de produção.
+ * 2. O modo de teste está desativado.
+ * 3. O hostname esperado é: camisa9torneio.lovable.app
+ * 4. A action esperada é: create_order
+ * 5. A configuração do frontend e a configuração do servidor são compatíveis com o mesmo widget de produção.
+ * 6. CORS permite: https://camisa9torneio.lovable.app
+ * 7. O Rate Limit está ativo e operacional.
+ * 8. A rota pública de criação de pedidos está pronta para prosseguir além da validação Turnstile.
+ * 
+ * Não criar pedido automaticamente.
+ * Não alterar nenhum arquivo.
+ * 
+ * Retornar somente:
+ * PRODUCTION TURNSTILE CHECK
+ * WIDGET MODE: PRODUCTION / TEST / UNKNOWN
+ * TEST MODE: ENABLED / DISABLED
+ * CONFIGURATION PAIR: MATCH / MISMATCH / UNKNOWN
+ * HOSTNAME: PASS / FAIL
+ * ACTION: PASS / FAIL
+ * CORS: PASS / FAIL
+ * RATE LIMIT: PASS / FAIL
+ * CREATE ORDER ROUTE: READY / BLOCKED
+ * FILES MODIFIED: MUST BE NONE
+ * 
+ * FINAL VERDICT:
+ * A) READY FOR LIVE ORDER TEST
+ * B) TURNSTILE CONFIGURATION STILL INVALID
+ * C) HOSTNAME/ACTION CONFIGURATION INVALID
+ * D) OTHER CONFIGURATION BLOCK
  */
 
 
