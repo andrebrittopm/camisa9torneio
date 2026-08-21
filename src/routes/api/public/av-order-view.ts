@@ -96,8 +96,8 @@ export const Route = createFileRoute('/api/public/av-order-view')({
             return new Response(JSON.stringify({ error: "INVALID_HANDLE", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
           }
 
-          const eventYear = parseInt(handleMatch[1], 10)
-          const orderSeq = parseInt(handleMatch[2], 10)
+          const eventYear = parseInt(handleMatch[1] as string, 10)
+          const orderSeq = parseInt(handleMatch[2] as string, 10)
 
           if (isNaN(eventYear) || isNaN(orderSeq) || orderSeq <= 0) {
             return new Response(JSON.stringify({ error: "INVALID_HANDLE", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
@@ -112,7 +112,7 @@ export const Route = createFileRoute('/api/public/av-order-view')({
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
           }
 
-          const supabase = createClient(supabaseUrl, supabaseKey)
+          const supabase = createClient(supabaseUrl as string, supabaseKey as string)
 
           // Buscar o pedido usando order_seq e verificar o ano do evento
           const { data: order, error: orderError } = await supabase
