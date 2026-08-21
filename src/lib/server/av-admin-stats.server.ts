@@ -92,12 +92,12 @@ export async function getDashboardStatsInternal(): Promise<AdminDashboardStats> 
   // Processamento
   const stats: AdminDashboardStats = {
     totalOrders: orders.length,
-    awaitingPayment: orders.filter(o => o.payment_status === 'pending').length,
-    receiptsPending: receipts.length,
-    paymentsConfirmed: orders.filter(o => o.payment_status === 'paid').length,
+    awaitingPayment: orders.filter(o => o.payment_status === 'awaiting_payment').length,
+    receiptsPending: orders.filter(o => o.payment_status === 'receipt_submitted').length,
+    paymentsConfirmed: orders.filter(o => o.payment_status === 'payment_confirmed').length,
     shirtsSold: items.reduce((sum, item) => sum + item.quantity, 0),
     totalOrderValue: orders.reduce((sum, o) => sum + o.total_amount, 0),
-    confirmedValue: orders.filter(o => o.payment_status === 'paid').reduce((sum, o) => sum + o.total_amount, 0),
+    confirmedValue: orders.filter(o => o.payment_status === 'payment_confirmed').reduce((sum, o) => sum + o.total_amount, 0),
     
     inProduction: orders.filter(o => o.order_status === 'production').length,
     ready: orders.filter(o => o.order_status === 'ready').length,
