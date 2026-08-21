@@ -17,7 +17,7 @@ import { Route as AdminAuditRouteImport } from './routes/admin/audit'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
 import { Route as AdminResetPasswordRouteImport } from './routes/admin/reset-password'
-import { Route as AdminOrdersOrderIdRouteImport } from './routes/admin/orders.$orderId'
+import { Route as AdminOrdersOrderIdRouteImport } from './routes/admin/orders_.$orderId'
 import { Route as ApiPublicAvCatalogRouteImport } from './routes/api/public/av-catalog'
 import { Route as ApiPublicAvCreateOrderRouteImport } from './routes/api/public/av-create-order'
 import { Route as ApiPublicAvOrderViewRouteImport } from './routes/api/public/av-order-view'
@@ -71,9 +71,9 @@ const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminOrdersOrderIdRoute = AdminOrdersOrderIdRouteImport.update({
-  id: '/$orderId',
-  path: '/$orderId',
-  getParentRoute: () => AdminOrdersRoute,
+  id: '/orders_/$orderId',
+  path: '/orders/$orderId',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const ApiPublicAvCatalogRoute = ApiPublicAvCatalogRouteImport.update({
   id: '/api/public/av-catalog',
@@ -140,7 +140,7 @@ export interface FileRoutesByFullPath {
   '/order-view': typeof OrderViewRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/login': typeof AdminLoginRoute
-  '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
@@ -161,7 +161,7 @@ export interface FileRoutesByTo {
   '/order-view': typeof OrderViewRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/login': typeof AdminLoginRoute
-  '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin': typeof AdminIndexRoute
   '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
@@ -184,10 +184,10 @@ export interface FileRoutesById {
   '/order-view': typeof OrderViewRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/login': typeof AdminLoginRoute
-  '/admin/orders': typeof AdminOrdersRouteWithChildren
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
-  '/admin/orders/$orderId': typeof AdminOrdersOrderIdRoute
+  '/admin/orders_/$orderId': typeof AdminOrdersOrderIdRoute
   '/api/public/av-catalog': typeof ApiPublicAvCatalogRoute
   '/api/public/av-create-order': typeof ApiPublicAvCreateOrderRoute
   '/api/public/av-order-view': typeof ApiPublicAvOrderViewRoute
@@ -254,7 +254,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/reset-password'
     | '/admin/'
-    | '/admin/orders/$orderId'
+    | '/admin/orders_/$orderId'
     | '/api/public/av-catalog'
     | '/api/public/av-create-order'
     | '/api/public/av-order-view'
@@ -343,12 +343,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminResetPasswordRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/admin/orders/$orderId': {
-      id: '/admin/orders/$orderId'
-      path: '/$orderId'
+    '/admin/orders_/$orderId': {
+      id: '/admin/orders_/$orderId'
+      path: '/orders/$orderId'
       fullPath: '/admin/orders/$orderId'
       preLoaderRoute: typeof AdminOrdersOrderIdRouteImport
-      parentRoute: typeof AdminOrdersRoute
+      parentRoute: typeof AdminRouteRoute
     }
     '/api/public/av-catalog': {
       id: '/api/public/av-catalog'
@@ -430,32 +430,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AdminOrdersRouteChildren {
-  AdminOrdersOrderIdRoute: typeof AdminOrdersOrderIdRoute
-}
-
-const AdminOrdersRouteChildren: AdminOrdersRouteChildren = {
-  AdminOrdersOrderIdRoute: AdminOrdersOrderIdRoute,
-}
-
-const AdminOrdersRouteWithChildren = AdminOrdersRoute._addFileChildren(
-  AdminOrdersRouteChildren,
-)
-
 interface AdminRouteRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminLoginRoute: typeof AdminLoginRoute
-  AdminOrdersRoute: typeof AdminOrdersRouteWithChildren
+  AdminOrdersRoute: typeof AdminOrdersRoute
   AdminResetPasswordRoute: typeof AdminResetPasswordRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminOrdersOrderIdRoute: typeof AdminOrdersOrderIdRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminLoginRoute: AdminLoginRoute,
-  AdminOrdersRoute: AdminOrdersRouteWithChildren,
+  AdminOrdersRoute: AdminOrdersRoute,
   AdminResetPasswordRoute: AdminResetPasswordRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminOrdersOrderIdRoute: AdminOrdersOrderIdRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
