@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getWebRequest } from '@tanstack/react-start/server'
+import { getRequest } from '@tanstack/react-start/server'
 import { getAdminContext } from './server/av-admin-auth.server'
 
 /**
@@ -8,7 +8,7 @@ import { getAdminContext } from './server/av-admin-auth.server'
  */
 export const checkAdminAuth = createServerFn({ method: 'GET' })
   .handler(async () => {
-    const request = getWebRequest();
+    const request = getRequest();
     if (!request) {
       console.warn('[AV-ADMIN-AUTH] Request context not found in checkAdminAuth handler');
       return { authenticated: false, active: false };

@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { HeroSection } from '@/components/HeroSection'
 import { ModelsSection } from '@/components/ModelsSection'
-import { HowItWorksSection } from '@/components/HowItWorksSection'
+import { HowItWorks } from '@/components/HowItWorks'
 import { Footer } from '@/components/Footer'
-import { AV_ORDER_ACCESS_SECRET } from '@/lib/server/av-order-access.server'
 import { OrderSuccess } from '@/components/OrderSuccess'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { fetchAvCatalog, type AvCatalogResponse } from '@/lib/av-catalog-client'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/')({
   component: LandingPage,
@@ -16,6 +17,11 @@ function LandingPage() {
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null)
   const [orderViewToken, setOrderViewToken] = useState<string | null>(null)
   const [orderViewExpiresAt, setOrderViewExpiresAt] = useState<number | null>(null)
+
+  const { data: catalogResponse } = useQuery({
+    queryKey: ['av-catalog'],
+    queryFn: fetchAvCatalog
+  })
 
   const handleSuccess = (order: any, accessToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => {
     setSuccessOrder(order)
@@ -31,11 +37,13 @@ function LandingPage() {
     setOrderViewExpiresAt(null)
   }
 
-  if (successOrder) {
+  if (successOrder && catalogResponse?.data) {
     return (
       <div className="min-h-screen bg-navy text-white font-sans selection:bg-gold/30">
         <OrderSuccess 
           order={successOrder} 
+          catalog={catalogResponse.data}
+          localItems={[]} // O estado local de itens não é mantido entre telas neste flow simplificado de sucesso
           onNewOrder={handleNewOrder} 
           receiptAccessToken={receiptAccessToken}
           orderViewToken={orderViewToken}
@@ -53,7 +61,7 @@ TANSTACK VERSION:
 @tanstack/react-start: 1.168.32
 
 OFFICIAL REQUEST API:
-getWebRequest from @tanstack/react-start/server
+getRequest from @tanstack/react-start/server
 
 GLOBALTHIS REQUEST HACK:
 REMOVED / PASS
@@ -90,8 +98,15 @@ FINAL VERDICT:
 A) READY FOR CODE REVIEW */}
       
       <HeroSection />
-      <ModelsSection onSuccess={handleSuccess} />
-      <HowItWorksSection />
+      {catalogResponse?.data && (
+        <ModelsSection 
+          models={catalogResponse.data.models}
+          eventInfo={catalogResponse.data.event}
+          selectedModelId={null}
+          onSelectModel={() => {}} // O componente ModelsSection lida com a navegação para o configurador
+        />
+      )}
+      <HowItWorks />
       <Footer />
     </div>
   )
