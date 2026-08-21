@@ -39,8 +39,6 @@
  * A) RPC OVERLOAD FIX READY — REVIEW BEFORE PUBLISH
  */
 
-
-
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertCircle, Loader2, RefreshCcw } from 'lucide-react'
 import { useState, useEffect, useCallback, useMemo } from 'react'
@@ -178,68 +176,96 @@ function Index() {
 
         {currentStep === 'configurator' && activeModel && catalog && (
           <OrderConfigurator 
-            model={activeModel} 
-            onBack={() => {
-              if (editingItemId) {
-                setEditingItemId(null)
-                setStep('summary')
-              } else {
-                setStep('idle')
-              }
-            }}
-            onConfirm={(item) => {
-              if (editingItemId) {
-                updateItem(editingItemId, item)
-                setEditingItemId(null)
-              } else {
-                addItem(item)
-              }
+            selectedModel={activeModel} 
+            eventInfo={catalog.data.event}
+            onAddItem={(item) => {
+              addItem(item)
               setStep('summary')
             }}
-            initialData={editingItem || undefined}
+            editingItem={editingItem}
+            onUpdateItem={(localId, item) => {
+              updateItem(localId, item)
+              setEditingItemId(null)
+              setStep('summary')
+            }}
+            onCancelEdit={() => {
+              setEditingItemId(null)
+              setStep('summary')
+            }}
+            onModelChange={() => {}}
           />
         )}
 
-        {currentStep === 'summary' && (
+        {currentStep === 'summary' && catalog && (
           <OrderItemsSummary 
             items={items}
-            models={catalog?.data?.models || []}
-            onAddItem={() => setStep('configurator')}
-            onEditItem={(localId) => {
+            eventInfo={catalog.data.event}
+            onRemove={removeItem}
+            onEdit={(localId) => {
               setEditingItemId(localId)
               setStep('configurator')
             }}
-            onRemoveItem={removeItem}
-            onNext={() => setStep('customer')}
-            onBack={() => setStep('idle')}
           />
         )}
 
-        {currentStep === 'customer' && (
-          <CustomerDataForm 
-            initialData={customer}
-            onBack={() => setStep('summary')}
-            onConfirm={(data) => {
-              setCustomer(data)
-              setStep('review')
-            }}
-          />
+        {currentStep === 'summary' && items.length > 0 && (
+          <div className="max-w-4xl mx-auto px-6 pb-20 flex gap-4">
+             <Button 
+               variant="outline" 
+               className="flex-1 h-16 rounded-2xl border-white/10 font-black uppercase tracking-widest"
+               onClick={() => setStep('idle')}
+             >
+               Voltar
+             </Button>
+             <Button 
+               className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
+               onClick={() => setStep('customer_data')}
+             >
+               Próximo Passo
+             </Button>
+          </div>
+        )}
+
+        {currentStep === 'customer_data' && (
+          <div className="max-w-xl mx-auto px-6 py-20 space-y-8">
+            <CustomerDataForm 
+              data={customer}
+              onChange={setCustomer}
+            />
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                className="flex-1 h-16 rounded-2xl border-white/10 font-black uppercase tracking-widest"
+                onClick={() => setStep('summary')}
+              >
+                Voltar
+              </Button>
+              <Button 
+                className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
+                disabled={!customer.name || !customer.whatsapp || !customer.email}
+                onClick={() => setStep('review')}
+              >
+                Revisar Pedido
+              </Button>
+            </div>
+          </div>
         )}
 
         {currentStep === 'review' && catalog && (
           <OrderReview 
-            items={items}
             customer={customer}
-            models={catalog?.data?.models || []}
-            event={catalog.data.event}
-            onBack={() => setStep('customer')}
+            items={items}
+            eventInfo={catalog.data.event}
+            onBack={() => setStep('customer_data')}
             onSuccess={handleSuccess}
           />
         )}
 
-        {currentStep === 'success' && createdOrder && (
+        {currentStep === 'success' && createdOrder && catalog && (
           <OrderSuccess 
             order={createdOrder}
+            catalog={catalog.data}
+            localItems={items}
             receiptAccessToken={receiptAccessToken}
             orderViewToken={orderViewToken}
             onNewOrder={handleNewOrder}
