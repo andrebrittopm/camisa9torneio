@@ -171,9 +171,9 @@ function OrderViewPage() {
               <div key={idx} className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/[0.02] transition-colors">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-xl font-heading font-black uppercase text-white">{item.model_name}</h4>
+                    <h4 className="text-xl font-heading font-black uppercase text-white">CAMISA OFICIAL</h4>
                     <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                      {item.shirt_type} • TAMANHO {item.size_option === "OUTRO" && item.custom_size ? item.custom_size : item.size_option}
+                      TAMANHO {item.size_option === "OUTRO" && item.custom_size ? item.custom_size : item.size_option}
                     </p>
                   </div>
                   
