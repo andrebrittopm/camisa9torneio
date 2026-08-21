@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { requireAdmin } from './server/av-admin-auth.server'
 import { z } from 'zod'
 import { 
@@ -21,7 +22,7 @@ export const getAdminAuditLogs = createServerFn({ method: 'GET' })
     dateTo: z.string().nullable().optional()
   }).parse(data))
   .handler(async ({ data: input }) => {
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     await requireAdmin(request);
@@ -34,7 +35,7 @@ export const getAdminAuditLogs = createServerFn({ method: 'GET' })
  */
 export const getAdminListForFilter = createServerFn({ method: 'GET' })
   .handler(async () => {
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     await requireAdmin(request);

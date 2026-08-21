@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getRequest } from '@tanstack/react-start/server'
 import { requireAdmin } from './server/av-admin-auth.server'
 import { 
   getAdminOrdersInternal, 
@@ -23,7 +24,7 @@ export const getAdminOrders = createServerFn({ method: 'GET' })
 
   .handler(async ({ data: input }) => {
 
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     // 1. Validar Guard Administrativo
@@ -42,7 +43,7 @@ export const getAdminOrderDetail = createServerFn({ method: 'GET' })
   }).parse(data))
   .handler(async ({ data: input }) => {
 
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     // 1. Validar Guard Administrativo
@@ -61,7 +62,7 @@ export const getAdminReceiptViewUrl = createServerFn({ method: 'GET' })
     receiptId: z.string()
   }).parse(data))
   .handler(async ({ data: input }) => {
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     // 1. Validar Guard Administrativo
@@ -86,7 +87,7 @@ export const reviewAdminReceipt = createServerFn({ method: 'POST' })
     notes: z.string().max(500).optional()
   }).parse(data))
   .handler(async ({ data: input }) => {
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     // 1. Validar Guard Administrativo
@@ -113,7 +114,7 @@ export const updateAdminOrderStatus = createServerFn({ method: 'POST' })
     newStatus: z.enum(['in_production', 'ready', 'delivered'])
   }).parse(data))
   .handler(async ({ data: input }) => {
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     // 1. Validar Guard Administrativo
@@ -138,7 +139,7 @@ export const cancelAdminOrder = createServerFn({ method: 'POST' })
     reasonText: z.string().max(500).nullable().optional()
   }).parse(data))
   .handler(async ({ data: input }) => {
-    const request = (globalThis as any).getRequest?.();
+    const request = getRequest();
     if (!request) throw new Error('Request Context Missing');
     
     // 1. Validar Guard Administrativo
