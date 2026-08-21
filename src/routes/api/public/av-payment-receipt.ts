@@ -187,9 +187,9 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
           }
 
           // 10. Disparar E-mail de Recebimento (Async Outbox + Provider)
+          const customerEmail = rpcResult?.customer_email || '';
+          
           if (rpcResult && !rpcResult.is_duplicate) {
-            const customerEmail = rpcResult.customer_email || '';
-            
             // Enqueue na outbox via server-side helper (idempotência pelo submission_id)
             if (customerEmail) {
               queueOrderEmail(orderId, 'RECEIPT_SUBMITTED', submissionId, customerEmail)
@@ -216,9 +216,22 @@ export const Route = createFileRoute('/api/public/av-payment-receipt')({
             }
           }
 
+          // 11. Sanitizar Resposta Pública (Data Privacy)
+          const publicReceiptResult = {
+            payment_status: rpcResult?.payment_status,
+            review_status: rpcResult?.review_status,
+            is_duplicate: Boolean(rpcResult?.is_duplicate)
+          };
+
+          // 12. Validar Response Contract
+          if (!publicReceiptResult.payment_status || !publicReceiptResult.review_status || typeof publicReceiptResult.is_duplicate !== 'boolean') {
+            console.error(`[AV] correlation=${correlationId} stage=response_validation code=INVALID_RPC_RESPONSE data=${JSON.stringify(publicReceiptResult)}`);
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders });
+          }
+
           return new Response(JSON.stringify({
             success: true,
-            data: rpcResult,
+            data: publicReceiptResult,
             correlation_id: correlationId
           }), { status: 200, headers: corsHeaders });
 
