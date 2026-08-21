@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Copy, Share2, PlusCircle, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import type { AvCreatedOrder } from "@/lib/av-order-client";
 import type { AvCatalogResponse } from "@/lib/av-catalog-client";

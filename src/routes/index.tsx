@@ -72,11 +72,13 @@ function Index() {
   const [createdOrder, setCreatedOrder] = useState<any>(null); // Tipado como any para aceitar o unwrap sem refatorar o index agora
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null);
   const [orderViewToken, setOrderViewToken] = useState<string | null>(null);
+  const [orderViewExpiresAt, setOrderViewExpiresAt] = useState<number | null>(null);
 
-  const handleSuccess = (order: any, receiptToken: string | null, viewToken: string | null) => {
+  const handleSuccess = (order: any, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => {
     setCreatedOrder(order);
     setReceiptAccessToken(receiptToken);
     setOrderViewToken(viewToken);
+    setOrderViewExpiresAt(viewExpiresAt);
     setStep("success");
   };
 
@@ -84,6 +86,7 @@ function Index() {
     setCreatedOrder(null);
     setReceiptAccessToken(null);
     setOrderViewToken(null);
+    setOrderViewExpiresAt(null);
     resetOrder();
   };
 
