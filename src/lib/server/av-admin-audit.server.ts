@@ -43,10 +43,7 @@ export async function getAdminAuditLogsInternal(params: {
 
   let query = supabaseAdmin
     .from('av_admin_audit_logs')
-    .select(`
-      *,
-      admin_profile:av_admin_profiles!admin_user_id(display_name)
-    `, { count: 'exact' });
+    .select('*', { count: 'exact' });
 
   // 1. Busca (Search)
   if (params.search) {
@@ -96,10 +93,29 @@ export async function getAdminAuditLogsInternal(params: {
   const totalCount = count || 0;
   const totalPages = Math.ceil(totalCount / params.pageSize);
 
-  // 5. Enriquecer com Public ID do pedido se o recurso for order
+  // 5. Enriquecer logs com dados de outras tabelas (sem embedded relation)
   const logs: AdminAuditLog[] = [];
   
-  // Coletar IDs de pedidos para buscar Public IDs em lote
+  // A) Buscar perfis administrativos em lote
+  const adminUserIds = Array.from(new Set((data || [])
+    .filter(r => r.admin_user_id)
+    .map(r => r.admin_user_id as string)));
+    
+  let adminProfileMap: Record<string, string> = {};
+  if (adminUserIds.length > 0) {
+    const { data: profiles } = await supabaseAdmin
+      .from('av_admin_profiles')
+      .select('user_id, display_name')
+      .in('user_id', adminUserIds);
+      
+    if (profiles) {
+      profiles.forEach(p => {
+        adminProfileMap[p.user_id] = p.display_name;
+      });
+    }
+  }
+
+  // B) Coletar IDs de pedidos para buscar Public IDs em lote
   const orderIds = (data || [])
     .filter(r => r.resource_type === 'order' && r.resource_id)
     .map(r => r.resource_id as string);
@@ -119,12 +135,13 @@ export async function getAdminAuditLogsInternal(params: {
   }
 
   (data || []).forEach(r => {
-    const adminProfile = r.admin_profile as any;
+    // Buscar adminDisplayName do mapa de perfis
+    const adminDisplayName = r.admin_user_id ? adminProfileMap[r.admin_user_id] : null;
     
     logs.push({
       id: r.id,
       adminId: r.admin_user_id,
-      adminDisplayName: adminProfile?.display_name || null,
+      adminDisplayName: adminDisplayName || 'Administrador',
       adminEmail: null, // Mascarado ou omitido por PII
       action: r.action,
       resourceType: r.resource_type,
