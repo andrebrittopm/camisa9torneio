@@ -90,12 +90,57 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
       };
     }
 
-    const { success, receipt_access_token, order_view_token, code, error, retry_after, ...orderData } = data;
+    // Validar contrato da resposta
+    const { success, data: orderData, receipt_access_token, order_view_token, code, error, retry_after } = data;
+
+    if (!success || !orderData) {
+      return {
+        order: {
+          success: false,
+          error: error || 'Resposta do servidor inválida',
+          code: code || 'INVALID_SERVER_RESPONSE',
+          retry_after
+        },
+        receiptAccessToken: null,
+        orderViewToken: null
+      };
+    }
+
+    // Validação de contrato via Zod para evitar UI corrompida (Etapa 12.1-P12)
+    const validation = z.object({
+      order_id: z.string().uuid(),
+      order_seq: z.number().int().positive(),
+      display_order_number: z.string().min(1),
+      event_year: z.number().int(),
+      customer_name: z.string().min(1),
+      total_quantity: z.number().int().nonnegative(),
+      subtotal: z.number().finite(),
+      total_amount: z.number().finite(),
+      order_status: z.string().min(1),
+      payment_status: z.string().min(1),
+      is_duplicate: z.boolean()
+    }).safeParse(orderData);
+
+    if (!validation.success) {
+      console.error('[AV-ORDER-CLIENT] Server response contract mismatch:', validation.error.format());
+      return {
+        order: {
+          success: false,
+          error: 'Resposta do servidor incompatível com o contrato esperado',
+          code: 'INVALID_SERVER_RESPONSE',
+          retry_after: null
+        },
+        receiptAccessToken: null,
+        orderViewToken: null
+      };
+    }
+
+    const validatedOrder = validation.data as AvCreatedOrder;
 
     return {
       order: {
         success: true,
-        data: orderData as AvCreatedOrder,
+        data: validatedOrder,
         code,
         error,
         retry_after
