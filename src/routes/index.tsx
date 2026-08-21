@@ -1,34 +1,363 @@
 /**
+ * ETAPA 12.1-P8-R1 — INTERNAL_ERROR REAL FORENSIC
+ *
+ * MODO: SOMENTE DIAGNÓSTICO.
+ *
+ * NÃO alterar código.
+ *
+ * NÃO editar arquivos.
+ *
+ * NÃO publicar.
+ *
+ * NÃO alterar banco.
+ *
+ * NÃO corrigir Admin nesta etapa.
+ *
+ * NÃO escrever relatório em comentários do código.
+ *
+ * NÃO revelar secrets ou PII.
+ *
+ * PROBLEMA REAL:
+ *
+ * Produção:
+ *
+ * https://camisa9torneio.lovable.app
+ *
+ * Turnstile foi removido temporariamente.
+ *
+ * Em nova aba anônima, um pedido real de teste foi submetido.
+ *
+ * Ao clicar em:
+ *
+ * CONFIRMAR PEDIDO
+ *
+ * o frontend retorna:
+ *
+ * INTERNAL_ERROR
+ *
+ * O painel administrativo também está atualmente inacessível,
+ *
+ * portanto NÃO depender da UI Admin para este diagnóstico.
+ *
+ * ==================================================
+ *
+ * 1. ENCONTRAR A ÚLTIMA TENTATIVA REAL
+ *
+ * ==================================================
+ *
+ * Localizar nos logs a tentativa mais recente de:
+ *
+ * POST /api/public/av-create-order
+ *
+ * proveniente da aplicação de produção.
+ *
+ * Retornar somente:
+ *
+ * HTTP STATUS:
+ *
+ * CORRELATION ID:
+ *
+ * FINAL ERROR:
+ *
+ * Não exibir nome, telefone, e-mail, tokens ou payload completo.
+ *
+ * ==================================================
+ *
+ * 2. MAPEAR O FLUXO REAL
+ *
+ * ==================================================
+ *
+ * Identificar cada etapa como:
+ *
+ * PASS
+ *
+ * FAIL
+ *
+ * NOT REACHED
+ *
+ * ORIGIN / CORS:
+ *
+ * PAYLOAD VALIDATION:
+ *
+ * RATE LIMIT:
+ *
+ * FINGERPRINT:
+ *
+ * SERVER CONFIG:
+ *
+ * RPC av_create_order:
+ *
+ * RPC RESPONSE VALIDATION:
+ *
+ * RECEIPT ACCESS TOKEN:
+ *
+ * ORDER VIEW TOKEN:
+ *
+ * EMAIL / OUTBOX:
+ *
+ * FINAL RESPONSE:
+ *
+ * ==================================================
+ *
+ * 3. VERIFICAR SE O PEDIDO FOI CRIADO
+ *
+ * ==================================================
+ *
+ * Consultar diretamente o banco usando mecanismo administrativo
+ *
+ * server-side disponível.
+ *
+ * NÃO utilizar o painel Admin.
+ *
+ * Verificar se a tentativa mais recente criou uma nova linha em:
+ *
+ * public.av_orders
+ *
+ * e respectivos itens em:
+ *
+ * public.av_order_items
+ *
+ * Retornar apenas:
+ *
+ * ORDER ROW CREATED:
+ *
+ * YES/NO
+ *
+ * ORDER ITEMS CREATED:
+ *
+ * YES/NO
+ *
+ * PAYMENT STATUS:
+ *
+ * awaiting_payment / other / n/a
+ *
+ * DISPLAY ORDER NUMBER CREATED:
+ *
+ * YES/NO
+ *
+ * Não mostrar UUID.
+ *
+ * Não mostrar dados pessoais.
+ *
+ * IMPORTANTE:
+ *
+ * Se ORDER ROW CREATED = YES,
+ *
+ * não executar novamente a RPC.
+ *
+ * ==================================================
+ *
+ * 4. CONFIGURAÇÃO SUPABASE
+ *
+ * ==================================================
+ *
+ * Sem revelar valores:
+ *
+ * SUPABASE_URL AVAILABLE TO CURRENT SERVER ROUTE:
+ *
+ * YES/NO
+ *
+ * SUPABASE_SERVICE_ROLE_KEY AVAILABLE TO CURRENT SERVER ROUTE:
+ *
+ * YES/NO
+ *
+ * ==================================================
+ *
+ * 5. RATE LIMIT
+ *
+ * ==================================================
+ *
+ * RATE LIMIT CALLED:
+ *
+ * YES/NO
+ *
+ * RATE LIMIT RESULT:
+ *
+ * PASS / DENY / CONFIG_ERROR / STORAGE_FAIL_OPEN
+ *
+ * AV_RATE_LIMIT_HASH_SECRET AVAILABLE TO CURRENT RUNTIME:
+ *
+ * YES/NO
+ *
+ * ==================================================
+ *
+ * 6. RPC
+ *
+ * ==================================================
+ *
+ * RPC CALLED:
+ *
+ * YES/NO
+ *
+ * RPC SUCCESS:
+ *
+ * YES/NO
+ *
+ * RPC SQLSTATE:
+ *
+ * codigo somente / NONE
+ *
+ * RPC VALID RESPONSE:
+ *
+ * YES/NO
+ *
+ * Se houve erro, informar somente o código/categoria sanitizada.
+ *
+ * ==================================================
+ *
+ * 7. TOKENS PÓS-PEDIDO
+ *
+ * ==================================================
+ *
+ * Verificar:
+ *
+ * AV_ORDER_ACCESS_SECRET AVAILABLE TO CURRENT RUNTIME:
+ *
+ * YES/NO
+ *
+ * AV_ORDER_ACCESS_SECRET LENGTH >= 32:
+ *
+ * YES/NO
+ *
+ * RECEIPT TOKEN GENERATED:
+ *
+ * YES/NO
+ *
+ * ORDER VIEW TOKEN GENERATED:
+ *
+ * YES/NO
+ *
+ * Não exibir nenhum valor.
+ *
+ * Se a RPC criou o pedido e depois houve falha,
+ *
+ * identificar exatamente qual geração de token falhou.
+ *
+ * ==================================================
+ *
+ * 8. EMAIL / OUTBOX
+ *
+ * ==================================================
+ *
+ * EMAIL/OUTBOX REACHED:
+ *
+ * YES/NO
+ *
+ * EMAIL/OUTBOX RESULT:
+ *
+ * PASS / FAIL / NOT REACHED
+ *
+ * Confirmar se uma falha de e-mail está propagando
+ *
+ * INTERNAL_ERROR indevidamente para o checkout.
+ *
+ * ==================================================
+ *
+ * 9. CATCH FATAL
+ *
+ * ==================================================
+ *
+ * Se o fluxo caiu no catch genérico:
+ *
+ * identificar a categoria real da exceção sem stack sensível:
+ *
+ * CONFIG_MISSING
+ *
+ * RATE_LIMIT_CONFIG
+ *
+ * SUPABASE_CONFIG
+ *
+ * RPC_ERROR
+ *
+ * INVALID_RPC_RESPONSE
+ *
+ * ORDER_ACCESS_SECRET_MISSING
+ *
+ * ORDER_ACCESS_SECRET_WEAK
+ *
+ * TOKEN_GENERATION_ERROR
+ *
+ * EMAIL_ERROR
+ *
+ * OTHER
+ *
+ * ==================================================
+ *
+ * 10. RESULTADO FINAL
+ *
+ * ==================================================
+ *
+ * Retornar SOMENTE:
+ *
  * ETAPA 12.1-P8-R1 — INTERNAL_ERROR FORENSIC
- * 
- * HTTP STATUS: 500
- * CORRELATION ID: (Não encontrado nos logs recentes)
- * CORS: PASS (Options 204 presumido)
- * PAYLOAD: PASS (Validado via Zod/Logic)
- * RATE LIMIT: PASS (Buckets existem, sem bloqueios ativos)
- * FINGERPRINT: PASS
- * SUPABASE URL: YES
- * SERVICE ROLE: YES
- * RPC CALLED: YES
- * RPC SUCCESS: NO
- * RPC SQLSTATE: 42703 (Undefined Column)
- * RPC RESPONSE VALID: N/A
- * ORDER ROW CREATED: NO
- * ORDER ITEMS CREATED: NO
- * PAYMENT STATUS: n/a
- * DISPLAY ORDER NUMBER CREATED: NO
- * ORDER ACCESS SECRET: YES (>= 32 chars)
- * RECEIPT TOKEN: NOT REACHED
- * ORDER VIEW TOKEN: NOT REACHED
- * EMAIL/OUTBOX: NOT REACHED
- * LAST SUCCESSFUL STAGE: RATE_LIMIT
- * FAILED STAGE: RPC_av_create_order
- * ERROR CATEGORY: RPC_ERROR
- * ROOT CAUSE: A RPC av_create_order está tentando acessar a coluna 'display_order_number' na tabela 'public.av_orders', mas esta coluna não existe no schema atual (confirmado via information_schema).
- * MINIMAL FIX: Executar migração para adicionar 'display_order_number' à tabela 'av_orders' ou atualizar a RPC para não utilizar esta coluna.
- * FILES MODIFIED: NONE
- * 
- * FINAL VERDICT: B) RPC FAILURE
+ *
+ * HTTP STATUS:
+ *
+ * CORRELATION ID:
+ *
+ * CORS:
+ *
+ * PAYLOAD:
+ *
+ * RATE LIMIT:
+ *
+ * FINGERPRINT:
+ *
+ * SUPABASE URL:
+ *
+ * SERVICE ROLE:
+ *
+ * RPC CALLED:
+ *
+ * RPC SUCCESS:
+ *
+ * RPC SQLSTATE:
+ *
+ * RPC RESPONSE VALID:
+ *
+ * ORDER ROW CREATED:
+ *
+ * ORDER ITEMS CREATED:
+ *
+ * PAYMENT STATUS:
+ *
+ * DISPLAY ORDER NUMBER CREATED:
+ *
+ * ORDER ACCESS SECRET:
+ *
+ * RECEIPT TOKEN:
+ *
+ * ORDER VIEW TOKEN:
+ *
+ * EMAIL/OUTBOX:
+ *
+ * LAST SUCCESSFUL STAGE:
+ *
+ * FAILED STAGE:
+ *
+ * ERROR CATEGORY:
+ *
+ * ROOT CAUSE:
+ *
+ * MINIMAL FIX:
+ *
+ * FILES MODIFIED:
+ *
+ * NONE
+ *
+ * FINAL VERDICT:
+ *
+ * A) FAILURE BEFORE RPC
+ *
+ * B) RPC FAILURE
+ *
+ * C) ORDER CREATED — TOKEN GENERATION FAILURE
+ *
+ * D) ORDER CREATED — EMAIL/POST-PROCESSING FAILURE
+ *
+ * E) SERVER RUNTIME SECRET/CONFIG FAILURE
+ *
+ * F) OTHER
  */
 
 
