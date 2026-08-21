@@ -39,6 +39,7 @@ export type AdminOrderDetail = {
   items: Array<{
     id: string;
     modelName: string;
+    modelCode: string;
     shirtType: string;
     sizeOption: string;
     customSize: string | null;
@@ -232,6 +233,7 @@ export async function getAdminOrderDetailInternal(orderId: string): Promise<Admi
     items: items.map(i => ({
       id: i.id,
       modelName: i.model_name,
+      modelCode: i.model_code,
       shirtType: i.shirt_type,
       sizeOption: i.size_option,
       customSize: i.custom_size,
