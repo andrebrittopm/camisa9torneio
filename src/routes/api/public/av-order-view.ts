@@ -90,39 +90,86 @@ export const Route = createFileRoute('/api/public/av-order-view')({
             return new Response(JSON.stringify({ error: "ACCESS_DENIED", correlation_id: correlationId }), { status: 403, headers: corsHeaders })
           }
 
-          // 2. Buscar Dados Sanitizados (Server-Side)
-          const supabaseUrl = process.env['SUPABASE_URL']!
-          const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!
-          const supabase = createClient(supabaseUrl, supabaseKey)
+          // 2. Validar Formato do Handle
+          const handleMatch = handle.match(/^AV-(\d{4})-(\d+)$/)
+          if (!handleMatch) {
+            return new Response(JSON.stringify({ error: "INVALID_HANDLE", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
 
-          // Buscar o pedido pelo handle (display_order_number)
+          const eventYear = parseInt(handleMatch[1] as string, 10)
+          const orderSeq = parseInt(handleMatch[2] as string, 10)
+
+          if (isNaN(eventYear) || isNaN(orderSeq) || orderSeq <= 0) {
+            return new Response(JSON.stringify({ error: "INVALID_HANDLE", correlation_id: correlationId }), { status: 400, headers: corsHeaders })
+          }
+
+          // 3. Buscar Dados Sanitizados (Server-Side)
+          const supabaseUrl = process.env['SUPABASE_URL']
+          const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
+          
+          if (!supabaseUrl || !supabaseKey) {
+            console.error(`[AV] correlation=${correlationId} stage=config error=MISSING_ENV_VARS`);
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
+          }
+
+          const supabase = createClient(supabaseUrl as string, supabaseKey as string)
+
+          // Buscar o pedido usando order_seq e verificar o ano do evento
           const { data: order, error: orderError } = await supabase
             .from('av_orders')
             .select(`
-              display_order_number,
-              total_quantity,
+              id,
+              order_seq,
               total_amount,
               order_status,
               payment_status,
-              event:av_events(event_name)
+              event:av_events(
+                event_name,
+                event_year
+              )
             `)
-            .eq('display_order_number', handle)
+            .eq('order_seq', orderSeq)
             .single()
 
           if (orderError || !order) {
             return new Response(JSON.stringify({ error: "ORDER_NOT_FOUND", correlation_id: correlationId }), { status: 404, headers: corsHeaders })
           }
 
-          // Buscar itens sanitizados
+          // Validar que o ano do evento corresponde ao handle
+          // @ts-ignore - Supabase type inference might not catch the nested event object correctly here
+          if (order.event?.event_year !== eventYear) {
+            return new Response(JSON.stringify({ error: "ORDER_NOT_FOUND", correlation_id: correlationId }), { status: 404, headers: corsHeaders })
+          }
+
+          const internalOrderId = order.id
+
+          // 4. Buscar itens sanitizados pelo order_id interno
           const { data: items, error: itemsError } = await supabase
             .from('av_order_items')
-            .select('model_name, shirt_type, size_option, custom_name, custom_number, quantity')
-            .eq('display_order_number', handle) // Usando display_order_number que é UNIQUE e indexado
+            .select('model_name, shirt_type, size_option, custom_size, custom_name, custom_number, quantity')
+            .eq('order_id', internalOrderId)
 
+          if (itemsError) {
+            console.error(`[AV] correlation=${correlationId} stage=items_fetch error=${itemsError.message}`);
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
+          }
+
+          // 5. Calcular total_quantity server-side
+          const totalQuantity = (items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+
+          // 6. Resposta Pública Sanitizada
           return new Response(JSON.stringify({
             success: true,
             order: {
-              ...order,
+              display_order_number: handle,
+              total_quantity: totalQuantity,
+              total_amount: order.total_amount,
+              order_status: order.order_status,
+              payment_status: order.payment_status,
+              event: {
+                // @ts-ignore
+                event_name: order.event?.event_name
+              },
               items: items || []
             },
             correlation_id: correlationId
