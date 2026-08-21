@@ -69,7 +69,7 @@ function Index() {
   const resetOrder = useOrderState((s) => s.resetOrder);
 
   // ESTADO EM MEMÓRIA (Fix NEW-01)
-  const [createdOrder, setCreatedOrder] = useState<any>(null);
+  const [createdOrder, setCreatedOrder] = useState<any>(null); // Tipado como any para aceitar o unwrap sem refatorar o index agora
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null);
   const [orderViewToken, setOrderViewToken] = useState<string | null>(null);
 

@@ -3,7 +3,7 @@ import { CheckCircle2, Copy, Share2, PlusCircle, Check, Clock } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import type { AvCreateOrderResponse } from "@/lib/av-order-client";
+import type { AvCreatedOrder } from "@/lib/av-order-client";
 import type { AvCatalogResponse } from "@/lib/av-catalog-client";
 import type { OrderItem } from "@/lib/order-state";
 import { OrderItemsSummary } from "./OrderItemsSummary";
@@ -12,7 +12,7 @@ import { ReceiptUpload } from "./ReceiptUpload";
 
 
 interface OrderSuccessProps {
-  order: AvCreateOrderResponse;
+  order: AvCreatedOrder;
   catalog: AvCatalogResponse['data'];
   localItems: OrderItem[];
   onNewOrder: () => void;
