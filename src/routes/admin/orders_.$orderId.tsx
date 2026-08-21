@@ -357,7 +357,7 @@ function AdminOrderDetailPage() {
                       <h3 className="text-sm font-black uppercase tracking-widest">Pedido Cancelado</h3>
                     </div>
                     
-                    {order.paymentStatus === 'paid' && (
+                    {order.paymentStatus === 'payment_confirmed' && (
                       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
@@ -890,7 +890,7 @@ function AdminOrderDetailPage() {
               </div>
             </div>
 
-            {order.paymentStatus === 'paid' && (
+            {order.paymentStatus === 'payment_confirmed' && (
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
