@@ -90,10 +90,16 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
       };
     }
 
-    const { receipt_access_token, order_view_token, ...orderData } = data;
+    const { success, receipt_access_token, order_view_token, code, error, retry_after, ...orderData } = data;
 
     return {
-      order: orderData,
+      order: {
+        success: true,
+        data: orderData as AvCreatedOrder,
+        code,
+        error,
+        retry_after
+      },
       receiptAccessToken: receipt_access_token || null,
       orderViewToken: order_view_token || null
     };
