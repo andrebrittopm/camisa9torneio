@@ -12,20 +12,18 @@ export const getPaymentStatusLabel = (status: string | null | undefined): string
     'receipt_submitted': 'Comprovante em análise',
     'payment_confirmed': 'Pagamento confirmado',
     'receipt_rejected': 'Comprovante rejeitado',
-    // Fallback for legacy or untracked strings
-    'paid': 'Pagamento confirmado',
-    'pending': 'Aguardando pagamento',
   };
 
-  return mapping[status.toLowerCase()] || status;
+  const normalized = status.toLowerCase();
+  return mapping[normalized] || "Status desconhecido";
 };
 
 export const getPaymentStatusStyle = (status: string | null | undefined): string => {
   const s = status?.toLowerCase();
-  if (s === 'payment_confirmed' || s === 'paid') return "bg-green-500/10 text-green-500 border-green-500/20";
+  if (s === 'payment_confirmed') return "bg-green-500/10 text-green-500 border-green-500/20";
   if (s === 'receipt_rejected') return "bg-red-500/10 text-red-500 border-red-500/20";
   if (s === 'receipt_submitted') return "bg-amber-500/10 text-amber-500 border-amber-500/20";
-  if (s === 'awaiting_payment' || s === 'pending') return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+  if (s === 'awaiting_payment') return "bg-amber-500/10 text-amber-500 border-amber-500/20";
   return "bg-slate-500/10 text-slate-500 border-slate-500/20";
 };
 
