@@ -238,6 +238,7 @@ function Index() {
             localItems={items}
             receiptAccessToken={receiptAccessToken}
             orderViewToken={orderViewToken}
+            orderViewExpiresAt={orderViewExpiresAt}
             onNewOrder={handleNewOrder}
           />
         )}
