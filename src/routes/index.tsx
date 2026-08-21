@@ -146,8 +146,12 @@ function Index() {
             <div id="camisa">
               <ModelsSection
                 models={catalog?.data?.models || []}
-                selectedModelId={null}
-                onSelectModel={() => setStep("configurator")}
+                selectedModelId={selectedModelId}
+                onSelectModel={(model) => {
+                  setSelectedModelId(model.id);
+                  setEditingItemId(null);
+                  setStep("configurator");
+                }}
                 eventInfo={catalog?.data?.event || ({} as any)}
               />
             </div>
