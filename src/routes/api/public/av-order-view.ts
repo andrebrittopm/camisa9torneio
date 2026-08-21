@@ -123,21 +123,21 @@ export const Route = createFileRoute('/api/public/av-order-view')({
               total_amount,
               order_status,
               payment_status,
-              event:av_events(
+              event:av_events!inner(
                 event_name,
                 event_year
               )
             `)
             .eq('order_seq', orderSeq)
-            .single()
+            .eq('event.event_year', eventYear)
+            .maybeSingle()
 
-          if (orderError || !order) {
-            return new Response(JSON.stringify({ error: "ORDER_NOT_FOUND", correlation_id: correlationId }), { status: 404, headers: corsHeaders })
+          if (orderError) {
+            console.error(`[AV] correlation=${correlationId} stage=order_fetch error=QUERY_ERROR`);
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
           }
 
-          // Validar que o ano do evento corresponde ao handle
-          // @ts-ignore - Supabase type inference might not catch the nested event object correctly here
-          if (order.event?.event_year !== eventYear) {
+          if (!order) {
             return new Response(JSON.stringify({ error: "ORDER_NOT_FOUND", correlation_id: correlationId }), { status: 404, headers: corsHeaders })
           }
 
@@ -150,12 +150,30 @@ export const Route = createFileRoute('/api/public/av-order-view')({
             .eq('order_id', internalOrderId)
 
           if (itemsError) {
-            console.error(`[AV] correlation=${correlationId} stage=items_fetch error=${itemsError.message}`);
+            console.error(`[AV] correlation=${correlationId} stage=items_fetch code=QUERY_ERROR`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
           }
 
-          // 5. Calcular total_quantity server-side
-          const totalQuantity = (items || []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+          // 5. Validar todos os itens e calcular total_quantity
+          if (!items || !Array.isArray(items)) {
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
+          }
+
+          for (const item of items) {
+            const q = item.quantity
+            const isValid = 
+              typeof q === 'number' &&
+              Number.isFinite(q) &&
+              Number.isInteger(q) &&
+              q >= 0
+            
+            if (!isValid) {
+              console.error(`[AV] correlation=${correlationId} stage=validation code=INVALID_ITEM_QUANTITY`)
+              return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
+            }
+          }
+
+          const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
 
           // 6. Resposta Pública Sanitizada
           return new Response(JSON.stringify({
