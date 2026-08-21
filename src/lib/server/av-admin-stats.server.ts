@@ -99,7 +99,7 @@ export async function getDashboardStatsInternal(): Promise<AdminDashboardStats> 
     totalOrderValue: orders.reduce((sum, o) => sum + o.total_amount, 0),
     confirmedValue: orders.filter(o => o.payment_status === 'payment_confirmed').reduce((sum, o) => sum + o.total_amount, 0),
     
-    inProduction: orders.filter(o => o.order_status === 'production').length,
+    inProduction: orders.filter(o => o.order_status === 'in_production').length,
     ready: orders.filter(o => o.order_status === 'ready').length,
     delivered: orders.filter(o => o.order_status === 'delivered').length,
     cancelled: orders.filter(o => o.order_status === 'cancelled').length,
