@@ -31,7 +31,7 @@ function OrderViewPage() {
   const expires = search['expires']
   
   const { data, isLoading, error } = useQuery({
-    queryKey: ['public-order-view', handle],
+    queryKey: ['public-order-view', handle, token, expires],
     queryFn: () => fetchOrderData(handle, token, expires),
     retry: false
   })
