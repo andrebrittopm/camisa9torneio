@@ -128,6 +128,395 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
+      <div className="bg-black/80 text-[10px] font-mono p-4 border-b border-white/10 whitespace-pre-wrap overflow-x-hidden">
+{`ETAPA 12.1-P15A — PUBLIC CHECKOUT UX FINAL AUDIT
+
+MODO SOMENTE DIAGNÓSTICO.
+
+NÃO alterar código.
+NÃO editar arquivos.
+NÃO alterar banco.
+NÃO alterar RPC.
+NÃO alterar secrets.
+NÃO alterar Storage.
+NÃO publicar.
+NÃO escrever este relatório em comentários.
+NÃO alterar src/routes/index.tsx.
+
+==================================================
+CONTEXTO ATUAL
+==================================================
+
+O checkout público principal está FUNCIONANDO em produção:
+
+- criação do pedido = OK
+- protocolo oficial = OK
+- cliente = OK
+- quantidade = OK
+- total real = OK
+- PIX = OK
+- chave PIX = OK
+- titular PIX = OK
+- copiar chave = OK
+- upload comprovante = OK
+- comprovante recebido = OK
+- payment_status → receipt_submitted = OK
+
+BACKEND FUNCIONAL DEVE FICAR CONGELADO.
+
+NÃO modificar:
+
+src/routes/api/public/av-create-order.ts
+src/routes/api/public/av-payment-info.ts
+src/routes/api/public/av-payment-receipt.ts
+
+NÃO modificar RPCs:
+
+av_create_order
+av_submit_payment_receipt
+
+NÃO modificar:
+
+av_payment_receipts
+av_orders
+av_order_items
+
+==================================================
+1. AUDITAR ORDER SUCCESS
+==================================================
+
+Inspecionar:
+
+src/components/OrderSuccess.tsx
+
+Verificar somente visual/texto/UX:
+
+A) protocolo oficial aparece claramente
+B) cliente aparece
+C) total de peças aparece
+D) total do pedido aparece
+E) status do pedido está coerente
+F) status do pagamento está coerente
+G) PIX aparece somente quando aplicável
+H) ReceiptUpload aparece somente quando aplicável
+I) após receipt_submitted, interface comunica claramente:
+   "Comprovante recebido"
+   "Em análise"
+J) não afirmar pagamento confirmado antes de conferência
+K) não afirmar camisa garantida antes de confirmação do pagamento
+L) não existir mensagem contraditória com payment_status
+
+Reportar textos exatos problemáticos.
+
+==================================================
+2. PROCURAR MENSAGEM DE PAGAMENTO CONTRADITÓRIA
+==================================================
+
+Pesquisar no projeto por frases relacionadas a:
+
+"aguardando a abertura do período de pagamentos"
+"período de pagamentos"
+"camisa garantida"
+"pagamento confirmado"
+"pedido garantido"
+"reserva garantida"
+
+Para cada ocorrência:
+
+FILE:
+LINE:
+TEXT:
+CONTEXT:
+CURRENT STATUS:
+CORRECT / MISLEADING / OUTDATED
+
+Não alterar nada.
+
+==================================================
+3. AUDITAR ORDER PAYMENT
+==================================================
+
+Inspecionar:
+
+src/components/OrderPayment.tsx
+
+Confirmar:
+
+PIX KEY:
+renderiza corretamente
+
+PIX HOLDER:
+renderiza corretamente
+
+PIX TYPE:
+renderiza corretamente
+
+TOTAL:
+usa total real do pedido
+
+COPY KEY:
+funcional
+
+COPY VALUE:
+funcional
+
+INSTRUÇÃO AO CLIENTE:
+deixa claro que deve:
+1. copiar a chave
+2. pagar no banco
+3. voltar à mesma página
+4. enviar o comprovante
+
+Verificar se essa instrução está visualmente legível no MOBILE.
+
+==================================================
+4. AUDITAR RECEIPT UPLOAD
+==================================================
+
+Inspecionar:
+
+src/components/ReceiptUpload.tsx
+
+Confirmar:
+
+JPG:
+SUPPORTED
+
+PNG:
+SUPPORTED
+
+PDF:
+SUPPORTED
+
+10MB:
+SUPPORTED
+
+LOADING STATE:
+PRESENT
+
+DOUBLE CLICK PROTECTION:
+PRESENT
+
+SUCCESS STATE:
+PRESENT
+
+ERROR STATE:
+PRESENT
+
+Após sucesso, verificar se aparece claramente:
+
+COMPROVANTE RECEBIDO
+EM ANÁLISE
+
+Verificar se ainda existe algum botão de upload indevido
+após payment_status = receipt_submitted.
+
+==================================================
+5. AUDITAR TRANSIÇÃO DE STATUS NO FRONTEND
+==================================================
+
+Inspecionar como:
+
+ReceiptUpload
+→ onSuccess
+→ OrderSuccess
+→ state/local status
+
+Verificar se após upload bem sucedido:
+
+payment_status muda visualmente para receipt_submitted
+
+sem reload.
+
+Reportar:
+
+STATUS UPDATE CALLBACK:
+PASS / FAIL
+
+SUCCESS UI AFTER RECEIPT:
+PASS / FAIL
+
+RELOAD REQUIRED:
+YES / NO
+
+==================================================
+6. AUDITAR LINK SEGURO
+==================================================
+
+Inspecionar geração do link:
+
+/order-view
+
+Verificar somente:
+
+handle usa display_order_number
+token usa orderViewToken
+não usa order_id público
+não contém customer_name
+não contém email
+não contém WhatsApp
+
+Não revelar token real.
+
+Reportar:
+
+ORDER VIEW HANDLE:
+VALID / FAIL
+
+PII IN URL:
+NONE / FOUND
+
+INTERNAL UUID IN URL:
+NONE / FOUND
+
+==================================================
+7. MOBILE UX
+==================================================
+
+Revisar visualmente o fluxo para largura aproximada:
+
+375 px
+390 px
+430 px
+
+Verificar:
+
+protocolo não corta
+PIX não corta
+CPF não corta
+titular não corta
+botões copiar utilizáveis
+total visível
+upload utilizável
+preview do comprovante não estoura
+textos não ficam ilegíveis
+cards não geram overflow horizontal
+
+Reportar problemas reais somente.
+
+==================================================
+8. ACESSIBILIDADE BÁSICA
+==================================================
+
+Verificar:
+
+botões têm texto/aria-label adequado
+inputs de arquivo são utilizáveis
+feedback não depende somente de cor
+contraste de textos importantes
+focus após Pedido Recebido
+loading possui feedback textual
+
+Não alterar nada.
+
+==================================================
+9. CLASSIFICAR ACHADOS
+==================================================
+
+Para cada achado usar:
+
+CRITICAL
+HIGH
+MEDIUM
+LOW
+COSMETIC
+
+Não classificar como CRITICAL algo puramente visual.
+
+Separar:
+
+FUNCTIONAL
+UX
+COPY
+ACCESSIBILITY
+SECURITY
+
+==================================================
+10. NÃO TOCAR NO BACKEND
+==================================================
+
+Confirmar explicitamente:
+
+CREATE ORDER BACKEND:
+FROZEN
+
+PIX BACKEND:
+FROZEN
+
+RECEIPT BACKEND:
+FROZEN
+
+DATABASE:
+FROZEN
+
+CAPABILITY TOKENS:
+FROZEN
+
+==================================================
+11. SAÍDA
+==================================================
+
+Retornar:
+
+ETAPA 12.1-P15A — PUBLIC CHECKOUT UX FINAL AUDIT
+
+ORDER SUCCESS:
+PASS / ISSUES
+
+PAYMENT STATUS UX:
+PASS / ISSUES
+
+PIX UX:
+PASS / ISSUES
+
+RECEIPT UX:
+PASS / ISSUES
+
+STATUS TRANSITION:
+PASS / ISSUES
+
+ORDER VIEW LINK:
+PASS / ISSUES
+
+MOBILE:
+PASS / ISSUES
+
+ACCESSIBILITY:
+PASS / ISSUES
+
+CONTRADICTORY COPY FOUND:
+YES / NO
+
+ACHADOS:
+
+01
+SEVERITY:
+CATEGORY:
+FILE:
+LINE:
+CURRENT:
+PROBLEM:
+RECOMMENDED CHANGE:
+
+02
+...
+
+BACKEND FROZEN:
+YES / NO
+
+DATABASE FROZEN:
+YES / NO
+
+FILES MODIFIED:
+NONE
+
+FINAL VERDICT:
+
+A) PUBLIC CHECKOUT UX READY — NO CHANGES NEEDED
+B) SMALL UX/COPY PATCH RECOMMENDED
+C) FUNCTIONAL FRONTEND PATCH REQUIRED
+D) SECURITY BLOCKER FOUND`}
+      </div>
       <Header />
 
       <main>
