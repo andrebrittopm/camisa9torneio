@@ -113,7 +113,7 @@ function Index() {
   }, [loadCatalog]);
 
   const activeModel = useMemo(() => {
-    if (!catalog?.data?.models) return null;
+    if (!catalog?.data?.models || catalog.data.models.length === 0) return null;
 
     if (editingItemId) {
       const editingItem = items.find((i) => i.local_id === editingItemId);
@@ -122,7 +122,9 @@ function Index() {
       }
     }
 
-    return catalog.data.models.find((m) => m.code === "TSHIRT-01") || catalog.data.models[0];
+    // A resolução deve ser baseada no primeiro modelo ativo retornado pelo catálogo,
+    // que já vem filtrado por active=true do backend e ordenado por sort_order.
+    return catalog.data.models[0];
   }, [catalog, editingItemId, items]);
 
   const editingItem = useMemo(() => {

@@ -355,7 +355,18 @@ export function ModelsSection({
   onSelectModel: (model: AvShirtModel) => void;
   eventInfo: AvCatalogEvent;
 }) {
-  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>('tshirt');
+  // Categorias baseadas nos modelos ATIVOS realmente recebidos
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>();
+    models.forEach(m => cats.add(m.category));
+    return Array.from(cats);
+  }, [models]);
+
+  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>(() => {
+    if (availableCategories.includes('tshirt')) return 'tshirt';
+    if (availableCategories.length > 0) return availableCategories[0] as 'tshirt' | 'tank';
+    return 'tshirt';
+  });
 
   const filteredModels = useMemo(() => models.filter(m => m.category === activeTab), [models, activeTab]);
 
@@ -410,31 +421,33 @@ export function ModelsSection({
           </p>
         </div>
 
-        <div className="flex justify-center mb-16">
-          <div className="inline-flex p-1.5 bg-white/[0.03] backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-            {(['tshirt', 'tank'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "px-8 md:px-12 py-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 relative",
-                  activeTab === tab 
-                    ? "text-ice shadow-xl" 
-                    : "text-ice/40 hover:text-ice/80"
-                )}
-              >
-                {activeTab === tab && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-royal rounded-xl -z-10 shadow-[0_0_20px_rgba(3,50,173,0.5)] border border-royal-light/20"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
-              </button>
-            ))}
+        {availableCategories.length > 1 && (
+          <div className="flex justify-center mb-16">
+            <div className="inline-flex p-1.5 bg-white/[0.03] backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
+              {(['tshirt', 'tank'] as const).filter(t => availableCategories.includes(t)).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={cn(
+                    "px-8 md:px-12 py-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 relative",
+                    activeTab === tab 
+                      ? "text-ice shadow-xl" 
+                      : "text-ice/40 hover:text-ice/80"
+                  )}
+                >
+                  {activeTab === tab && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-royal rounded-xl -z-10 shadow-[0_0_20px_rgba(3,50,173,0.5)] border border-royal-light/20"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                  {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <motion.div 
           layout
