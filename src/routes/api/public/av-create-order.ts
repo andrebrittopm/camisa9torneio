@@ -520,6 +520,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
             success: true,
             receipt_access_token: receiptAccessToken,
             order_view_token: orderViewToken,
+            order_view_expires_at: expiresAt,
 
             data: {
               order_id: rpcData.order_id,

@@ -38,6 +38,7 @@ export interface AvOrderSubmissionResult {
   order: AvCreateOrderResponse;
   receiptAccessToken: string | null;
   orderViewToken: string | null;
+  orderViewExpiresAt: number | null;
 }
 
 /**
@@ -158,7 +159,8 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
         retry_after: null
       },
       receiptAccessToken: null,
-      orderViewToken: null
+      orderViewToken: null,
+      orderViewExpiresAt: null
     };
   }
 }
