@@ -878,11 +878,11 @@ function AdminOrderDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Status Atual:</span>
-                <span className="text-white font-bold uppercase">{order.orderStatus}</span>
+                <span className="text-white font-bold uppercase">{getOrderStatusLabel(order.orderStatus)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Pagamento:</span>
-                <span className="text-white font-bold uppercase">{order.paymentStatus}</span>
+                <span className="text-white font-bold uppercase">{getPaymentStatusLabel(order.paymentStatus)}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-white/5">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Total:</span>
