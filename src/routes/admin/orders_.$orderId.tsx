@@ -251,8 +251,8 @@ function AdminOrderDetailPage() {
                 <div key={item.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-white text-lg">{item.modelName}</h4>
-                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{item.shirtType}</p>
+                      <h4 className="font-bold text-white text-lg">{getAdminProductDisplayName(item.modelCode, item.modelName)}</h4>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">Tamanho: {item.sizeOption === 'OUTRO' ? item.customSize : item.sizeOption}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-gold font-black">{item.quantity}x</p>
