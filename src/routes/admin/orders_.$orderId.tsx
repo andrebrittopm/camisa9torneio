@@ -32,7 +32,7 @@ import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
 
 
-export const Route = createFileRoute('/admin/orders/$orderId')({
+export const Route = createFileRoute('/admin/orders_/$orderId')({
   beforeLoad: async () => {
     const context = await checkAdminAuth();
     if (!context.authenticated || !context.active) {
