@@ -4,24 +4,31 @@ import { AvShirtModel } from './av-catalog-client';
 /**
  * Interface de resposta do servidor (Sanitizada)
  */
+export interface AvCreatedOrder {
+  order_id: string;
+  order_seq: number;
+  display_order_number: string;
+  event_year: number;
+  customer_name: string;
+  total_quantity: number;
+  subtotal: number;
+  total_amount: number;
+  order_status: string;
+  payment_status: string;
+  is_duplicate: boolean;
+}
+
+/**
+ * Interface de resposta do servidor (Sanitizada)
+ */
 export interface AvCreateOrderResponse {
   success: boolean;
-  order_id?: string;
-  order_seq?: number;
-  display_order_number?: string;
-  event_year?: number;
-  customer_name?: string;
-  total_quantity?: number;
-  subtotal?: number;
-  total_amount?: number;
-  order_status?: string;
-  payment_status?: string;
-  is_duplicate?: boolean;
+  data?: AvCreatedOrder;
   error?: string;
   code?: string;
   retry_after?: number | null;
   receipt_access_token?: string; 
-  order_view_token?: string; // Etapa 4.3C-R1
+  order_view_token?: string; 
 }
 
 /**
