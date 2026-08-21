@@ -87,12 +87,13 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
           retry_after: response.status === 429 ? parseInt(response.headers.get('Retry-After') || '0', 10) : null
         },
         receiptAccessToken: null,
-        orderViewToken: null
+        orderViewToken: null,
+        orderViewExpiresAt: null
       };
     }
 
     // Validar contrato da resposta
-    const { success, data: orderData, receipt_access_token, order_view_token, code, error, retry_after } = data;
+    const { success, data: orderData, receipt_access_token, order_view_token, order_view_expires_at, code, error, retry_after } = data;
 
     if (!success || !orderData) {
       return {
@@ -103,7 +104,8 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
           retry_after
         },
         receiptAccessToken: null,
-        orderViewToken: null
+        orderViewToken: null,
+        orderViewExpiresAt: null
       };
     }
 
@@ -132,11 +134,21 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
           retry_after: null
         },
         receiptAccessToken: null,
-        orderViewToken: null
+        orderViewToken: null,
+        orderViewExpiresAt: null
       };
     }
 
     const validatedOrder = validation.data as AvCreatedOrder;
+
+    let validatedExpiresAt: number | null = null;
+    if (
+      typeof order_view_expires_at === 'number' &&
+      Number.isSafeInteger(order_view_expires_at) &&
+      order_view_expires_at > Date.now()
+    ) {
+      validatedExpiresAt = order_view_expires_at;
+    }
 
     return {
       order: {
@@ -147,7 +159,8 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
         retry_after
       },
       receiptAccessToken: receipt_access_token || null,
-      orderViewToken: order_view_token || null
+      orderViewToken: order_view_token || null,
+      orderViewExpiresAt: validatedExpiresAt
     };
   } catch (error) {
     console.error('[AV-ORDER-CLIENT] Network error:', error);
