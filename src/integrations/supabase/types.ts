@@ -314,6 +314,7 @@ export type Database = {
       }
       av_payment_receipts: {
         Row: {
+          file_sha256: string
           id: string
           mime_type: string | null
           order_id: string
@@ -324,9 +325,11 @@ export type Database = {
           reviewed_by: string | null
           size_bytes: number | null
           storage_path: string
+          submission_id: string
           uploaded_at: string
         }
         Insert: {
+          file_sha256: string
           id?: string
           mime_type?: string | null
           order_id: string
@@ -337,9 +340,11 @@ export type Database = {
           reviewed_by?: string | null
           size_bytes?: number | null
           storage_path: string
+          submission_id: string
           uploaded_at?: string
         }
         Update: {
+          file_sha256?: string
           id?: string
           mime_type?: string | null
           order_id?: string
@@ -350,6 +355,7 @@ export type Database = {
           reviewed_by?: string | null
           size_bytes?: number | null
           storage_path?: string
+          submission_id?: string
           uploaded_at?: string
         }
         Relationships: [

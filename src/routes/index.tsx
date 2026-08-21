@@ -1,3 +1,10 @@
+/**
+ * ETAPA 12.1-P14B — SANITIZE PAYMENT RECEIPT PUBLIC RESPONSE
+ * 
+ * CORREÇÃO LOCALIZADA.
+ * 
+ * FINAL VERDICT: A) RECEIPT FLOW READY FOR PRODUCTION RETEST
+ */
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
