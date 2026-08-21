@@ -18,6 +18,7 @@ interface OrderSuccessProps {
   onNewOrder: () => void;
   receiptAccessToken?: string | null;
   orderViewToken?: string | null;
+  orderViewExpiresAt?: number | null;
   onStatusUpdate?: (paymentStatus: string, reviewStatus: string) => void;
 }
 
@@ -39,7 +40,7 @@ const PAYMENT_STATUS_MAP: Record<string, string> = {
   receipt_rejected: "COMPROVANTE NÃO APROVADO",
 };
 
-export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAccessToken, orderViewToken, onStatusUpdate }: OrderSuccessProps) {
+export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAccessToken, orderViewToken, orderViewExpiresAt, onStatusUpdate }: OrderSuccessProps) {
   const [copied, setCopied] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(order.payment_status || "awaiting_payment");
 
@@ -99,6 +100,25 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
   }[paymentStatus] || "";
 
   const showSubtotal = order.subtotal !== order.total_amount;
+
+  const secureOrderViewUrl = useMemo(() => {
+    if (
+      !orderViewToken ||
+      typeof orderViewExpiresAt !== 'number' ||
+      !Number.isSafeInteger(orderViewExpiresAt) ||
+      orderViewExpiresAt <= Date.now()
+    ) {
+      return null;
+    }
+
+    const params = new URLSearchParams({
+      handle: order.display_order_number,
+      token: orderViewToken,
+      expires: String(orderViewExpiresAt)
+    });
+
+    return `${window.location.origin}/order-view?${params.toString()}`;
+  }, [order.display_order_number, orderViewToken, orderViewExpiresAt]);
 
   return (
     <motion.div 
@@ -234,11 +254,11 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
               {footerCopy} <br/>
               Acompanhe seu e-mail para novas instruções.
             </p>
-            {orderViewToken && (
+            {secureOrderViewUrl && (
               <div className="pt-4 border-t border-white/5">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ice/20 mb-2">Link Seguro de Visualização</p>
                 <code className="block p-3 bg-black/40 rounded-lg text-[9px] text-gold/60 break-all border border-gold/10">
-                  {`${window.location.origin}/order-view?handle=${order.display_order_number}&token=${orderViewToken}`}
+                  {secureOrderViewUrl}
                 </code>
               </div>
             )}

@@ -13,7 +13,7 @@ interface OrderReviewProps {
   items: OrderItem[];
   eventInfo: AvCatalogEvent;
   onBack: () => void;
-  onSuccess: (order: AvCreatedOrder, receiptToken: string | null, viewToken: string | null) => void;
+  onSuccess: (order: AvCreatedOrder, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => void;
 }
 
 
@@ -95,7 +95,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
 
     };
 
-    const { order: orderResult, receiptAccessToken, orderViewToken } = await submitAvOrder(payload);
+    const { order: orderResult, receiptAccessToken, orderViewToken, orderViewExpiresAt } = await submitAvOrder(payload);
 
     // Resetar Turnstile após qualquer tentativa (Single Use)
     setTurnstileToken(null);
@@ -103,7 +103,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
 
     if (orderResult.success && orderResult.data) {
       setStatus('success');
-      onSuccess(orderResult.data, receiptAccessToken, orderViewToken);
+      onSuccess(orderResult.data, receiptAccessToken, orderViewToken, orderViewExpiresAt);
     } else {
 
       setStatus('error');
