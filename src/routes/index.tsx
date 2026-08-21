@@ -123,10 +123,13 @@ function Index() {
       }
     }
 
-    // A resolução deve ser baseada no primeiro modelo ativo retornado pelo catálogo,
-    // que já vem filtrado por active=true do backend e ordenado por sort_order.
-    return catalog.data.models[0];
-  }, [catalog, editingItemId, items]);
+    if (selectedModelId) {
+      const selected = catalog.data.models.find((m) => m.id === selectedModelId);
+      if (selected) return selected;
+    }
+
+    return catalog.data.models[0] || null;
+  }, [catalog, editingItemId, items, selectedModelId]);
 
   const editingItem = useMemo(() => {
     return items.find((i) => i.local_id === editingItemId) || null;
