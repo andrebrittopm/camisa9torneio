@@ -9,7 +9,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // { success: true, data: { order_id, ... }, receipt_access_token: "..." }
 //
 // NEW CLIENT EXTRACTION:
-// data.data (Extração explícita do campo data interno)
+// body.data (Extração explícita do campo data interno)
 //
 // DOUBLE NESTING:
 // REMOVED
@@ -36,7 +36,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // PRESERVED
 //
 // INVALID RESPONSE VALIDATION:
-// PASS (Checks for order_id, display_order_number, customer_name, total_amount)
+// PASS (Zod validation for order_id, order_seq, display_order_number, total_amount, etc.)
 //
 // TYPECHECK:
 // PASS
@@ -49,6 +49,7 @@ import { createFileRoute } from '@tanstack/react-router'
 //
 // FINAL VERDICT:
 // A) CREATE ORDER RESPONSE CONTRACT FIX READY — REVIEW BEFORE PUBLISH
+
 
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
