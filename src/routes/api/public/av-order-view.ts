@@ -104,8 +104,14 @@ export const Route = createFileRoute('/api/public/av-order-view')({
           }
 
           // 3. Buscar Dados Sanitizados (Server-Side)
-          const supabaseUrl = process.env['SUPABASE_URL']!
-          const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!
+          const supabaseUrl = process.env['SUPABASE_URL']
+          const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
+          
+          if (!supabaseUrl || !supabaseKey) {
+            console.error(`[AV] correlation=${correlationId} stage=config error=MISSING_ENV_VARS`);
+            return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), { status: 500, headers: corsHeaders })
+          }
+
           const supabase = createClient(supabaseUrl, supabaseKey)
 
           // Buscar o pedido usando order_seq e verificar o ano do evento
