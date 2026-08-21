@@ -1,42 +1,35 @@
 import { createFileRoute } from '@tanstack/react-router'
-// ETAPA 12.1-P12 — DOUBLE NESTING FIX
+// ETAPA 12.1-P13 — PIX PAYMENT INFO FIX
 //
 // ROOT CAUSE:
-// O helper submitAvOrder estava usando rest operator (...orderData) sobre a resposta JSON que já continha um campo 'data'. 
-// Isso criava um objeto { data: { ...pedido } }, resultando em orderResult.data.data no frontend e valores vazios/R$ 0,00.
+// src/routes/api/public/av-payment-info.ts consultava colunas inexistentes (pix_holder, pix_type).
 //
-// SERVER RESPONSE SHAPE:
-// { success: true, data: { order_id, ... }, receipt_access_token: "..." }
+// OLD DB FIELDS:
+// pix_holder / pix_type
 //
-// NEW CLIENT EXTRACTION:
-// body.data (Extração explícita do campo data interno)
+// REAL DB FIELDS:
+// pix_holder_name / pix_key_type
 //
-// DOUBLE NESTING:
-// REMOVED
+// QUERY:
+// FIXED (pix_key, pix_holder_name, pix_key_type)
 //
-// DISPLAY_ORDER_NUMBER:
-// DIRECT (order.display_order_number)
+// PIX TYPE DB:
+// CPF
 //
-// CUSTOMER_NAME:
-// DIRECT (order.customer_name)
+// PIX TYPE PUBLIC:
+// cpf (normalized server-side)
 //
-// TOTAL_QUANTITY:
-// DIRECT (order.total_quantity)
+// PIX KEY:
+// 915.251.601-68
 //
-// TOTAL_AMOUNT:
-// DIRECT (order.total_amount)
+// PIX HOLDER:
+// Célio R. da Silva Arruda
 //
-// PAYMENT_STATUS:
-// DIRECT (order.payment_status)
+// PUBLIC CONTRACT:
+// PASS (pix: { type, key, holder })
 //
-// RECEIPT TOKEN:
+// PAYMENT CLIENT:
 // PRESERVED
-//
-// ORDER VIEW TOKEN:
-// PRESERVED
-//
-// INVALID RESPONSE VALIDATION:
-// PASS (Zod validation for order_id, order_seq, display_order_number, total_amount, etc.)
 //
 // TYPECHECK:
 // PASS
@@ -45,10 +38,10 @@ import { createFileRoute } from '@tanstack/react-router'
 // PASS
 //
 // FILES MODIFIED:
-// [src/lib/av-order-client.ts]
+// [src/routes/api/public/av-payment-info.ts, src/routes/index.tsx]
 //
 // FINAL VERDICT:
-// A) CREATE ORDER RESPONSE CONTRACT FIX READY — REVIEW BEFORE PUBLISH
+// A) PIX PAYMENT INFO FIX READY — REVIEW BEFORE PUBLISH
 
 
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
