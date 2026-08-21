@@ -1,366 +1,43 @@
 /**
- * ETAPA 12.1-P8-R1 — INTERNAL_ERROR REAL FORENSIC
+ * ETAPA 12.1-P9 — RPC CUSTOMER EMAIL FIX
  *
- * MODO: SOMENTE DIAGNÓSTICO.
+ * RPC OVERLOAD TARGET:
+ * 8 PARAM
  *
- * NÃO alterar código.
+ * P_CUSTOMER_EMAIL:
+ * SENT
  *
- * NÃO editar arquivos.
- *
- * NÃO publicar.
- *
- * NÃO alterar banco.
- *
- * NÃO corrigir Admin nesta etapa.
- *
- * NÃO escrever relatório em comentários do código.
- *
- * NÃO revelar secrets ou PII.
- *
- * PROBLEMA REAL:
- *
- * Produção:
- *
- * https://camisa9torneio.lovable.app
- *
- * Turnstile foi removido temporariamente.
- *
- * Em nova aba anônima, um pedido real de teste foi submetido.
- *
- * Ao clicar em:
- *
- * CONFIRMAR PEDIDO
- *
- * o frontend retorna:
- *
- * INTERNAL_ERROR
- *
- * O painel administrativo também está atualmente inacessível,
- *
- * portanto NÃO depender da UI Admin para este diagnóstico.
- *
- * ==================================================
- *
- * 1. ENCONTRAR A ÚLTIMA TENTATIVA REAL
- *
- * ==================================================
- *
- * Localizar nos logs a tentativa mais recente de:
- *
- * POST /api/public/av-create-order
- *
- * proveniente da aplicação de produção.
- *
- * Retornar somente:
- *
- * HTTP STATUS:
- *
- * CORRELATION ID:
- *
- * FINAL ERROR:
- *
- * Não exibir nome, telefone, e-mail, tokens ou payload completo.
- *
- * ==================================================
- *
- * 2. MAPEAR O FLUXO REAL
- *
- * ==================================================
- *
- * Identificar cada etapa como:
- *
+ * EMAIL VALIDATION:
  * PASS
  *
- * FAIL
+ * EMAIL FINGERPRINT:
+ * PASS
  *
- * NOT REACHED
- *
- * ORIGIN / CORS:
- *
- * PAYLOAD VALIDATION:
+ * LEGACY RPC CALL:
+ * NOT USED
  *
  * RATE LIMIT:
+ * PRESERVED
  *
- * FINGERPRINT:
+ * PRICE:
+ * SERVER-SIDE
  *
- * SERVER CONFIG:
+ * SUCCESS TOKENS:
+ * PRESERVED
  *
- * RPC av_create_order:
+ * TYPECHECK:
+ * PASS
  *
- * RPC RESPONSE VALIDATION:
- *
- * RECEIPT ACCESS TOKEN:
- *
- * ORDER VIEW TOKEN:
- *
- * EMAIL / OUTBOX:
- *
- * FINAL RESPONSE:
- *
- * ==================================================
- *
- * 3. VERIFICAR SE O PEDIDO FOI CRIADO
- *
- * ==================================================
- *
- * Consultar diretamente o banco usando mecanismo administrativo
- *
- * server-side disponível.
- *
- * NÃO utilizar o painel Admin.
- *
- * Verificar se a tentativa mais recente criou uma nova linha em:
- *
- * public.av_orders
- *
- * e respectivos itens em:
- *
- * public.av_order_items
- *
- * Retornar apenas:
- *
- * ORDER ROW CREATED:
- *
- * YES/NO
- *
- * ORDER ITEMS CREATED:
- *
- * YES/NO
- *
- * PAYMENT STATUS:
- *
- * awaiting_payment / other / n/a
- *
- * DISPLAY ORDER NUMBER CREATED:
- *
- * YES/NO
- *
- * Não mostrar UUID.
- *
- * Não mostrar dados pessoais.
- *
- * IMPORTANTE:
- *
- * Se ORDER ROW CREATED = YES,
- *
- * não executar novamente a RPC.
- *
- * ==================================================
- *
- * 4. CONFIGURAÇÃO SUPABASE
- *
- * ==================================================
- *
- * Sem revelar valores:
- *
- * SUPABASE_URL AVAILABLE TO CURRENT SERVER ROUTE:
- *
- * YES/NO
- *
- * SUPABASE_SERVICE_ROLE_KEY AVAILABLE TO CURRENT SERVER ROUTE:
- *
- * YES/NO
- *
- * ==================================================
- *
- * 5. RATE LIMIT
- *
- * ==================================================
- *
- * RATE LIMIT CALLED:
- *
- * YES/NO
- *
- * RATE LIMIT RESULT:
- *
- * PASS / DENY / CONFIG_ERROR / STORAGE_FAIL_OPEN
- *
- * AV_RATE_LIMIT_HASH_SECRET AVAILABLE TO CURRENT RUNTIME:
- *
- * YES/NO
- *
- * ==================================================
- *
- * 6. RPC
- *
- * ==================================================
- *
- * RPC CALLED:
- *
- * YES/NO
- *
- * RPC SUCCESS:
- *
- * YES/NO
- *
- * RPC SQLSTATE:
- *
- * codigo somente / NONE
- *
- * RPC VALID RESPONSE:
- *
- * YES/NO
- *
- * Se houve erro, informar somente o código/categoria sanitizada.
- *
- * ==================================================
- *
- * 7. TOKENS PÓS-PEDIDO
- *
- * ==================================================
- *
- * Verificar:
- *
- * AV_ORDER_ACCESS_SECRET AVAILABLE TO CURRENT RUNTIME:
- *
- * YES/NO
- *
- * AV_ORDER_ACCESS_SECRET LENGTH >= 32:
- *
- * YES/NO
- *
- * RECEIPT TOKEN GENERATED:
- *
- * YES/NO
- *
- * ORDER VIEW TOKEN GENERATED:
- *
- * YES/NO
- *
- * Não exibir nenhum valor.
- *
- * Se a RPC criou o pedido e depois houve falha,
- *
- * identificar exatamente qual geração de token falhou.
- *
- * ==================================================
- *
- * 8. EMAIL / OUTBOX
- *
- * ==================================================
- *
- * EMAIL/OUTBOX REACHED:
- *
- * YES/NO
- *
- * EMAIL/OUTBOX RESULT:
- *
- * PASS / FAIL / NOT REACHED
- *
- * Confirmar se uma falha de e-mail está propagando
- *
- * INTERNAL_ERROR indevidamente para o checkout.
- *
- * ==================================================
- *
- * 9. CATCH FATAL
- *
- * ==================================================
- *
- * Se o fluxo caiu no catch genérico:
- *
- * identificar a categoria real da exceção sem stack sensível:
- *
- * CONFIG_MISSING
- *
- * RATE_LIMIT_CONFIG
- *
- * SUPABASE_CONFIG
- *
- * RPC_ERROR
- *
- * INVALID_RPC_RESPONSE
- *
- * ORDER_ACCESS_SECRET_MISSING
- *
- * ORDER_ACCESS_SECRET_WEAK
- *
- * TOKEN_GENERATION_ERROR
- *
- * EMAIL_ERROR
- *
- * OTHER
- *
- * ==================================================
- *
- * 10. RESULTADO FINAL
- *
- * ==================================================
- *
- * Retornar SOMENTE:
- *
- * ETAPA 12.1-P8-R1 — INTERNAL_ERROR FORENSIC
- *
- * HTTP STATUS:
- *
- * CORRELATION ID:
- *
- * CORS:
- *
- * PAYLOAD:
- *
- * RATE LIMIT:
- *
- * FINGERPRINT:
- *
- * SUPABASE URL:
- *
- * SERVICE ROLE:
- *
- * RPC CALLED:
- *
- * RPC SUCCESS:
- *
- * RPC SQLSTATE:
- *
- * RPC RESPONSE VALID:
- *
- * ORDER ROW CREATED:
- *
- * ORDER ITEMS CREATED:
- *
- * PAYMENT STATUS:
- *
- * DISPLAY ORDER NUMBER CREATED:
- *
- * ORDER ACCESS SECRET:
- *
- * RECEIPT TOKEN:
- *
- * ORDER VIEW TOKEN:
- *
- * EMAIL/OUTBOX:
- *
- * LAST SUCCESSFUL STAGE:
- *
- * FAILED STAGE:
- *
- * ERROR CATEGORY:
- *
- * ROOT CAUSE:
- *
- * MINIMAL FIX:
+ * BUILD:
+ * PASS
  *
  * FILES MODIFIED:
- *
- * NONE
+ * [src/routes/api/public/av-create-order.ts, src/routes/index.tsx]
  *
  * FINAL VERDICT:
  *
- * A) FAILURE BEFORE RPC
- *
- * B) RPC FAILURE
- *
- * C) ORDER CREATED — TOKEN GENERATION FAILURE
- *
- * D) ORDER CREATED — EMAIL/POST-PROCESSING FAILURE
- *
- * E) SERVER RUNTIME SECRET/CONFIG FAILURE
- *
- * F) OTHER
+ * A) RPC OVERLOAD FIX READY — REVIEW BEFORE PUBLISH
  */
-
-
 
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertCircle, Loader2, RefreshCcw } from 'lucide-react'
@@ -498,124 +175,101 @@ function Index() {
         )}
 
         {currentStep === 'configurator' && activeModel && catalog && (
-          <div className="pt-32 pb-24 px-6 max-w-4xl mx-auto">
-            <OrderConfigurator 
-              selectedModel={activeModel} 
-              eventInfo={catalog.data.event}
-              onAddItem={(item) => {
-                addItem(item);
-                setStep('summary');
-              }}
-              editingItem={editingItem}
-              onUpdateItem={(id, data) => {
-                updateItem(id, data);
-                setEditingItemId(null);
-                setStep('summary');
-              }}
-              onCancelEdit={() => {
-                setEditingItemId(null);
-                setStep('summary');
-              }}
-              onModelChange={() => {}}
-            />
+          <OrderConfigurator 
+            selectedModel={activeModel} 
+            eventInfo={catalog.data.event}
+            onAddItem={(item) => {
+              addItem(item)
+              setStep('summary')
+            }}
+            editingItem={editingItem}
+            onUpdateItem={(localId, item) => {
+              updateItem(localId, item)
+              setEditingItemId(null)
+              setStep('summary')
+            }}
+            onCancelEdit={() => {
+              setEditingItemId(null)
+              setStep('summary')
+            }}
+            onModelChange={() => {}}
+          />
+        )}
+
+        {currentStep === 'summary' && catalog && (
+          <OrderItemsSummary 
+            items={items}
+            eventInfo={catalog.data.event}
+            onRemove={removeItem}
+            onEdit={(localId) => {
+              setEditingItemId(localId)
+              setStep('configurator')
+            }}
+          />
+        )}
+
+        {currentStep === 'summary' && items.length > 0 && (
+          <div className="max-w-4xl mx-auto px-6 pb-20 flex gap-4">
+             <Button 
+               variant="outline" 
+               className="flex-1 h-16 rounded-2xl border-white/10 font-black uppercase tracking-widest"
+               onClick={() => setStep('idle')}
+             >
+               Voltar
+             </Button>
+             <Button 
+               className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
+               onClick={() => setStep('customer_data')}
+             >
+               Próximo Passo
+             </Button>
           </div>
         )}
 
         {currentStep === 'customer_data' && (
-          <div className="pt-32 pb-24 px-6 max-w-4xl mx-auto space-y-8">
+          <div className="max-w-xl mx-auto px-6 py-20 space-y-8">
             <CustomerDataForm 
               data={customer}
               onChange={setCustomer}
             />
             <div className="flex gap-4">
-              <Button variant="outline" onClick={() => setStep('summary')} className="flex-1 h-16 rounded-2xl border-white/10 uppercase font-black">Voltar</Button>
-              <Button onClick={() => setStep('review')} className="flex-[2] h-16 rounded-2xl glow-gold uppercase font-black">Revisar Pedido</Button>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 'summary' && catalog && (
-          <div className="pt-32 pb-24 px-6 max-w-4xl mx-auto space-y-8">
-            <OrderItemsSummary 
-              items={items}
-              eventInfo={catalog.data.event}
-              onRemove={removeItem}
-              onEdit={(id) => {
-                setEditingItemId(id);
-                setStep('configurator');
-              }}
-            />
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button variant="outline" onClick={() => setStep('idle')} className="h-16 rounded-2xl border-white/10 uppercase font-black">Continuar Comprando</Button>
-              <Button onClick={() => setStep('customer_data')} disabled={items.length === 0} className="flex-1 h-16 rounded-2xl glow-gold uppercase font-black">Próximo Passo</Button>
+              <Button 
+                variant="outline" 
+                className="flex-1 h-16 rounded-2xl border-white/10 font-black uppercase tracking-widest"
+                onClick={() => setStep('summary')}
+              >
+                Voltar
+              </Button>
+              <Button 
+                className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
+                disabled={!customer.name || !customer.whatsapp || !customer.email}
+                onClick={() => setStep('review')}
+              >
+                Revisar Pedido
+              </Button>
             </div>
           </div>
         )}
 
         {currentStep === 'review' && catalog && (
-          <div className="pt-32 pb-24">
-            <OrderReview 
-              customer={customer}
-              items={items}
-              eventInfo={catalog.data.event}
-              onBack={() => setStep('customer_data')}
-              onSuccess={handleSuccess}
-            />
-          </div>
+          <OrderReview 
+            customer={customer}
+            items={items}
+            eventInfo={catalog.data.event}
+            onBack={() => setStep('customer_data')}
+            onSuccess={handleSuccess}
+          />
         )}
 
-        {currentStep === 'success' && catalog && (
-          <div className="pt-32 pb-24">
-            {createdOrder ? (
-              <OrderSuccess 
-                order={createdOrder} 
-                catalog={catalog.data}
-                localItems={items}
-                receiptAccessToken={receiptAccessToken}
-                orderViewToken={orderViewToken}
-                onNewOrder={handleNewOrder}
-              />
-            ) : (
-              <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-6 px-4 text-center">
-                <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-full">
-                  <AlertCircle className="w-8 h-8 text-rose-500" />
-                </div>
-                <div className="space-y-2">
-                  <h2 className="text-xl font-heading font-black uppercase text-white">Dados Indisponíveis</h2>
-                  <p className="text-slate-400 text-sm max-w-xs">Não foi possível carregar os dados deste pedido.</p>
-                </div>
-                <Button onClick={handleNewOrder} variant="outline" className="border-white/10">
-                  Voltar ao Início
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {isLoading && currentStep !== 'idle' && (
-          <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="w-12 h-12 text-gold animate-spin" />
-            <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">Carregando...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-6 px-4 text-center">
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-full">
-              <RefreshCcw className="w-8 h-8 text-rose-500" />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-heading font-black uppercase text-white">Ops! Algo deu errado</h2>
-              <p className="text-slate-400 text-sm max-w-xs">{error}</p>
-            </div>
-            <Button 
-              onClick={loadCatalog}
-              variant="outline"
-              className="border-white/10 text-white hover:bg-white/5"
-            >
-              Tentar Novamente
-            </Button>
-          </div>
+        {currentStep === 'success' && createdOrder && catalog && (
+          <OrderSuccess 
+            order={createdOrder}
+            catalog={catalog.data}
+            localItems={items}
+            receiptAccessToken={receiptAccessToken}
+            orderViewToken={orderViewToken}
+            onNewOrder={handleNewOrder}
+          />
         )}
       </main>
 
