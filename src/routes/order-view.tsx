@@ -31,7 +31,7 @@ function OrderViewPage() {
   const expires = search['expires']
   
   const { data, isLoading, error } = useQuery({
-    queryKey: ['public-order-view', handle],
+    queryKey: ['public-order-view', handle, token, expires],
     queryFn: () => fetchOrderData(handle, token, expires),
     retry: false
   })
@@ -46,6 +46,25 @@ function OrderViewPage() {
     ready: { label: "PRONTO PARA RETIRADA", icon: CheckCircle2, color: "text-emerald-400" },
     delivered: { label: "ENTREGUE", icon: Truck, color: "text-blue-400" },
     cancelled: { label: "CANCELADO", icon: XCircle, color: "text-rose-400" },
+  }
+
+  const PAYMENT_STATUS_MAP: Record<string, { label: string; style: string }> = {
+    awaiting_payment: { 
+      label: "AGUARDANDO PAGAMENTO", 
+      style: "bg-amber-500/10 text-amber-500 border-amber-500/20" 
+    },
+    receipt_submitted: { 
+      label: "COMPROVANTE EM ANÁLISE", 
+      style: "bg-amber-500/10 text-gold border-amber-500/20" 
+    },
+    payment_confirmed: { 
+      label: "PAGAMENTO CONFIRMADO", 
+      style: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" 
+    },
+    receipt_rejected: { 
+      label: "COMPROVANTE NÃO APROVADO", 
+      style: "bg-rose-500/10 text-rose-500 border-rose-500/20" 
+    },
   }
 
   if (isLoading) {
@@ -109,20 +128,29 @@ function OrderViewPage() {
               {statusInfo.label}
             </h2>
             <p className="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-              Olá, 
-              seu pedido está em nossa base e sendo processado conforme o cronograma oficial.
+              Seu pedido está em nossa base e sendo processado conforme o cronograma oficial.
             </p>
           </div>
 
           <div className="pt-8 border-t border-white/5 grid grid-cols-2 gap-4 text-left">
             <div>
               <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-1">Pagamento</span>
-              <span className={cn(
-                "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border",
-                order.payment_status === 'paid' ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
-              )}>
-                {order.payment_status === 'paid' ? 'Confirmado' : (order.payment_status === 'receipt_rejected' ? 'Comprovante Rejeitado' : 'Pendente / Em Análise')}
-              </span>
+              {(() => {
+                const status = PAYMENT_STATUS_MAP[order.payment_status]
+                if (!status) return (
+                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-white/5 text-slate-400 border-white/10">
+                    STATUS DE PAGAMENTO INDISPONÍVEL
+                  </span>
+                )
+                return (
+                  <span className={cn(
+                    "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border",
+                    status.style
+                  )}>
+                    {status.label}
+                  </span>
+                )
+              })()}
             </div>
             <div className="text-right">
               <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest block mb-1">Total</span>
@@ -144,7 +172,9 @@ function OrderViewPage() {
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-xl font-heading font-black uppercase text-white">{item.model_name}</h4>
-                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{item.shirt_type} • TAMANHO {item.size_option}</p>
+                    <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                      {item.shirt_type} • TAMANHO {item.size_option === "OUTRO" && item.custom_size ? item.custom_size : item.size_option}
+                    </p>
                   </div>
                   
                   {(item.custom_name || item.custom_number) && (
