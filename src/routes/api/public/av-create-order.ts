@@ -454,7 +454,7 @@ export const Route = createFileRoute('/api/public/av-create-order')({
                 headers: corsHeaders,
               })
             }
-            console.error(`[AV] correlation=${correlationId} stage=rpc code=UNKNOWN_ERROR`)
+            console.error(`[AV] correlation=${correlationId} stage=rpc code=UNKNOWN_ERROR sqlstate=${error.code}`)
             return new Response(JSON.stringify({ error: "INTERNAL_ERROR", correlation_id: correlationId }), {
               status: 500,
               headers: corsHeaders,
