@@ -106,3 +106,20 @@ export function AdminStatusBadge({ status, type, className }: StatusBadgeProps) 
     </Badge>
   );
 }
+
+/**
+ * Presentation helper for Product Display Name in Administrative UI
+ */
+export const getAdminProductDisplayName = (modelCode: string | null | undefined, modelNameSnapshot?: string | null): string => {
+  // Current known tournament shirt model
+  if (modelCode === 'TSHIRT-01' || modelNameSnapshot === 'Camiseta Modelo 01' || modelNameSnapshot === 'TSHIRT-01') {
+    return "CAMISA OFICIAL";
+  }
+  
+  // Fallback to snapshot name or code, ensuring we don't display technical TSHIRT strings directly to admin
+  const displayName = modelNameSnapshot || modelCode || "Produto";
+  
+  if (displayName === 'TSHIRT-01') return "CAMISA OFICIAL";
+  
+  return displayName;
+};
