@@ -17,6 +17,8 @@ import { getAdminDashboardStats } from '@/lib/av-admin-stats.functions'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { AdminStatusBadge } from '@/utils/av-admin-status-mapper'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/admin/')({
   beforeLoad: async () => {
@@ -139,14 +141,7 @@ function AdminDashboard() {
                         {formatCurrency(order.totalAmount)}
                       </td>
                       <td className="py-4 bg-white/[0.03] border-y border-white/5 group-hover:bg-white/[0.06] transition-colors">
-                         <span className={cn(
-                           "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                           order.paymentStatus === 'paid' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
-                           order.paymentStatus === 'pending' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                           "bg-slate-500/10 text-slate-500 border border-slate-500/20"
-                         )}>
-                           {order.paymentStatus === 'paid' ? 'Pago' : order.paymentStatus === 'pending' ? 'Pendente' : order.paymentStatus}
-                         </span>
+                         <AdminStatusBadge status={order.paymentStatus} type="payment" />
                       </td>
                       <td className="py-4 pr-4 bg-white/[0.03] rounded-r-2xl border-y border-r border-white/5 group-hover:bg-white/[0.06] transition-colors text-right text-[10px] text-slate-500 font-mono">
                         {format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
@@ -200,6 +195,3 @@ function AdminDashboard() {
   )
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
-}

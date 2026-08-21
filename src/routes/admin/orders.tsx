@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { z } from 'zod'
+import { AdminStatusBadge } from '@/utils/av-admin-status-mapper'
 
 const searchSchema = z.object({
   page: z.number().catch(1),
@@ -156,21 +157,10 @@ function AdminOrdersPage() {
                     <td className="p-6 text-slate-300">{o.itemCount}</td>
                     <td className="p-6 text-white font-bold">{formatCurrency(o.totalAmount)}</td>
                     <td className="p-6">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                        o.paymentStatus === 'paid' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" :
-                        o.paymentStatus === 'pending' ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                        "bg-slate-500/10 text-slate-500 border border-slate-500/20"
-                      )}>
-                        {o.paymentStatus === 'paid' ? 'Pago' : o.paymentStatus === 'pending' ? 'Pendente' : o.paymentStatus}
-                      </span>
+                      <AdminStatusBadge status={o.paymentStatus} type="payment" />
                     </td>
                     <td className="p-6">
-                       <span className={cn(
-                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-white/5 border border-white/10 text-slate-400"
-                      )}>
-                        {o.orderStatus}
-                      </span>
+                       <AdminStatusBadge status={o.orderStatus} type="order" />
                     </td>
                     <td className="p-6 text-slate-500 text-[10px] font-mono">{format(new Date(o.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</td>
                     <td className="p-6 text-right">
@@ -205,13 +195,13 @@ function AdminOrdersPage() {
                    <span className="font-bold text-white">{formatCurrency(o.totalAmount)}</span>
                 </div>
                 <div className="flex gap-2">
-                   <div className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-center">
-                      <p className="text-[8px] text-slate-500 uppercase font-black">Pagamento</p>
-                      <p className="text-[9px] text-white font-black uppercase mt-1">{o.paymentStatus}</p>
+                   <div className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-center flex flex-col items-center justify-center">
+                      <p className="text-[8px] text-slate-500 uppercase font-black mb-1">Pagamento</p>
+                      <AdminStatusBadge status={o.paymentStatus} type="payment" className="text-[7px] px-2 py-0" />
                    </div>
-                   <div className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-center">
-                      <p className="text-[8px] text-slate-500 uppercase font-black">Pedido</p>
-                      <p className="text-[9px] text-white font-black uppercase mt-1">{o.orderStatus}</p>
+                   <div className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-center flex flex-col items-center justify-center">
+                      <p className="text-[8px] text-slate-500 uppercase font-black mb-1">Pedido</p>
+                      <AdminStatusBadge status={o.orderStatus} type="order" className="text-[7px] px-2 py-0" />
                    </div>
                 </div>
                 <Button className="w-full bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}>

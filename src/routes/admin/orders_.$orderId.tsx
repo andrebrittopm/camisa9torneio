@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
+import { AdminStatusBadge, getPaymentStatusLabel, getOrderStatusLabel } from '@/utils/av-admin-status-mapper'
 
 
 export const Route = createFileRoute('/admin/orders_/$orderId')({
@@ -231,18 +232,8 @@ function AdminOrderDetailPage() {
                   <h1 className="text-3xl font-heading font-black text-white uppercase">{order.publicId}</h1>
                 </div>
                 <div className="flex gap-2">
-                   <span className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10",
-                    order.orderStatus === 'cancelled' ? "text-rose-500 border-rose-500/20 bg-rose-500/5" : "text-slate-400"
-                  )}>
-                    {order.orderStatus}
-                  </span>
-                   <span className={cn(
-                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest",
-                    order.paymentStatus === 'paid' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                  )}>
-                    {order.paymentStatus}
-                  </span>
+                   <AdminStatusBadge status={order.orderStatus} type="order" className="px-4 py-2" />
+                   <AdminStatusBadge status={order.paymentStatus} type="payment" className="px-4 py-2" />
                 </div>
               </div>
             </div>
@@ -387,7 +378,7 @@ function AdminOrderDetailPage() {
                       </div>
                       <div className="text-right sm:text-left">
                          <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status do Pagamento</p>
-                         <p className="text-xs text-white font-bold">{order.paymentStatus === 'paid' ? 'Pago (Preservado)' : order.paymentStatus}</p>
+                         <p className="text-xs text-white font-bold">{getPaymentStatusLabel(order.paymentStatus)}</p>
                       </div>
                     </div>
                   </div>
