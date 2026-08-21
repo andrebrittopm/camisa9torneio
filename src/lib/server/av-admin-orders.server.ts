@@ -126,20 +126,7 @@ export async function getAdminOrdersInternal(params: {
   }
 
   if (params.paymentFilter && params.paymentFilter !== 'all') {
-    if (params.paymentFilter === 'awaiting') {
-       query = query.eq('payment_status', 'pending');
-    } else if (params.paymentFilter === 'paid') {
-       query = query.eq('payment_status', 'paid');
-    } else if (params.paymentFilter === 'receipt_sent') {
-       // Pedidos que tem recibo com review_status pending
-       // Nota: PostgREST filters on joined tables are tricky for top-level results.
-       // We'll use a subquery approach or filter in memory if volume is small,
-       // but for real pagination we should use a proper filter.
-       // Here we use the fact that av_payment_receipts exists.
-       query = query.not('av_payment_receipts', 'is', null).eq('av_payment_receipts.review_status', 'pending');
-    } else if (params.paymentFilter === 'receipt_rejected') {
-       query = query.not('av_payment_receipts', 'is', null).eq('av_payment_receipts.review_status', 'rejected');
-    }
+    query = query.eq('payment_status', params.paymentFilter);
   }
 
   // 3. Ordenação

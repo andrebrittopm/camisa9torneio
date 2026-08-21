@@ -103,10 +103,10 @@ function AdminOrdersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos Pagamentos</SelectItem>
-              <SelectItem value="awaiting">Aguardando</SelectItem>
-              <SelectItem value="paid">Confirmado</SelectItem>
-              <SelectItem value="receipt_sent">Em Análise</SelectItem>
-              <SelectItem value="receipt_rejected">Rejeitado</SelectItem>
+              <SelectItem value="awaiting_payment">Aguardando pagamento</SelectItem>
+              <SelectItem value="receipt_submitted">Comprovante em análise</SelectItem>
+              <SelectItem value="payment_confirmed">Pagamento confirmado</SelectItem>
+              <SelectItem value="receipt_rejected">Comprovante rejeitado</SelectItem>
             </SelectContent>
           </Select>
           
