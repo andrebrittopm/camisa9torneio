@@ -91,6 +91,7 @@ function Index() {
   };
 
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -122,10 +123,13 @@ function Index() {
       }
     }
 
-    // A resolução deve ser baseada no primeiro modelo ativo retornado pelo catálogo,
-    // que já vem filtrado por active=true do backend e ordenado por sort_order.
-    return catalog.data.models[0];
-  }, [catalog, editingItemId, items]);
+    if (selectedModelId) {
+      const selected = catalog.data.models.find((m) => m.id === selectedModelId);
+      if (selected) return selected;
+    }
+
+    return catalog.data.models[0] || null;
+  }, [catalog, editingItemId, items, selectedModelId]);
 
   const editingItem = useMemo(() => {
     return items.find((i) => i.local_id === editingItemId) || null;
@@ -142,8 +146,12 @@ function Index() {
             <div id="camisa">
               <ModelsSection
                 models={catalog?.data?.models || []}
-                selectedModelId={null}
-                onSelectModel={() => setStep("configurator")}
+                selectedModelId={selectedModelId}
+                onSelectModel={(model) => {
+                  setSelectedModelId(model.id);
+                  setEditingItemId(null);
+                  setStep("configurator");
+                }}
                 eventInfo={catalog?.data?.event || ({} as any)}
               />
             </div>
