@@ -91,6 +91,7 @@ function Index() {
   };
 
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
