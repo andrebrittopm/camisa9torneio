@@ -93,7 +93,23 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
     }
 
     // Validar contrato da resposta
-    const { success, data: orderData, receipt_access_token, order_view_token, order_view_expires_at, code, error, retry_after } = data;
+    const { 
+      success, 
+      data: orderData, 
+      receipt_access_token, 
+      order_view_token, 
+      order_view_expires_at, 
+      code, 
+      error, 
+      retry_after 
+    } = data;
+
+    const validOrderViewExpiresAt =
+      typeof order_view_expires_at === 'number' &&
+      Number.isSafeInteger(order_view_expires_at) &&
+      order_view_expires_at > Date.now()
+        ? order_view_expires_at
+        : null;
 
     if (!success || !orderData) {
       return {
@@ -141,15 +157,6 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
 
     const validatedOrder = validation.data as AvCreatedOrder;
 
-    let validatedExpiresAt: number | null = null;
-    if (
-      typeof order_view_expires_at === 'number' &&
-      Number.isSafeInteger(order_view_expires_at) &&
-      order_view_expires_at > Date.now()
-    ) {
-      validatedExpiresAt = order_view_expires_at;
-    }
-
     return {
       order: {
         success: true,
@@ -160,7 +167,7 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
       },
       receiptAccessToken: receipt_access_token || null,
       orderViewToken: order_view_token || null,
-      orderViewExpiresAt: validatedExpiresAt
+      orderViewExpiresAt: validOrderViewExpiresAt
     };
   } catch (error) {
     console.error('[AV-ORDER-CLIENT] Network error:', error);
