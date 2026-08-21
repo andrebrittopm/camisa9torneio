@@ -355,7 +355,18 @@ export function ModelsSection({
   onSelectModel: (model: AvShirtModel) => void;
   eventInfo: AvCatalogEvent;
 }) {
-  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>('tshirt');
+  // Categorias baseadas nos modelos ATIVOS realmente recebidos
+  const availableCategories = useMemo(() => {
+    const cats = new Set<string>();
+    models.forEach(m => cats.add(m.category));
+    return Array.from(cats);
+  }, [models]);
+
+  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>(() => {
+    if (availableCategories.includes('tshirt')) return 'tshirt';
+    if (availableCategories.length > 0) return availableCategories[0] as 'tshirt' | 'tank';
+    return 'tshirt';
+  });
 
   const filteredModels = useMemo(() => models.filter(m => m.category === activeTab), [models, activeTab]);
 
