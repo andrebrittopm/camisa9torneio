@@ -1,3 +1,4 @@
+import { createFileRoute } from '@tanstack/react-router'
 // ETAPA 12.1-P12 — DOUBLE NESTING FIX
 //
 // ROOT CAUSE:
