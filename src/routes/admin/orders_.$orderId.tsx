@@ -515,7 +515,7 @@ function AdminOrderDetailPage() {
               <div className="space-y-6">
                  <div>
                     <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status Global</p>
-                    <p className="text-lg text-white font-black uppercase">{order.paymentStatus}</p>
+                    <p className="text-lg text-white font-black uppercase">{getPaymentStatusLabel(order.paymentStatus)}</p>
                  </div>
                  
                  <div className="space-y-4 pt-4 border-t border-white/5">
