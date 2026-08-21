@@ -118,7 +118,7 @@ function AdminOrdersPage() {
               <SelectItem value="all">Todos Status</SelectItem>
               <SelectItem value="received">Recebido</SelectItem>
               <SelectItem value="confirmed">Confirmado</SelectItem>
-              <SelectItem value="production">Em Produção</SelectItem>
+              <SelectItem value="in_production">Em Produção</SelectItem>
               <SelectItem value="ready">Pronto</SelectItem>
               <SelectItem value="delivered">Entregue</SelectItem>
               <SelectItem value="cancelled">Cancelado</SelectItem>
