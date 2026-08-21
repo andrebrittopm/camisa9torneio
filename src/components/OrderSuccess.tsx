@@ -41,10 +41,16 @@ const PAYMENT_STATUS_MAP: Record<string, string> = {
 
 export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAccessToken, orderViewToken, onStatusUpdate }: OrderSuccessProps) {
   const [copied, setCopied] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState(order.payment_status || "awaiting_payment");
+
   const currencyFormatter = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
+
+  useEffect(() => {
+    setPaymentStatus(order.payment_status || "awaiting_payment");
+  }, [order.order_id, order.payment_status]);
 
   useEffect(() => {
     // Focar no título para acessibilidade após o sucesso
@@ -66,7 +72,7 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
 
   const handleWhatsAppShare = () => {
     const statusLabel = ORDER_STATUS_MAP[order.order_status || 'received'] || order.order_status;
-    const paymentLabel = PAYMENT_STATUS_MAP[order.payment_status || 'awaiting_payment'] || order.payment_status;
+    const paymentLabel = PAYMENT_STATUS_MAP[paymentStatus] || paymentStatus;
     const totalFormatted = currencyFormatter.format(order.total_amount || 0);
     
     const eventName = catalog.event.event_name;
@@ -77,6 +83,20 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
     const encoded = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
   };
+
+  const heroCopy = {
+    awaiting_payment: "Seu pedido foi criado! Agora faça o PIX e envie o comprovante.",
+    receipt_submitted: "Comprovante recebido! Agora aguarde a conferência do pagamento.",
+    payment_confirmed: "Pagamento confirmado! Acompanhe o andamento do seu pedido.",
+    receipt_rejected: "O comprovante não foi aprovado. Verifique o pagamento e siga as orientações para regularização."
+  }[paymentStatus] || "Seu pedido foi criado! Acompanhe o andamento abaixo.";
+
+  const footerCopy = {
+    awaiting_payment: "Faça o PIX com os dados acima e envie o comprovante nesta página para conferência.",
+    receipt_submitted: "Comprovante recebido. Seu pagamento está em análise e será confirmado após a conferência.",
+    payment_confirmed: "Pagamento confirmado. Acompanhe o andamento do seu pedido pelo link seguro abaixo.",
+    receipt_rejected: "Seu comprovante não foi aprovado. Consulte o acompanhamento do pedido para verificar a situação."
+  }[paymentStatus] || "";
 
   const showSubtotal = order.subtotal !== order.total_amount;
 
@@ -100,22 +120,23 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
           >
             Pedido recebido!
           </h2>
-          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">Seu pedido foi criado! Agora faça o PIX e envie o comprovante.</p>
+          <p className="text-gold font-black uppercase tracking-[0.4em] text-xs">{heroCopy}</p>
         </div>
       </div>
 
       {/* Main Order Card */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <div className="lg:col-span-3 space-y-12">
-          {(order.payment_status === "awaiting_payment" || order.payment_status === "receipt_rejected") && (
+          {(paymentStatus === "awaiting_payment" || paymentStatus === "receipt_rejected") && (
             <div className="space-y-12">
               <OrderPayment totalAmount={order.total_amount || 0} />
               {receiptAccessToken && order.order_id && (
                 <ReceiptUpload 
                   orderId={order.order_id}
                   receiptAccessToken={receiptAccessToken}
-                  currentPaymentStatus={order.payment_status}
+                  currentPaymentStatus={paymentStatus}
                   onSuccess={(pStatus, rStatus) => {
+                    setPaymentStatus(pStatus);
                     onStatusUpdate?.(pStatus, rStatus);
                   }}
                 />
@@ -123,11 +144,11 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
             </div>
           )}
 
-          {order.payment_status === "receipt_submitted" && (
+          {paymentStatus === "receipt_submitted" && (
              <ReceiptUpload 
                 orderId={order.order_id || ''}
                 receiptAccessToken={receiptAccessToken || ''}
-                currentPaymentStatus={order.payment_status}
+                currentPaymentStatus={paymentStatus}
                 onSuccess={() => {}}
              />
           )}
@@ -177,7 +198,7 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
                   <div className="space-y-1">
                     <span className="text-[10px] font-black uppercase tracking-widest text-ice/40">Pagamento</span>
                     <p className="text-xl font-black text-ice uppercase">
-                      {PAYMENT_STATUS_MAP[order.payment_status || 'awaiting_payment'] || order.payment_status}
+                      {PAYMENT_STATUS_MAP[paymentStatus] || paymentStatus}
                     </p>
                   </div>
                 </div>
@@ -210,7 +231,7 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
           
           <div className="bg-white/[0.01] border border-white/5 p-8 rounded-[32px] text-center space-y-4">
             <p className="text-sm text-ice/40 leading-relaxed max-w-md mx-auto">
-              Seu pedido foi registrado e está aguardando a abertura do período de pagamentos. <br/>
+              {footerCopy} <br/>
               Acompanhe seu e-mail para novas instruções.
             </p>
             {orderViewToken && (
