@@ -21,8 +21,8 @@ const PaymentInfoResponseSchema = z.object({
   event_year: z.literal(TARGET_EVENT_YEAR),
   event_name: z.string().min(1),
   pix_key: z.string().min(1),
-  pix_holder: z.string().min(1),
-  pix_type: z.string().min(1),
+  pix_holder_name: z.string().min(1),
+  pix_key_type: z.string().min(1),
   active: z.literal(true),
 })
 
@@ -94,7 +94,7 @@ export const Route = createFileRoute('/api/public/av-payment-info')({
 
           const { data: eventRows, error: eventError } = await supabase
             .from('av_events')
-            .select('id, event_number, event_year, event_name, pix_key, pix_holder, pix_type, active')
+            .select('id, event_number, event_year, event_name, pix_key, pix_holder_name, pix_key_type, active')
             .eq('event_number', TARGET_EVENT_NUMBER)
             .eq('event_year', TARGET_EVENT_YEAR)
             .eq('active', true)
@@ -126,33 +126,39 @@ export const Route = createFileRoute('/api/public/av-payment-info')({
 
           // Validação rigorosa dos dados PIX
           try {
-            PaymentInfoResponseSchema.parse(eventRow)
-            // Validação secundária do pix_type
-            PixInfoSchema.shape.type.parse((eventRow as any).pix_type)
+            const row = PaymentInfoResponseSchema.parse(eventRows[0])
+            
+            // Normalizar o tipo PIX do banco
+            const normalizedPixType = String(row.pix_key_type || '')
+              .trim()
+              .toLowerCase()
+
+            // Construir e validar o objeto PIX para o contrato público
+            const pix = PixInfoSchema.parse({
+              type: normalizedPixType,
+              key: row.pix_key,
+              holder: row.pix_holder_name
+            })
+
+            const response = {
+              success: true,
+              data: {
+                event_name: row.event_name,
+                pix
+              }
+            }
+
+            return new Response(JSON.stringify(response), {
+              status: 200,
+              headers,
+            })
           } catch (err) {
-            console.error(`[AV-PAYMENT-INFO] correlation=${correlationId} stage=validation code=INVALID_PIX_CONFIG`)
+            console.error(`[AV-PAYMENT-INFO] correlation=${correlationId} stage=validation code=INVALID_PIX_CONFIG`, err)
             return new Response(JSON.stringify({ error: "PAYMENT_NOT_AVAILABLE", correlation_id: correlationId }), {
               status: 503,
               headers,
             })
           }
-
-          const response = {
-            success: true,
-            data: {
-              event_name: (eventRow as any).event_name,
-              pix: {
-                type: (eventRow as any).pix_type,
-                key: (eventRow as any).pix_key,
-                holder: (eventRow as any).pix_holder
-              }
-            }
-          }
-
-          return new Response(JSON.stringify(response), {
-            status: 200,
-            headers,
-          })
 
         } catch (err) {
           console.error(`[AV-PAYMENT-INFO] correlation=${correlationId} error=${err instanceof Error ? err.message : 'Unknown'}`)
