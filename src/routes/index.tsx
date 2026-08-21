@@ -267,7 +267,7 @@ function Index() {
         Validar:
 
         eventYear = inteiro válido
-        orderSeq = inteiro seguro > 0
+        orderSeq = inteiro seguro &gt; 0
 
         Handle inválido:
 
@@ -383,10 +383,10 @@ function Index() {
         e retornar:
 
         HTTP 500
-        {
+        {"{"}
           error: "INTERNAL_ERROR",
           correlation_id
-        }
+        {"}"}
 
         NÃO retornar mensagem SQL ao navegador.
 
@@ -401,7 +401,7 @@ function Index() {
         totalQuantity =
           soma de item.quantity
 
-        Validar que cada quantity é número inteiro >= 0.
+        Validar que cada quantity é número inteiro &gt;= 0.
 
         Se houver estrutura inesperada:
 
@@ -413,19 +413,19 @@ function Index() {
 
         A resposta pública de sucesso deve conter SOMENTE algo equivalente a:
 
-        {
+        {"{"}
           success: true,
-          order: {
+          order: {"{"}
             display_order_number: handle,
             total_quantity: calculatedTotalQuantity,
             total_amount: order.total_amount,
             order_status: order.order_status,
             payment_status: order.payment_status,
-            event: {
+            event: {"{"}
               event_name: ...
-            },
+            {"}"},
             items: [
-              {
+              {"{"}
                 model_name,
                 shirt_type,
                 size_option,
@@ -433,11 +433,11 @@ function Index() {
                 custom_name,
                 custom_number,
                 quantity
-              }
+              {"}"}
             ]
-          },
+          {"}"},
           correlation_id
-        }
+        {"}"}
 
         NUNCA incluir:
 
