@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
-import { AdminStatusBadge, getPaymentStatusLabel, getOrderStatusLabel } from '@/utils/av-admin-status-mapper'
+import { AdminStatusBadge, getPaymentStatusLabel, getOrderStatusLabel, getAdminProductDisplayName } from '@/utils/av-admin-status-mapper'
 
 
 export const Route = createFileRoute('/admin/orders_/$orderId')({
