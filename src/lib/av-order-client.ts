@@ -90,7 +90,42 @@ export async function submitAvOrder(payload: AvCreateOrderPayload): Promise<AvOr
       };
     }
 
-    const { success, receipt_access_token, order_view_token, code, error, retry_after, ...orderData } = data;
+    // Validar contrato da resposta
+    const { success, data: orderData, receipt_access_token, order_view_token, code, error, retry_after } = data;
+
+    if (!success || !orderData) {
+      return {
+        order: {
+          success: false,
+          error: error || 'Resposta do servidor inválida',
+          code: code || 'INVALID_SERVER_RESPONSE',
+          retry_after
+        },
+        receiptAccessToken: null,
+        orderViewToken: null
+      };
+    }
+
+    // Validação mínima de sanidade para evitar UI corrompida
+    const isValidOrder = 
+      typeof orderData.order_id === 'string' &&
+      typeof orderData.display_order_number === 'string' &&
+      typeof orderData.customer_name === 'string' &&
+      typeof orderData.total_amount === 'number';
+
+    if (!isValidOrder) {
+      console.error('[AV-ORDER-CLIENT] Invalid order data structure:', orderData);
+      return {
+        order: {
+          success: false,
+          error: 'Dados do pedido corrompidos na resposta',
+          code: 'INVALID_SERVER_RESPONSE',
+          retry_after: null
+        },
+        receiptAccessToken: null,
+        orderViewToken: null
+      };
+    }
 
     return {
       order: {

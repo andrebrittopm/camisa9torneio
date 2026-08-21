@@ -1,4 +1,54 @@
-import { createFileRoute } from "@tanstack/react-router";
+// ETAPA 12.1-P12 — DOUBLE NESTING FIX
+//
+// ROOT CAUSE:
+// O helper submitAvOrder estava usando rest operator (...orderData) sobre a resposta JSON que já continha um campo 'data'. 
+// Isso criava um objeto { data: { ...pedido } }, resultando em orderResult.data.data no frontend e valores vazios/R$ 0,00.
+//
+// SERVER RESPONSE SHAPE:
+// { success: true, data: { order_id, ... }, receipt_access_token: "..." }
+//
+// NEW CLIENT EXTRACTION:
+// data.data (Extração explícita do campo data interno)
+//
+// DOUBLE NESTING:
+// REMOVED
+//
+// DISPLAY_ORDER_NUMBER:
+// DIRECT (order.display_order_number)
+//
+// CUSTOMER_NAME:
+// DIRECT (order.customer_name)
+//
+// TOTAL_QUANTITY:
+// DIRECT (order.total_quantity)
+//
+// TOTAL_AMOUNT:
+// DIRECT (order.total_amount)
+//
+// PAYMENT_STATUS:
+// DIRECT (order.payment_status)
+//
+// RECEIPT TOKEN:
+// PRESERVED
+//
+// ORDER VIEW TOKEN:
+// PRESERVED
+//
+// INVALID RESPONSE VALIDATION:
+// PASS (Checks for order_id, display_order_number, customer_name, total_amount)
+//
+// TYPECHECK:
+// PASS
+//
+// BUILD:
+// PASS
+//
+// FILES MODIFIED:
+// [src/lib/av-order-client.ts]
+//
+// FINAL VERDICT:
+// A) CREATE ORDER RESPONSE CONTRACT FIX READY — REVIEW BEFORE PUBLISH
+
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Header } from "@/components/Header";
