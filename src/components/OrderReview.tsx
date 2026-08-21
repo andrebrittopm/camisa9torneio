@@ -6,14 +6,14 @@ import { AvCatalogEvent } from "@/lib/av-catalog-client";
 import { OrderItemsSummary } from "./OrderItemsSummary";
 import { TurnstileWidget, type TurnstileWidgetHandle } from "./TurnstileWidget";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { submitAvOrder, type AvCreateOrderResponse } from "@/lib/av-order-client";
+import { submitAvOrder, type AvCreateOrderResponse, type AvCreatedOrder } from "@/lib/av-order-client";
 
 interface OrderReviewProps {
   customer: CustomerData;
   items: OrderItem[];
   eventInfo: AvCatalogEvent;
   onBack: () => void;
-  onSuccess: (order: AvCreateOrderResponse, receiptToken: string | null, viewToken: string | null) => void;
+  onSuccess: (order: AvCreatedOrder, receiptToken: string | null, viewToken: string | null) => void;
 }
 
 
@@ -101,9 +101,9 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
     setTurnstileToken(null);
     if (turnstileRef.current) turnstileRef.current.reset();
 
-    if (orderResult.success) {
+    if (orderResult.success && orderResult.data) {
       setStatus('success');
-      onSuccess(orderResult, receiptAccessToken, orderViewToken);
+      onSuccess(orderResult.data, receiptAccessToken, orderViewToken);
     } else {
 
       setStatus('error');
