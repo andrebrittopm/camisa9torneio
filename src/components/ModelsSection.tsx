@@ -223,7 +223,8 @@ export function ModelCard({
   model, 
   isSelected, 
   onSelect,
-  eventInfo
+  eventInfo,
+  allModels
 }: { 
   model: AvShirtModel; 
   isSelected: boolean;
