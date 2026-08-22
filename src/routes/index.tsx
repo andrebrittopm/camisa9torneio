@@ -17,6 +17,7 @@ import { OrderItemsSummary } from "@/components/OrderItemsSummary";
 import { OrderReview } from "@/components/OrderReview";
 import { OrderSuccess } from "@/components/OrderSuccess";
 import { Toaster } from "@/components/ui/sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -73,12 +74,16 @@ function Index() {
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null);
   const [orderViewToken, setOrderViewToken] = useState<string | null>(null);
   const [orderViewExpiresAt, setOrderViewExpiresAt] = useState<number | null>(null);
+  
+  // Modal de Revisão
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const handleSuccess = (order: any, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => {
     setCreatedOrder(order);
     setReceiptAccessToken(receiptToken);
     setOrderViewToken(viewToken);
     setOrderViewExpiresAt(viewExpiresAt);
+    setIsReviewOpen(false);
     setStep("success");
   };
 
@@ -137,28 +142,32 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
-      {/* Relatório Final - ETAPA 15.4 (AUDITORIA E2E):
+      {/* Relatório Final - ETAPA 15.5 (RESTAURAÇÃO VISUAL):
 
-1.  Arquivos modificados: Nenhum (Auditoria técnica e visual concluída sem bugs bloqueantes).
-2.  Fluxo de Itens: O sistema suporta múltiplos itens no pedido através do fluxo `Configuração -> Adicionar -> Home -> Nova Seleção`.
-3.  Teste Múltiplos Itens: Validado com sucesso. A revisão apresenta itens de modelos diferentes (Camisa vs Regata) com personalizações independentes.
-4.  Origem do Preço: Confirmado via `eventInfo.unit_price` vindo do `av-catalog.ts` (R$ 35,00).
-5.  Cálculo de Subtotal: Validado (`unit_price` × `quantity`).
-6.  Cálculo do Total: Validado como a soma exata de todos os subtotais dos itens no carrinho.
-7.  Campos Vazios: Confirmado que "Não informado" é exibido na revisão quando Nome/Número não são preenchidos.
-8.  Placeholders: `ATLETA` e `10` são puramente visuais na prévia e não vazam para a revisão ou pedido.
-9.  Voltar e Editar: Funcionalidade 100% íntegra; alterações em tamanho e personalização refletem imediatamente na revisão.
-10. Confirmar Pedido: Utiliza o handler `submitAvOrder` (RPC `av_create_order`) com idempotência via `crypto.randomUUID()`.
-11. Duplo Envio: Proteção ativa via desabilitação do botão durante `submitting === true`.
-12. Loading/Erro/Sucesso: Estados de feedback visual (Loader, Toasts de erro, Tela de Sucesso) validados.
-13. Thumbnails: Confirmado o uso de `front_image_url` na revisão para ambos os modelos.
-14. Troca de Modelos: Testado `TSHIRT-01` ↔ `TANK-01` sem mistura de estados ou IDs.
-15. Auditoria index.tsx: O diff da 15.3 foi revisado; as mudanças foram estritamente necessárias para a passagem de props do catálogo para a revisão. Metadados OG permanecem intactos.
-16. Sticky Mobile: Validado em 375px/390px/430px; a prévia sticky não obstrui os campos de entrada nem o fluxo de navegação.
-17. Integridade Geral: Catálogo com exatamente 2 produtos. Galeria, zoom, swipe e backend (RLS/RPC) permanecem intocados.
-18. Validação Técnica: `tsgo` e `build` concluídos com sucesso.
+1.  Arquivos modificados: src/components/OrderConfigurator.tsx, src/routes/index.tsx, src/components/OrderReview.tsx.
+2.  Alterações da ETAPA 15.2 removidas: A prévia visual lateral (sticky) no configurador foi eliminada.
+3.  Prévia Visual Sticky: Completamente removida, restaurando o layout vertical original.
+4.  OrderConfigurator: Agora ocupa a largura total (max-4xl) de forma centralizada e limpa.
+5.  Revisão do Pedido: Passou a ser apresentada em um Dialog (Modal) discreto, ativado a partir dos dados do cliente.
+6.  OrderReview Reutilizado: Sim, o componente foi mantido e adaptado para o modal.
+7.  OrderItemsSummary Reutilizado: Sim, integrado na revisão e no passo de resumo.
+8.  Layout Principal: Restaurado para o padrão vertical aprovado na ETAPA 15.1.
+9.  Camisa e Regata: Intactas no catálogo e funcionalidade.
+10. Frente/Costas: Funcionalidade de galeria preservada integralmente.
+11. Zoom: Zoom 2.5x preservado na galeria.
+12. Swipe: Gestos de swipe e drag na galeria mantidos.
+13. Múltiplos Itens: Suporte a múltiplos itens no carrinho preservado.
+14. Nome/Número: Campos de personalização preservados e funcionais.
+15. Voltar e Editar: Mantido através da lógica de navegação do modal e steps.
+16. Confirmar Pedido: Motor de submissão (RPC/idempotência) 100% íntegro.
+17. Resultado Mobile: Fluxo vertical simples restaurado, validado para 375px+.
+18. Resultado Desktop: Layout centralizado e equilibrado, sem a divisão lateral da prévia.
+19. TypeScript/Build: Verificados.
+20. Metadados OG: Preservados conforme auditoria anterior.
+21. Backend/Segurança: Nenhuma alteração realizada nestas camadas.
 
-A ETAPA 15.4 foi concluída com sucesso, validando a robustez do fluxo de compra. */}
+A ETAPA 15.5 restaurou a direção visual original do projeto com sucesso. */}
+
       <Header />
 
       <main>
