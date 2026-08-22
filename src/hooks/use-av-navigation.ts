@@ -28,7 +28,9 @@ export function useAvNavigation() {
     let timer: ReturnType<typeof setTimeout>;
     
     if (currentStep === 'idle' && pendingTarget) {
+      console.log(`[useAvNavigation] Idle reached, processing pending target: ${pendingTarget}`);
       timer = setTimeout(() => {
+
         const el = document.getElementById(pendingTarget);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
