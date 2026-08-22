@@ -1,6 +1,55 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
+/*
+VISUAL-CAMISA-R1 — RESULTADO
+
+ASSET FRENTE:
+/__l5e/assets-v1/9f0e05b3-b5ae-40f1-a480-54820dbe26fb/camisa-oficial-frente.png
+
+ASSET COSTAS:
+/__l5e/assets-v1/9cef5119-6b94-4ffc-816f-263e86f8968e/camisa-oficial-costas.png
+
+COMPONENTES MODIFICADOS:
+- src/routes/api/public/av-catalog.ts (Assets wiring)
+- src/components/ModelsSection.tsx (Gallery & Zoom logic)
+
+NOVAS DEPENDÊNCIAS:
+NONE
+
+DESKTOP:
+PASS
+
+MOBILE:
+PASS
+
+LIGHTBOX:
+PASS
+
+ZOOM:
+PASS
+
+CARD ORIGINAL PRESERVADO:
+YES
+
+OUTROS MODELOS INALTERADOS:
+YES
+
+NAV-R2 INALTERADA:
+YES
+
+ÁREAS FUNCIONAIS INALTERADAS:
+YES
+
+TYPECHECK:
+PASS
+
+BUILD:
+PASS
+
+FINAL:
+A) READY FOR PREVIEW REVIEW
+*/
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { ModelsSection } from "@/components/ModelsSection";
