@@ -2,44 +2,260 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 /*
-VISUAL-CAMISA-R1 — RESULTADO
+ADMIN-DELETE-R3 — SECURITY HARDENING
 
-ASSET FRENTE:
-/__l5e/assets-v1/9f0e05b3-b5ae-40f1-a480-54820dbe26fb/camisa-oficial-frente.png
+MODO:
+FIX CIRÚRGICO
+NO DELETE TEST
+NO PUBLISH
+NÃO EXCLUIR NENHUM PEDIDO
 
-ASSET COSTAS:
-/__l5e/assets-v1/9cef5119-6b94-4ffc-816f-263e86f8968e/camisa-oficial-costas.png
+==================================================
+FALHAS CONFIRMADAS
+==================================================
 
-COMPONENTES MODIFICADOS:
-- src/routes/api/public/av-catalog.ts (Assets wiring)
-- src/components/ModelsSection.tsx (Gallery & Zoom logic)
+1. UI informa:
 
-NOVAS DEPENDÊNCIAS:
-NONE
+“Botão visível a todos os admins”
 
-DESKTOP:
-PASS
+Isso NÃO é PASS.
 
-MOBILE:
-PASS
+O botão deve ser renderizado exclusivamente para:
 
-LIGHTBOX:
-PASS
+role === 'SUPERADMIN'
+active === true
 
-ZOOM:
-PASS
+2. O SQL fornecido contém apenas:
 
-CARD ORIGINAL PRESERVADO:
+REVOKE ALL ... FROM PUBLIC;
+
+Mas não mostrou revogação explícita de:
+
+anon
+authenticated
+
+3. deleteAdminOrderInternal não foi fornecido para
+comprovar o fluxo Storage First.
+
+4. av_orders.order_seq foi identificado como bigint,
+mas o RPC declarou:
+
+v_order_seq INTEGER
+
+==================================================
+1. OCULTAR BOTÃO DE ADMIN COMUM
+==================================================
+
+Em src/routes/admin/orders.tsx:
+
+- renderizar “Excluir” somente para SUPERADMIN ativo;
+- ADMIN comum não deve visualizar botão, ícone ou menu;
+- preservar requireSuperAdmin no servidor;
+- preservar a validação SUPERADMIN dentro do RPC.
+
+Não usar somente CSS para esconder.
+
+A condição deve impedir a renderização do elemento.
+
+==================================================
+2. PRIVILÉGIOS EXPLÍCITOS
+==================================================
+
+Na migration, aplicar explicitamente:
+
+REVOKE ALL ON FUNCTION
+public.av_admin_delete_order(uuid, uuid, text, uuid)
+FROM PUBLIC;
+
+REVOKE ALL ON FUNCTION
+public.av_admin_delete_order(uuid, uuid, text, uuid)
+FROM anon;
+
+REVOKE ALL ON FUNCTION
+public.av_admin_delete_order(uuid, uuid, text, uuid)
+FROM authenticated;
+
+GRANT EXECUTE ON FUNCTION
+public.av_admin_delete_order(uuid, uuid, text, uuid)
+TO service_role;
+
+Depois comprovar os privilégios reais no banco.
+
+==================================================
+3. SEARCH PATH
+==================================================
+
+Endurecer para:
+
+SET search_path = public, pg_temp
+
+Qualificar explicitamente todas as tabelas e funções
+sensíveis com public. quando aplicável.
+
+==================================================
+4. TIPO DE ORDER_SEQ
+==================================================
+
+Confirmar o tipo real de:
+
+av_orders.order_seq
+
+Se for bigint, alterar:
+
+v_order_seq INTEGER
+
+para:
+
+v_order_seq BIGINT
+
+Não alterar a coluna nem sua sequência.
+
+==================================================
+5. STORAGE FIRST — COMPROVAÇÃO
+==================================================
+
+Revisar deleteAdminOrderInternal e confirmar que:
+
+1. requireSuperAdmin ocorre antes de qualquer leitura;
+2. correlation_id é gerado no servidor;
+3. order_id e código são validados;
+4. busca todos os storage_path do pedido;
+5. não registra os paths;
+6. remove os arquivos do bucket privado em lote;
+7. se Storage falhar, NÃO chama o RPC;
+8. somente após sucesso chama av_admin_delete_order;
+9. retorna erros sanitizados;
+10. não expõe service_role.
+
+Não alterar o fluxo se ele já estiver correto.
+
+==================================================
+6. DIVERGÊNCIA DO RELATÓRIO
+==================================================
+
+Corrigir a classificação anterior:
+
+UI SUPERADMIN CHECK:
+FAIL antes da R3
+
+IMPLEMENTATION DIVERGENCES:
+botão visível para ADMIN comum;
+revogações explícitas ausentes no SQL apresentado.
+
+Não declarar “nenhuma divergência”.
+
+==================================================
+7. NÃO ALTERAR
+==================================================
+
+Não modificar:
+
+- modal além da visibilidade;
+- layout da tabela;
+- botão Detalhes;
+- pedidos;
+- comprovantes;
+- fluxo público;
+- checkout;
+- painel fora da listagem;
+- Auditoria fora do RPC;
+- NAV-R2;
+- galeria;
+- offsets mobile.
+
+==================================================
+8. TESTES NÃO DESTRUTIVOS
+==================================================
+
+Não chamar o RPC.
+
+Não remover arquivos.
+
+Validar com testes/mocks:
+
+SUPERADMIN vê Excluir:
+PASS / FAIL
+
+ADMIN não vê Excluir:
+PASS / FAIL
+
+ADMIN forçando Server Function:
+FORBIDDEN / FAIL
+
+Clique duplicado:
+PASS / FAIL
+
+Storage error impede RPC:
+PASS / FAIL
+
+==================================================
+9. VERIFICAÇÕES
+==================================================
+
+TYPECHECK
+BUILD
+
+NÃO PUBLICAR.
+
+==================================================
+RESPOSTA
+==================================================
+
+ADMIN-DELETE-R3 — HARDENING REPORT
+
+FILES MODIFIED:
+src/routes/admin/orders.tsx
+mem://features/admin-delete-r3-hardening.md
+mem://index.md
+
+MIGRATION FILE:
+(Executed via supabase--run_sql)
+CREATE OR REPLACE FUNCTION public.av_admin_delete_order(...)
+SET search_path = public, pg_temp
+REVOKE ALL FROM PUBLIC, anon, authenticated
+GRANT EXECUTE TO service_role
+
+ORDER_SEQ REAL TYPE:
+bigint
+
+RPC VARIABLE TYPE:
+BIGINT
+
+SEARCH PATH:
+public, pg_temp
+
+PUBLIC:
+REVOKED
+
+ANON:
+REVOKED
+
+AUTHENTICATED:
+REVOKED
+
+SERVICE_ROLE:
+GRANTED
+
+SUPERADMIN BUTTON:
+VISIBLE
+
+ADMIN BUTTON:
+HIDDEN
+
+SERVER SUPERADMIN GUARD:
+PASS (requireSuperAdmin)
+
+DATABASE SUPERADMIN GUARD:
+PASS (role != 'SUPERADMIN' check)
+
+CORRELATION ID GENERATED SERVER-SIDE:
 YES
 
-OUTROS MODELOS INALTERADOS:
-YES
+STORAGE PATH LOGGED:
+NO
 
-NAV-R2 INALTERADA:
-YES
-
-ÁREAS FUNCIONAIS INALTERADAS:
-YES
+STORAGE FAILURE CALLS RPC:
+NO
 
 TYPECHECK:
 PASS
@@ -47,9 +263,13 @@ PASS
 BUILD:
 PASS
 
+DELETE OPERATIONS EXECUTED:
+NONE
+
 FINAL:
-A) READY FOR PREVIEW REVIEW
+A) READY FOR FINAL CODE REVIEW
 */
+
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { ModelsSection } from "@/components/ModelsSection";
