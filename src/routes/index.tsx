@@ -142,543 +142,345 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
-      {/* ETAPA 15.5 — RESTAURAÇÃO VISUAL CONTROLADA DO LAYOUT APROVADO
+      {/* CORREÇÃO PRIORITÁRIA — RECUPERAR ELEMENTOS VISUAIS DA LANDING PAGE
 
-IMPORTANTE — CORREÇÃO DE DIREÇÃO DO PROJETO
+O projeto sofreu alterações recentes e elementos importantes que já existiam e estavam aprovados desapareceram da página.
 
-As ETAPAS 15.2 e 15.3 introduziram alterações de UX que modificaram excessivamente o layout visual da landing page.
+NÃO quero um novo design.
 
-O objetivo original NÃO era redesenhar a página.
+NÃO quero uma nova estrutura.
 
-Precisamos restaurar a aparência, organização, proporções e hierarquia visual que existiam AO FINAL DA ETAPA 15.1.
-
-IMPORTANTE:
-
-NÃO fazer rollback geral do projeto.
-
-NÃO perder funcionalidades técnicas já aprovadas.
-
-NÃO alterar backend.
-
-A correção deve ser exclusivamente visual/estrutural no frontend.
+Quero recuperar a landing page que já estávamos desenvolvendo e continuar a partir dela.
 
 ---
 
-1. BASE VISUAL DE REFERÊNCIA
+OBJETIVO IMEDIATO
 
-Utilizar como referência o estado visual da aplicação existente AO FINAL DA ETAPA 15.1.
+Recuperar na página pública:
 
-Ou seja:
+1. A apresentação inicial/hero que existia anteriormente;
+2. A frase principal que aparecia no início da página;
+3. A área onde o visitante conseguia visualizar as camisas;
+4. A CAMISA OFICIAL;
+5. A REGATA OFICIAL.
 
-ANTES das alterações visuais introduzidas pelas ETAPAS:
-
-15.2 — Prévia ao Vivo da Personalização
-
-15.3 — Revisão Visual do Pedido
-
-Se houver histórico Git/local disponível:
-
-comparar os diffs dessas etapas para identificar exatamente quais mudanças alteraram o layout.
-
-NÃO restaurar cegamente arquivos inteiros se isso apagar funcionalidades posteriores importantes.
-
-Fazer uma restauração controlada.
+Esses elementos precisam voltar a ficar VISÍVEIS na landing page.
 
 ---
 
-2. OBJETIVO VISUAL
+1. USE O HISTÓRICO DO PROJETO
 
-A landing page deve voltar a ter:
+Verifique o histórico Git/versões anteriores do projeto e identifique a última versão em que:
 
-* aparência original;
-* mesma organização das seções;
-* mesma hierarquia;
-* mesmos espaçamentos;
-* mesmas proporções;
-* mesma identidade visual;
-* fluxo simples;
-* foco principal nos modelos de uniforme e no pedido.
+* o hero inicial estava correto;
+* a frase principal aparecia no topo;
+* as camisas apareciam visualmente na página;
+* o layout estava seguindo a identidade visual do torneio.
 
-NÃO criar um novo design.
+Use essa versão APENAS como referência visual.
 
-NÃO modernizar novamente.
+NÃO faça rollback completo.
 
-NÃO reinterpretar o layout.
-
-Restaurar o visual que já estava aprovado.
+Recupere somente os elementos que desapareceram.
 
 ---
 
-3. REMOVER A ALTERAÇÃO VISUAL DA ETAPA 15.2
+2. NÃO INVENTAR A FRASE
 
-A ETAPA 15.2 adicionou uma grande:
+A frase/texto que existia no início da landing page deve ser recuperada do histórico.
 
-"PRÉVIA DA PERSONALIZAÇÃO"
+NÃO criar uma frase nova.
 
-com layout lateral/sticky.
+NÃO reescrever o conteúdo.
 
-Essa implementação alterou demasiadamente a composição da página.
+NÃO substituir por texto genérico.
 
-REMOVER essa prévia do layout principal.
-
-Remover especialmente:
-
-* painel lateral grande;
-* sticky da prévia;
-* divisão `lg:flex-row` criada especificamente para a prévia;
-* bloco visual "Future Arena";
-* qualquer espaço adicional criado exclusivamente para essa função.
-
-Os campos existentes de:
-
-NOME
-
-NÚMERO
-
-devem continuar funcionando normalmente.
-
-NÃO remover os campos.
-
-NÃO alterar seus estados.
-
-NÃO alterar os dados enviados ao pedido.
+Restaurar o texto que já existia na versão anterior aprovada.
 
 ---
 
-4. PRÉVIA DE PERSONALIZAÇÃO
+3. CAMISAS DEVEM VOLTAR A APARECER
 
-Nesta etapa NÃO precisamos manter uma prévia visual permanente.
-
-Portanto:
-
-pode remover a interface visual adicionada na ETAPA 15.2.
-
-IMPORTANTE:
-
-Não alterar:
-
-customName
-customNumber
-
-Nem a lógica real de personalização.
-
-Remover somente a camada visual adicional que mudou o layout.
-
----
-
-5. ETAPA 15.3 — REVISÃO DO PEDIDO
-
-A revisão é útil, mas NÃO deve redesenhar a landing page nem ocupar uma nova grande área permanente.
-
-Manter a funcionalidade de revisão SOMENTE se puder funcionar de maneira discreta.
-
-Preferência:
-
-usar um MODAL / DIALOG / SHEET ao clicar no botão final de revisão/continuação.
-
-A revisão NÃO deve se tornar uma grande seção permanente da landing page.
-
----
-
-6. COMPORTAMENTO DA REVISÃO
-
-Fluxo desejado:
-
-Usuário preenche normalmente o pedido no layout original.
-
-Ao chegar ao momento de finalizar:
-
-clicar no botão correspondente.
-
-Abrir uma revisão compacta em modal/dialog.
-
-Mostrar:
-
-* modelo;
-* tamanho;
-* nome;
-* número;
-* quantidade;
-* valores;
-* total.
-
-Ações:
-
-VOLTAR E EDITAR
-
-CONFIRMAR PEDIDO
-
-Assim preservamos a funcionalidade sem alterar a estrutura principal da página.
-
----
-
-7. SE A REVISÃO JÁ FOR UMA ETAPA SEPARADA
-
-Se atualmente `OrderReview` alterou significativamente a navegação principal:
-
-converter sua apresentação para modal/dialog sem reescrever o motor.
-
-Reutilizar:
-
-OrderReview
-OrderItemsSummary
-
-quando possível.
-
-Não duplicar componentes.
-
-Não recriar lógica de cálculo.
-
----
-
-8. PRESERVAR TOTALMENTE — MODELOS OFICIAIS
-
-Continuar exibindo EXATAMENTE:
+A landing page precisa novamente mostrar claramente os dois produtos oficiais:
 
 CAMISA OFICIAL — TSHIRT-01
 
 REGATA OFICIAL — TANK-01
 
-Não alterar catálogo.
+O visitante deve conseguir visualizar os produtos ANTES de começar a configurar o pedido.
 
-Não reativar outros produtos.
+Não deixar as camisas escondidas somente dentro do formulário/configurador.
 
 ---
 
-9. PRESERVAR TOTALMENTE — ASSETS
+4. IMAGENS OFICIAIS
 
-NÃO alterar:
+Utilizar os assets atuais já aprovados.
 
-camisa_oficial_frente.png
-camisa_oficial_costas.png
-regata_oficial_frente.png
-regata_oficial_costas.png
-
-Preservar:
+CAMISA OFICIAL:
 
 front_image_url
 back_image_url
 
+REGATA OFICIAL:
+
+front_image_url
+back_image_url
+
+No card/vitrine principal utilizar a imagem da FRENTE.
+
+Não voltar para imagens antigas ou placeholders.
+
 ---
 
-10. PRESERVAR TOTALMENTE — GALERIA
+5. VITRINE DOS MODELOS
 
-Manter tudo que estava aprovado até a ETAPA 15.1:
+Restaurar a seção visual onde o usuário vê os uniformes.
 
+Ela deve apresentar claramente:
+
+CAMISA OFICIAL
+
+REGATA OFICIAL
+
+com suas respectivas imagens.
+
+O visitante deve entender imediatamente:
+
+"Esses são os modelos disponíveis para o 9º Torneio."
+
+---
+
+6. INTERAÇÃO JÁ EXISTENTE
+
+Preservar as funcionalidades que já estão funcionando:
+
+* abrir imagem;
 * Frente / Costas;
 * lightbox;
 * zoom 2.5x;
-* reset de zoom;
-* swipe mobile;
+* swipe;
 * drag;
-* threshold de 60px;
-* indicador discreto mobile;
-* abertura sempre pela Frente.
+* reset do zoom;
+* abertura pela Frente.
 
-NÃO modificar `ModelsSection` sem necessidade concreta.
-
----
-
-11. PRESERVAR PERSONALIZAÇÃO REAL
-
-Os campos:
-
-Nome personalizado
-Número personalizado
-
-devem permanecer normalmente no configurador.
-
-Preservar:
-
-customName
-customNumber
-
-Não alterar:
-
-validação;
-payload;
-armazenamento;
-ordem;
-lógica.
+NÃO remover essas funções.
 
 ---
 
-12. PRESERVAR CARRINHO / MÚLTIPLOS ITENS
+7. FLUXO PRINCIPAL
 
-O sistema atualmente suporta múltiplos itens.
+A experiência da página deve voltar a ser simples:
 
-Preservar integralmente.
+ENTRAR NA LANDING PAGE
 
-Não modificar:
+↓
 
-Adicionar item;
-Nova seleção;
-itens independentes;
-quantidades;
-personalizações individuais.
+VER APRESENTAÇÃO DO 9º TORNEIO
+
+↓
+
+VER CAMISA OFICIAL E REGATA OFICIAL
+
+↓
+
+ESCOLHER MODELO
+
+↓
+
+ESCOLHER TAMANHO
+
+↓
+
+INFORMAR NOME E NÚMERO
+
+↓
+
+QUANTIDADE
+
+↓
+
+ADICIONAR AO PEDIDO
+
+↓
+
+REVISAR
+
+↓
+
+FINALIZAR
+
+Esse é o foco do projeto.
 
 ---
 
-13. PRESERVAR REVISÃO FUNCIONAL
+8. NÃO ESCONDER OS MODELOS
 
-A revisão pode continuar existindo, porém como camada discreta antes da confirmação.
+Verificar se alguma alteração recente em:
 
-Não remover:
+ModelsSection
+OrderConfigurator
+index.tsx
+condicionais de renderização
+tabs
+estado do fluxo
 
-* cálculo;
-* subtotal;
-* total;
-* "Não informado";
-* miniaturas;
-* voltar e editar;
-* proteção contra duplo envio.
+passou a esconder a vitrine de modelos.
 
-Somente corrigir sua APRESENTAÇÃO para não redesenhar a landing page.
+Corrigir somente o necessário para que ela volte a aparecer.
 
 ---
 
-14. PRESERVAR MOTOR DO PEDIDO
+9. PRESERVAR O QUE ESTÁ FUNCIONANDO
 
 NÃO alterar:
 
-submitAvOrder
-selectedModelId
-idempotency_key
-request_fingerprint
-create-order
-av_create_order
-RPCs
-RLS
-Supabase
-Turnstile
-CORS
-Rate Limit
-PIX
-pagamentos
-comprovantes
+* banco de dados;
+* IDs;
+* catálogo;
+* TSHIRT-01;
+* TANK-01;
+* múltiplos itens;
+* carrinho;
+* nome;
+* número;
+* tamanho;
+* quantidade;
+* revisão;
+* cálculo;
+* PIX;
+* comprovante;
+* create-order;
+* av_create_order;
+* RPC;
+* RLS;
+* Turnstile;
+* CORS;
+* rate limit;
+* idempotência.
 
 ---
 
-15. PRESERVAR METADADOS
-
-Os metadados OG já foram auditados.
-
-Não alterar novamente:
-
-title
-description
-Open Graph
-imagem OG
-
-em:
-
-src/routes/index.tsx
-
-Exceto se for estritamente necessário remover apenas wiring visual introduzido pelas ETAPAS 15.2/15.3.
-
-Não mexer nos metadados aprovados.
-
----
-
-16. FOOTER
-
-O label "Processo" já foi auditado e aprovado.
-
-Manter.
-
-Não redesenhar Footer.
-
----
-
-17. NÃO FAZER
+10. NÃO FAZER REDESIGN
 
 NÃO:
 
-* criar novo layout;
-* trocar paleta;
-* trocar fontes;
-* mudar identidade visual;
-* criar novas seções;
 * criar sidebar;
 * criar dashboard;
-* criar cards extras;
-* adicionar novas animações;
-* adicionar 360°;
-* adicionar 3D;
-* instalar bibliotecas;
-* refatorar a landing page inteira.
+* trocar a estrutura geral;
+* trocar paleta;
+* mudar toda a tipografia;
+* criar novas seções;
+* remover seções antigas aprovadas;
+* reorganizar a página inteira;
+* adicionar novas funcionalidades.
+
+O objetivo é RECUPERAR.
+
+Não redesenhar.
 
 ---
 
-18. MOBILE
+11. RESPONSIVIDADE
 
-Após a restauração, validar:
+Após restaurar os elementos, validar:
 
 375px
 390px
 430px
-
-Queremos novamente um fluxo vertical simples.
-
-Confirmar:
-
-* nenhuma grande prévia sticky ocupando a tela;
-* campos facilmente acessíveis;
-* scroll natural;
-* visual dos uniformes em destaque;
-* botões acessíveis;
-* nenhuma seção desnecessariamente alta;
-* nenhuma alteração brusca na identidade original.
-
----
-
-19. DESKTOP
-
-Validar:
-
 768px
 1024px
 1440px
 
-Confirmar que a composição voltou a se aproximar do layout anterior à ETAPA 15.2.
-
-Não manter divisão lateral grande criada pela prévia.
+As duas camisas precisam estar visíveis e bem apresentadas principalmente no celular.
 
 ---
 
-20. COMPARAÇÃO VISUAL
+12. TESTE O FLUXO
 
-Se houver histórico disponível:
+Após a correção:
 
-comparar visualmente:
+Abrir a página inicial.
 
-ESTADO AO FINAL DA 15.1
+Confirmar que aparece o hero/frase inicial.
 
-versus
+Descer a página.
 
-ESTADO APÓS ESTA CORREÇÃO.
+Confirmar que aparecem:
 
-O resultado deve ser visualmente muito próximo ao estado da 15.1.
+CAMISA OFICIAL
+REGATA OFICIAL
 
-As diferenças aceitáveis são apenas:
+Abrir CAMISA.
 
-* funcionalidades Frente/Costas já existentes;
-* swipe;
-* revisão apresentada discretamente quando solicitada.
+Testar Frente/Costas.
 
----
+Fechar.
 
-21. ALTERAÇÃO MÍNIMA
+Abrir REGATA.
 
-Analisar especialmente os arquivos alterados nas ETAPAS 15.2 e 15.3:
+Testar Frente/Costas.
 
-src/components/OrderConfigurator.tsx
+Selecionar um modelo.
 
-src/components/OrderReview.tsx
-
-src/components/OrderItemsSummary.tsx
-
-src/routes/index.tsx
-
-Alterar SOMENTE o necessário.
-
-Não tocar em outros componentes sem justificativa.
+Confirmar que o configurador continua funcionando.
 
 ---
 
-22. TESTE DO FLUXO
+13. ALTERAÇÃO MÍNIMA
 
-Após restaurar o layout:
+Antes de alterar código:
 
-Selecionar CAMISA.
+identifique exatamente POR QUE os elementos desapareceram.
 
-Escolher tamanho.
+Faça a menor correção possível.
 
-Nome.
-
-Número.
-
-Quantidade.
-
-Adicionar.
-
-Selecionar REGATA.
-
-Configurar.
-
-Adicionar.
-
-Continuar.
-
-Abrir revisão compacta.
-
-Voltar e editar.
-
-Abrir novamente.
-
-Confirmar que todos os dados continuam funcionando.
+Não reescreva componentes inteiros se não for necessário.
 
 ---
 
-23. TESTES TÉCNICOS
+14. TESTES
 
 Executar:
 
 TypeScript/typecheck
-
 Build
 
 Verificar console.
 
 ---
 
-24. IMPORTANTE
-
-ESTA ETAPA NÃO É PARA MELHORAR O DESIGN.
-
-É PARA:
-
-RESTAURAR O DESIGN QUE JÁ ESTAVA APROVADO.
-
-Preservando as funcionalidades técnicas úteis adicionadas posteriormente.
-
----
-
 RELATÓRIO FINAL
 
-Informar:
+Informe:
 
-1. arquivos modificados;
-2. quais alterações da ETAPA 15.2 foram removidas;
-3. se a prévia visual sticky foi completamente removida;
-4. como ficou o OrderConfigurator;
-5. como a revisão do pedido passou a ser apresentada;
-6. se OrderReview foi reutilizado;
-7. se OrderItemsSummary foi reutilizado;
-8. confirmação de que o layout principal voltou ao padrão anterior;
-9. confirmação de que Camisa e Regata permanecem intactas;
-10. confirmação de Frente/Costas;
-11. confirmação de zoom;
-12. confirmação de swipe;
-13. confirmação de múltiplos itens;
-14. confirmação dos campos Nome/Número;
-15. confirmação de Voltar e Editar;
-16. confirmação de Confirmar Pedido;
-17. resultado mobile;
-18. resultado desktop;
-19. TypeScript/typecheck;
-20. Build;
-21. erros de console;
-22. confirmação de exatamente 2 produtos;
-23. confirmação de que metadados OG não foram removidos;
-24. confirmação de que backend, segurança e pagamentos não foram alterados.
+1. por que a frase inicial havia desaparecido;
+2. por que as camisas haviam desaparecido;
+3. qual versão/histórico foi usado como referência;
+4. quais arquivos foram modificados;
+5. confirmação de que a frase original foi restaurada;
+6. confirmação de que CAMISA OFICIAL está visível;
+7. confirmação de que REGATA OFICIAL está visível;
+8. confirmação de que as imagens atuais foram preservadas;
+9. confirmação de Frente/Costas;
+10. confirmação de zoom;
+11. confirmação de swipe;
+12. confirmação de seleção dos produtos;
+13. resultado mobile;
+14. resultado desktop;
+15. TypeScript/typecheck;
+16. Build;
+17. erros de console;
+18. confirmação de que o fluxo de pedido permaneceu intacto;
+19. confirmação de que backend e segurança não foram alterados.
 
-NÃO iniciar nenhuma etapa nova.
+IMPORTANTE:
 
-NÃO realizar auditoria de produção ainda.
+A prioridade desta correção é fazer a landing page VOLTAR A PARECER UMA LANDING PAGE DE PEDIDOS DE CAMISETAS DO TORNEIO.
 
-Pare após restaurar o layout e entregar este relatório. */}
+Não iniciar nenhuma outra melhoria.
 
+Pare após restaurar esses elementos. */}
 
       <Header />
 
@@ -799,7 +601,6 @@ Pare após restaurar o layout e entregar este relatório. */}
           </div>
         )}
 
-
         {currentStep === "success" && createdOrder && catalog && (
           <OrderSuccess
             order={createdOrder}
@@ -818,4 +619,5 @@ Pare após restaurar o layout e entregar este relatório. */}
     </div>
   );
 }
+
 
