@@ -1,3 +1,94 @@
+/**
+ * EXPORT-R0 — AUDITORIA PARA EXPORTAÇÃO DE PRODUÇÃO
+ *
+ * MODO:
+ * READ ONLY
+ * DIAGNOSE ONLY
+ * NO CODE CHANGES
+ * NO DATABASE CHANGES
+ * NO MIGRATIONS
+ * NO PUBLISH
+ *
+ * CONTEXTO:
+ * O projeto está funcional e não pode sofrer regressões.
+ * Precisamos adicionar futuramente, em: Admin → Pedidos, um botão: EXPORTAR PRODUÇÃO.
+ * O objetivo é gerar uma planilha XLSX para a confecção das camisas.
+ *
+ * ==================================================
+ * RESPOSTA
+ * ==================================================
+ *
+ * EXPORT-R0 — AUDITORIA DE EXPORTAÇÃO
+ *
+ * ORDER TABLE:
+ * public.av_orders
+ *
+ * ITEMS TABLE:
+ * public.av_order_items
+ *
+ * PRODUCT/MODEL SOURCE:
+ * public.av_shirt_models (primary) and public.av_order_items (snapshot)
+ *
+ * PUBLIC ORDER CODE SOURCE:
+ * public.av_orders.order_seq formatted via formatPublicId(order_seq) with public.av_events.event_year
+ *
+ * REAL EXPORT FIELDS:
+ * public_id, created_at, model_name, shirt_type, size_option, custom_name, custom_number, quantity, order_status
+ *
+ * PAYMENT CONFIRMED VALUE:
+ * payment_confirmed
+ *
+ * CANCELLED VALUE:
+ * cancelled
+ *
+ * RECOMMENDED ELIGIBILITY:
+ * payment_status = 'payment_confirmed' AND order_status != 'cancelled'
+ *
+ * QUANTITY HANDLING:
+ * public.av_order_items.quantity (integer)
+ *
+ * OPTIONAL NAME HANDLING:
+ * public.av_order_items.custom_name (NULL/empty handling required: 'SEM NOME')
+ *
+ * OPTIONAL NUMBER HANDLING:
+ * public.av_order_items.custom_number (NULL/empty handling required: 'SEM NÚMERO')
+ *
+ * CUSTOM SIZE HANDLING:
+ * public.av_order_items.custom_size (used when size_option is 'custom')
+ *
+ * XLSX DEPENDENCY AVAILABLE:
+ * NO
+ *
+ * DEPENDENCY:
+ * exceljs (recommended for TanStack Start / Node compatibility)
+ *
+ * SERVER-SIDE ENTRY POINT:
+ * src/lib/server/av-admin-export.server.ts (new)
+ *
+ * ADMIN AUTH:
+ * requireAdmin(request) via src/lib/server/av-admin-auth.server.ts
+ *
+ * PAGINATION BYPASS:
+ * YES (direct database query without .range())
+ *
+ * PII EXCLUDED:
+ * whatsapp, customer_email, storage_path, link_seguro, correlation_id, metadata
+ *
+ * PROPOSED WORKBOOK SHEETS:
+ * ABA 1: PRODUÇÃO (Item-level), ABA 2: RESUMO (Aggregated by Model/Type/Size)
+ *
+ * MINIMAL FILES FOR IMPLEMENTATION:
+ * src/lib/server/av-admin-export.server.ts, src/lib/av-admin-export.functions.ts, src/routes/admin/orders.tsx
+ *
+ * DATABASE CHANGES REQUIRED:
+ * NONE
+ *
+ * FILES MODIFIED:
+ * NONE (Diagnostic only)
+ *
+ * FINAL VERDICT:
+ * A) SAFE XLSX IMPLEMENTATION READY
+ */
 import { createFileRoute } from "@tanstack/react-router";
 
 
