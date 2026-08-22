@@ -171,7 +171,7 @@ export function OrderConfigurator({
       </div>
 
       {/* Tamanho */}
-      <div>
+      <div className="scroll-mt-32" id="tamanho-selector">
         <div className="flex justify-between items-center mb-5">
           <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40">Tamanho oficial</Label>
           {!eventInfo.orders_available && (

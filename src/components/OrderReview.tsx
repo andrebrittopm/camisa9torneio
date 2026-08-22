@@ -12,6 +12,7 @@ interface OrderReviewProps {
   customer: CustomerData;
   items: OrderItem[];
   eventInfo: AvCatalogEvent;
+  catalogModels: any[];
   onBack: () => void;
   onSuccess: (order: AvCreatedOrder, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => void;
   isMultiModel?: boolean;
@@ -20,7 +21,7 @@ interface OrderReviewProps {
 
 type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-export function OrderReview({ customer, items, eventInfo, onBack, onSuccess, isMultiModel = false }: OrderReviewProps) {
+export function OrderReview({ customer, items, eventInfo, catalogModels, onBack, onSuccess, isMultiModel = false }: OrderReviewProps) {
   const [status, setStatus] = useState<SubmissionStatus>('idle');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
@@ -188,7 +189,7 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess, isM
         </div>
 
         <div className="md:col-span-2 space-y-8">
-          <OrderItemsSummary items={items} eventInfo={eventInfo} onRemove={() => {}} onEdit={() => {}} disabled isMultiModel={isMultiModel} />
+          <OrderItemsSummary items={items} eventInfo={eventInfo} catalogModels={catalogModels} onRemove={() => {}} onEdit={() => {}} disabled isMultiModel={isMultiModel} />
           
           <div className="bg-royal/10 border border-royal/20 p-8 rounded-[32px] space-y-8 overflow-hidden">
             {/* TURNSTILE TEMPORARILY DISABLED
