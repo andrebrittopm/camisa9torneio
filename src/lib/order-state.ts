@@ -38,7 +38,7 @@ interface OrderState {
   resetOrder: () => void;
 }
 
-export const useOrderState = create<OrderState>()(
+const useOrderStateBase = create<OrderState>()(
   persist(
     (set) => ({
       items: [],
@@ -65,3 +65,9 @@ export const useOrderState = create<OrderState>()(
     }
   )
 );
+
+export const useOrderState = useOrderStateBase;
+
+if (typeof window !== 'undefined') {
+  (window as any).__ORDER_STATE__ = useOrderStateBase;
+}
