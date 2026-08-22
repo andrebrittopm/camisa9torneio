@@ -1,6 +1,9 @@
 import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
+import { useAvNavigation } from "@/hooks/use-av-navigation";
 
 export function Footer() {
+  const { navigateToSection } = useAvNavigation();
+
   return (
     <footer className="py-20 relative overflow-hidden bg-navy border-t border-white/5">
       {/* Background Decor */}
@@ -32,6 +35,10 @@ export function Footer() {
                 <a 
                   key={item.label} 
                   href={item.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigateToSection(item.href);
+                  }}
                   className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40 hover:text-gold transition-colors"
                 >
                   {item.label}
