@@ -63,7 +63,10 @@ export const Route = createFileRoute('/admin/orders')({
 })
 
 function AdminOrdersPage() {
+  const { authenticated, active, role } = Route.useRouteContext() as any
+  const isSuperAdmin = role === 'SUPERADMIN' && active === true;
   const { page, search, paymentFilter, orderFilter } = Route.useSearch()
+
   const navigate = useNavigate({ from: Route.fullPath })
   const queryClient = useQueryClient()
   const [deletingOrder, setDeletingOrder] = useState<{ id: string, code: string } | null>(null)
@@ -196,18 +199,21 @@ function AdminOrdersPage() {
                         >
                           Detalhes <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label={`Excluir pedido ${o.publicId}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingOrder({ id: o.id, code: o.publicId });
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {isSuperAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={`Excluir pedido ${o.publicId}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingOrder({ id: o.id, code: o.publicId });
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+
                       </div>
                     </td>
 
@@ -246,13 +252,16 @@ function AdminOrdersPage() {
                   <Button className="flex-[2] bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}>
                     Ver Detalhes
                   </Button>
-                  <Button 
-                    variant="outline"
-                    className="flex-1 border-rose-500/20 bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white"
-                    onClick={() => setDeletingOrder({ id: o.id, code: o.publicId })}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {isSuperAdmin && (
+                    <Button 
+                      variant="outline"
+                      className="flex-1 border-rose-500/20 bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white"
+                      onClick={() => setDeletingOrder({ id: o.id, code: o.publicId })}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+
                 </div>
 
               </div>
