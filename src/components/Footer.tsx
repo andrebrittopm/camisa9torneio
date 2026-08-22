@@ -28,7 +28,6 @@ export function Footer() {
                 { label: 'Início', href: '#inicio' },
                 { label: 'Camisa', href: '#camisa' },
                 { label: 'Como funciona', href: '#como-funciona' },
-                { label: 'Como funciona', href: '#como-funciona' }
               ].map((item) => (
                 <a 
                   key={item.label} 
