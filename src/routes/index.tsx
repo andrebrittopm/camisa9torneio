@@ -1,16 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/*
-Localize e disponibilize para download, sem modificar,
-o arquivo:
-
-supabase/migrations/20260822225500_fix_av_admin_delete_order.sql
-
-Não execute a migration novamente.
-Não alterar o arquivo.
-Não executar o RPC.
-Não excluir pedidos.
-*/
 
 
 
