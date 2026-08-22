@@ -258,25 +258,35 @@ A ETAPA 15.5 restaurou a direção visual original do projeto com sucesso. */}
               <Button
                 className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
                 disabled={!customer.name || !customer.whatsapp || !customer.email}
-                onClick={() => setStep("review")}
+                onClick={() => setIsReviewOpen(true)}
               >
                 Revisar Pedido
               </Button>
             </div>
+
+            <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-navy border-white/10 p-0 rounded-[32px]">
+                <DialogHeader className="p-8 pb-0">
+                  <DialogTitle className="sr-only">Revisão do Pedido</DialogTitle>
+                </DialogHeader>
+                {catalog && (
+                  <div className="pb-8">
+                    <OrderReview
+                      customer={customer}
+                      items={items}
+                      eventInfo={catalog.data.event}
+                      catalogModels={catalog.data.models}
+                      onBack={() => setIsReviewOpen(false)}
+                      onSuccess={handleSuccess}
+                      isMultiModel={catalog.data.models.length > 1}
+                    />
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
-        {currentStep === "review" && catalog && (
-          <OrderReview
-            customer={customer}
-            items={items}
-            eventInfo={catalog.data.event}
-            catalogModels={catalog.data.models}
-            onBack={() => setStep("customer_data")}
-            onSuccess={handleSuccess}
-            isMultiModel={catalog.data.models.length > 1}
-          />
-        )}
 
         {currentStep === "success" && createdOrder && catalog && (
           <OrderSuccess

@@ -156,12 +156,13 @@ export function OrderReview({ customer, items, eventInfo, catalogModels, onBack,
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto space-y-8 px-6 lg:px-0"
+      className="max-w-4xl mx-auto space-y-8 px-6 lg:px-8 py-4"
     >
-      <div className="text-center mb-12">
-        <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">Revise seu Pedido</h2>
-        <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes do seu pedido antes de finalizar</p>
+      <div className="text-center mb-6">
+        <h2 className="text-4xl md:text-5xl font-heading font-black uppercase mb-2 tracking-tighter">Revise seu Pedido</h2>
+        <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes antes de finalizar</p>
       </div>
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-8">
