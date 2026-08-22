@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
 import type { OrderItem } from "@/lib/order-state";
 import { Minus, Plus, ShoppingCart, Save } from "lucide-react";
-import { getPublicProductDisplayName } from "@/utils/av-public-status-mapper";
 
 interface OrderConfiguratorProps {
   selectedModel: AvShirtModel | null;
@@ -18,7 +17,6 @@ interface OrderConfiguratorProps {
   onUpdateItem: (local_id: string, item: Omit<OrderItem, 'local_id'>) => void;
   onCancelEdit: () => void;
   onModelChange: (model: AvShirtModel) => void;
-  isMultiModel?: boolean;
 }
 
 export function OrderConfigurator({
@@ -28,8 +26,7 @@ export function OrderConfigurator({
   editingItem,
   onUpdateItem,
   onCancelEdit,
-  onModelChange,
-  isMultiModel = false
+  onModelChange
 }: OrderConfiguratorProps) {
   const [sizeOption, setSizeOption] = useState("");
   const [customSize, setCustomSize] = useState("");
@@ -113,16 +110,16 @@ export function OrderConfigurator({
   }).format(eventInfo.unit_price);
 
   return (
-    <div className="max-w-4xl mx-auto w-full space-y-10 bg-white/[0.02] backdrop-blur-xl p-6 sm:p-10 rounded-[32px] border border-white/5 shadow-2xl">
+    <div className="space-y-10 bg-white/[0.02] backdrop-blur-xl p-6 sm:p-10 rounded-[32px] border border-white/5 shadow-2xl">
       <div className="flex flex-col gap-2">
         <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Passo único: Personalize sua peça</span>
         <h3 className="text-2xl font-heading font-black uppercase tracking-tight">
-          {selectedModel ? getPublicProductDisplayName(selectedModel, isMultiModel) : 'CAMISA OFICIAL'}
+          CAMISA OFICIAL
         </h3>
       </div>
 
       {/* Tamanho */}
-      <div className="scroll-mt-32" id="tamanho-selector">
+      <div>
         <div className="flex justify-between items-center mb-5">
           <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-ice/40">Tamanho oficial</Label>
           {!eventInfo.orders_available && (
@@ -247,6 +244,5 @@ export function OrderConfigurator({
         </div>
       </div>
     </div>
-
   );
 }

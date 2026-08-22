@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
 import { X, ZoomIn, ChevronLeft, ChevronRight, Eye } from "lucide-react";
-import { getPublicProductDisplayName } from "@/utils/av-public-status-mapper";
 
 interface ModelGalleryProps {
   model: AvShirtModel;
@@ -13,19 +12,11 @@ interface ModelGalleryProps {
   onSelect: () => void;
   isSelected: boolean;
   eventInfo: AvCatalogEvent;
-  allModels: AvShirtModel[];
 }
 
-function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo, allModels }: ModelGalleryProps) {
+function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo }: ModelGalleryProps) {
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [isZoomed, setIsZoomed] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setActiveSide('front');
-      setIsZoomed(false);
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -64,37 +55,22 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
           <div className="flex-1 relative bg-black/20 flex items-center justify-center p-6 md:p-12 overflow-hidden group">
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${activeSide}-${model.id}`}
-                initial={{ opacity: 0, x: activeSide === 'front' ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: activeSide === 'front' ? 20 : -20 }}
-                transition={{ duration: 0.3 }}
+                key={activeSide}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4 }}
                 className={cn(
-                  "relative w-full h-full flex items-center justify-center transition-transform duration-500",
-                  isZoomed ? "scale-[2.5] z-50 cursor-zoom-out" : "cursor-zoom-in"
+                  "relative w-full h-full flex items-center justify-center transition-all duration-700 cursor-zoom-in",
+                  isZoomed && "scale-[1.8] cursor-zoom-out z-50"
                 )}
-                onPanEnd={(_, info) => {
-                  if (isZoomed) return;
-                  const threshold = 60;
-                  if (info.offset.x < -threshold) {
-                    if (activeSide === 'front' && hasBackImage) {
-                      setActiveSide('back');
-                      setIsZoomed(false);
-                    }
-                  } else if (info.offset.x > threshold) {
-                    if (activeSide === 'back') {
-                      setActiveSide('front');
-                      setIsZoomed(false);
-                    }
-                  }
-                }}
                 onClick={() => setIsZoomed(!isZoomed)}
               >
                 {currentImage ? (
                   <img
                     src={currentImage}
-                    alt={`${getPublicProductDisplayName(model, allModels)} - ${activeSide === 'front' ? 'Frente' : 'Costas'}`}
-                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-transform"
+                    alt={`${model.name} - ${activeSide === 'front' ? 'Frente' : 'Costas'}`}
+                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                     loading="lazy"
                   />
                 ) : (
@@ -113,7 +89,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 {/* Controls Overlay */}
                 <div className="absolute top-6 left-6 flex items-center gap-4">
                   <div className="bg-gold text-navy text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-lg">
-                    {getPublicProductDisplayName(model, allModels)}
+                    CAMISA OFICIAL
                   </div>
                   <div className="bg-white/5 backdrop-blur-md text-ice/60 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest border border-white/10">
                     {activeSide === 'front' ? 'Frente' : 'Costas'}
@@ -123,56 +99,19 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 <button 
                   onClick={() => setIsZoomed(true)}
                   className="absolute bottom-6 right-6 w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-ice/40 hover:text-gold hover:border-gold/50 transition-all active:scale-90"
-                  title="Ampliar imagem"
                 >
                   <ZoomIn className="w-5 h-5" />
                 </button>
 
                 {hasBackImage && (
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4">
                     <button
-                      onClick={() => {
-                        if (activeSide !== 'front') {
-                          setActiveSide('front');
-                          setIsZoomed(false);
-                        }
-                      }}
-                      className={cn(
-                        "w-12 h-12 rounded-xl backdrop-blur-md border transition-all flex items-center justify-center font-black text-[10px] tracking-tighter",
-                        activeSide === 'front' 
-                          ? "bg-gold border-gold text-navy shadow-lg shadow-gold/20" 
-                          : "bg-white/5 border-white/10 text-ice/40 hover:border-white/20"
-                      )}
+                      onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
+                      className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-ice/40 hover:text-gold hover:border-gold/50 transition-all active:scale-90"
+                      aria-label="Trocar vista"
                     >
-                      FRENTE
+                      {activeSide === 'front' ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
                     </button>
-                    <button
-                      onClick={() => {
-                        if (activeSide !== 'back') {
-                          setActiveSide('back');
-                          setIsZoomed(false);
-                        }
-                      }}
-                      className={cn(
-                        "w-12 h-12 rounded-xl backdrop-blur-md border transition-all flex items-center justify-center font-black text-[10px] tracking-tighter",
-                        activeSide === 'back' 
-                          ? "bg-gold border-gold text-navy shadow-lg shadow-gold/20" 
-                          : "bg-white/5 border-white/10 text-ice/40 hover:border-white/20"
-                      )}
-                    >
-                      COSTAS
-                    </button>
-                  </div>
-                )}
-
-                {/* Gesture Indicator - Mobile/Touch context */}
-                {!isZoomed && hasBackImage && (
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none opacity-20 animate-pulse lg:hidden">
-                    <div className="flex items-center gap-3">
-                      <ChevronLeft className="w-3 h-3" />
-                      <span className="text-[8px] font-black uppercase tracking-[0.3em]">Deslize para o lado</span>
-                      <ChevronRight className="w-3 h-3" />
-                    </div>
                   </div>
                 )}
               </>
@@ -187,7 +126,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                   <span className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-2 block">
                     {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
                   </span>
-                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">{getPublicProductDisplayName(model, allModels)}</h3>
+                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">CAMISA OFICIAL</h3>
                   <div className="text-3xl font-black text-white">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(eventInfo.unit_price)}
                   </div>
@@ -222,12 +161,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 {hasBackImage && (
                   <div className="grid grid-cols-2 gap-4">
                     <button
-                      onClick={() => {
-                        if (activeSide !== 'front') {
-                          setActiveSide('front');
-                          setIsZoomed(false);
-                        }
-                      }}
+                      onClick={() => setActiveSide('front')}
                       className={cn(
                         "h-14 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all",
                         activeSide === 'front' 
@@ -238,12 +172,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                       Frente
                     </button>
                     <button
-                      onClick={() => {
-                        if (activeSide !== 'back') {
-                          setActiveSide('back');
-                          setIsZoomed(false);
-                        }
-                      }}
+                      onClick={() => setActiveSide('back')}
                       className={cn(
                         "h-14 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all",
                         activeSide === 'back' 
@@ -292,14 +221,12 @@ export function ModelCard({
   model, 
   isSelected, 
   onSelect,
-  eventInfo,
-  allModels
+  eventInfo
 }: { 
   model: AvShirtModel; 
   isSelected: boolean;
   onSelect: () => void;
   eventInfo: AvCatalogEvent;
-  allModels: AvShirtModel[];
 }) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -333,7 +260,7 @@ export function ModelCard({
             {model.front_image_url ? (
               <img 
                 src={model.front_image_url} 
-                alt={getPublicProductDisplayName(model, allModels)}
+                alt={model.name}
                 className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
               />
@@ -377,7 +304,7 @@ export function ModelCard({
               <span className="text-[10px] text-gold font-black uppercase tracking-[0.3em] mb-1 block">
                 {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
               </span>
-              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">{getPublicProductDisplayName(model, allModels)}</h3>
+              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">CAMISA OFICIAL</h3>
               <div className="text-gold font-black text-lg mt-2">{formattedPrice}</div>
             </div>
           </div>
@@ -412,7 +339,6 @@ export function ModelCard({
         onSelect={onSelect}
         isSelected={isSelected}
         eventInfo={eventInfo}
-        allModels={allModels}
       />
     </>
   );
@@ -429,18 +355,7 @@ export function ModelsSection({
   onSelectModel: (model: AvShirtModel) => void;
   eventInfo: AvCatalogEvent;
 }) {
-  // Categorias baseadas nos modelos ATIVOS realmente recebidos
-  const availableCategories = useMemo(() => {
-    const cats = new Set<string>();
-    models.forEach(m => cats.add(m.category));
-    return Array.from(cats);
-  }, [models]);
-
-  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>(() => {
-    if (availableCategories.includes('tshirt')) return 'tshirt';
-    if (availableCategories.length > 0) return availableCategories[0] as 'tshirt' | 'tank';
-    return 'tshirt';
-  });
+  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>('tshirt');
 
   const filteredModels = useMemo(() => models.filter(m => m.category === activeTab), [models, activeTab]);
 
@@ -456,8 +371,32 @@ export function ModelsSection({
     }
   }, [selectedModelId, models]);
 
-  // ETAPA 13.4: Removido o atalho de models.length === 1 para garantir a exibição de grid/abas se necessário.
+  if (models.length === 1 && models[0]) {
+    const singleModel = models[0];
+    return (
+      <section id="camisa" className="py-24 relative overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
+              Conheça a Camisa Oficial
+            </h2>
+            <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
+              9º Torneio Amigos do Vôlei — ACS
+            </p>
+          </div>
 
+          <div className="max-w-4xl mx-auto">
+            <ModelCard 
+              model={singleModel} 
+              isSelected={true}
+              onSelect={() => {}}
+              eventInfo={eventInfo}
+            />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="camisa" className="py-24 relative overflow-hidden">
@@ -466,38 +405,36 @@ export function ModelsSection({
           <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
             Escolha seu estilo
           </h2>
-          <p className="text-gold/60 font-black uppercase tracking-[0.2em] text-[10px] md:text-xs max-w-lg mx-auto">
-            Escolha o modelo que combina com você
+          <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
+            Seis modelos oficiais. Uma só paixão pelo vôlei.
           </p>
         </div>
 
-        {availableCategories.length > 1 && (
-          <div className="flex justify-center mb-16">
-            <div className="inline-flex p-1.5 bg-white/[0.03] backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-              {(['tshirt', 'tank'] as const).filter(t => availableCategories.includes(t)).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={cn(
-                    "px-8 md:px-12 py-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 relative",
-                    activeTab === tab 
-                      ? "text-ice shadow-xl" 
-                      : "text-ice/40 hover:text-ice/80"
-                  )}
-                >
-                  {activeTab === tab && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-royal rounded-xl -z-10 shadow-[0_0_20px_rgba(3,50,173,0.5)] border border-royal-light/20"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
-                </button>
-              ))}
-            </div>
+        <div className="flex justify-center mb-16">
+          <div className="inline-flex p-1.5 bg-white/[0.03] backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
+            {(['tshirt', 'tank'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "px-8 md:px-12 py-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 relative",
+                  activeTab === tab 
+                    ? "text-ice shadow-xl" 
+                    : "text-ice/40 hover:text-ice/80"
+                )}
+              >
+                {activeTab === tab && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 bg-royal rounded-xl -z-10 shadow-[0_0_20px_rgba(3,50,173,0.5)] border border-royal-light/20"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         <motion.div 
           layout
@@ -517,7 +454,6 @@ export function ModelsSection({
                   isSelected={selectedModelId === model.id}
                   onSelect={() => onSelectModel(model)}
                   eventInfo={eventInfo}
-                  allModels={models}
                 />
               </motion.div>
             ))}

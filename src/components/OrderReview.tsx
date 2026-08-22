@@ -12,16 +12,14 @@ interface OrderReviewProps {
   customer: CustomerData;
   items: OrderItem[];
   eventInfo: AvCatalogEvent;
-  catalogModels: any[];
   onBack: () => void;
   onSuccess: (order: AvCreatedOrder, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => void;
-  isMultiModel?: boolean;
 }
 
 
 type SubmissionStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-export function OrderReview({ customer, items, eventInfo, catalogModels, onBack, onSuccess, isMultiModel = false }: OrderReviewProps) {
+export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: OrderReviewProps) {
   const [status, setStatus] = useState<SubmissionStatus>('idle');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
@@ -156,13 +154,12 @@ export function OrderReview({ customer, items, eventInfo, catalogModels, onBack,
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto space-y-8 px-6 lg:px-8 py-4"
+      className="max-w-4xl mx-auto space-y-8 px-6 lg:px-0"
     >
-      <div className="text-center mb-6">
-        <h2 className="text-4xl md:text-5xl font-heading font-black uppercase mb-2 tracking-tighter">Revise seu Pedido</h2>
-        <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes antes de finalizar</p>
+      <div className="text-center mb-12">
+        <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">Revise sua Camisa</h2>
+        <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes da sua CAMISA OFICIAL antes de finalizar</p>
       </div>
-
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-1 space-y-8">
@@ -190,7 +187,7 @@ export function OrderReview({ customer, items, eventInfo, catalogModels, onBack,
         </div>
 
         <div className="md:col-span-2 space-y-8">
-          <OrderItemsSummary items={items} eventInfo={eventInfo} catalogModels={catalogModels} onRemove={() => {}} onEdit={() => {}} disabled isMultiModel={isMultiModel} />
+          <OrderItemsSummary items={items} eventInfo={eventInfo} onRemove={() => {}} onEdit={() => {}} disabled />
           
           <div className="bg-royal/10 border border-royal/20 p-8 rounded-[32px] space-y-8 overflow-hidden">
             {/* TURNSTILE TEMPORARILY DISABLED

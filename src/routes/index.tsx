@@ -17,7 +17,6 @@ import { OrderItemsSummary } from "@/components/OrderItemsSummary";
 import { OrderReview } from "@/components/OrderReview";
 import { OrderSuccess } from "@/components/OrderSuccess";
 import { Toaster } from "@/components/ui/sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -37,12 +36,12 @@ export const Route = createFileRoute("/")({
       {
         property: "og:image",
         content:
-          "https://camisa9torneio.lovable.app/__l5e/assets-v1/134e51cc-4df3-4151-ab64-d073785a4be6/camisa_oficial_frente.png",
+          "https://camisa9torneio.lovable.app/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp",
       },
       {
         name: "twitter:image",
         content:
-          "https://camisa9torneio.lovable.app/__l5e/assets-v1/134e51cc-4df3-4151-ab64-d073785a4be6/camisa_oficial_frente.png",
+          "https://camisa9torneio.lovable.app/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp",
       },
     ],
     links: [
@@ -74,16 +73,12 @@ function Index() {
   const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null);
   const [orderViewToken, setOrderViewToken] = useState<string | null>(null);
   const [orderViewExpiresAt, setOrderViewExpiresAt] = useState<number | null>(null);
-  
-  // Modal de Revisão
-  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   const handleSuccess = (order: any, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => {
     setCreatedOrder(order);
     setReceiptAccessToken(receiptToken);
     setOrderViewToken(viewToken);
     setOrderViewExpiresAt(viewExpiresAt);
-    setIsReviewOpen(false);
     setStep("success");
   };
 
@@ -96,7 +91,6 @@ function Index() {
   };
 
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null);
-  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,7 +113,7 @@ function Index() {
   }, [loadCatalog]);
 
   const activeModel = useMemo(() => {
-    if (!catalog?.data?.models || catalog.data.models.length === 0) return null;
+    if (!catalog?.data?.models) return null;
 
     if (editingItemId) {
       const editingItem = items.find((i) => i.local_id === editingItemId);
@@ -128,13 +122,8 @@ function Index() {
       }
     }
 
-    if (selectedModelId) {
-      const selected = catalog.data.models.find((m) => m.id === selectedModelId);
-      if (selected) return selected;
-    }
-
-    return catalog.data.models[0] || null;
-  }, [catalog, editingItemId, items, selectedModelId]);
+    return catalog.data.models.find((m) => m.code === "TSHIRT-01") || catalog.data.models[0];
+  }, [catalog, editingItemId, items]);
 
   const editingItem = useMemo(() => {
     return items.find((i) => i.local_id === editingItemId) || null;
@@ -142,283 +131,6 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
-      {/* RECUPERAÇÃO EXATA DO PROJETO — RESTAURAR B4B
-
-Quero interromper todas as alterações posteriores e RESTAURAR EXATAMENTE a versão do projeto correspondente ao ponto identificado no histórico como:
-
-B4B
-
-Referência da conversa/desenvolvimento:
-
-“Pode publicar a B4B.”
-
-ESTE É O PONTO EXATO QUE DEVE SER RECUPERADO.
-
-Não quero uma reconstrução aproximada.
-Não quero corrigir a versão atual.
-Não quero combinar B4B com funcionalidades posteriores.
-Não quero redesign.
-
-Quero o projeto exatamente como estava na B4B.
-
----
-
-1. LOCALIZAR B4B NO HISTÓRICO
-
-Utilize o histórico real do projeto:
-
-* version history;
-* Git history;
-* commits;
-* snapshots/checkpoints;
-* histórico interno do Lovable.
-
-Localize a versão correspondente ao momento em que a B4B estava concluída e pronta para publicação.
-
-A referência é:
-
-“Pode publicar a B4B.”
-
-Não utilizar ETAPA 15.1, 15.2, 15.3, 15.4, 16.1 ou qualquer versão posterior como base.
-
-A BASE CORRETA É B4B.
-
----
-
-2. CRIAR BACKUP ANTES
-
-Antes de restaurar:
-
-crie um snapshot/branch de segurança do estado atual.
-
-Exemplo:
-
-backup-before-b4b-restore
-
-Isso serve somente para segurança.
-
-Depois prossiga com a restauração.
-
----
-
-3. RESTAURAÇÃO DEVE SER EXATA
-
-Restaure os arquivos da aplicação para o estado exato da B4B.
-
-Não tente reproduzir visualmente a B4B usando o código atual.
-
-Não faça alterações manuais para “deixar parecido”.
-
-Utilize o snapshot/revisão real daquela versão.
-
-Queremos recuperar:
-
-* layout;
-* hero;
-* textos;
-* frase inicial;
-* posicionamento dos elementos;
-* apresentação das camisas;
-* formulário;
-* navegação;
-* identidade visual;
-* componentes;
-* comportamento da página;
-
-EXATAMENTE como estavam na B4B.
-
----
-
-4. NÃO PRESERVAR FUNCIONALIDADES POSTERIORES
-
-Não misture a B4B com recursos criados depois dela.
-
-Se uma funcionalidade NÃO EXISTIA na B4B:
-
-não deve permanecer apenas porque foi adicionada posteriormente.
-
-Isso inclui qualquer alteração posterior em:
-
-* prévia de personalização;
-* revisão redesenhada;
-* sticky;
-* novos layouts;
-* reorganização de OrderConfigurator;
-* mudanças posteriores na ModelsSection;
-* alterações de UX;
-* novos componentes visuais;
-* mudanças estruturais.
-
-PRIORIDADE:
-
-FIDELIDADE TOTAL À B4B.
-
----
-
-5. BANCO E DADOS
-
-NÃO fazer rollback destrutivo do banco de dados.
-
-NÃO apagar pedidos.
-
-NÃO excluir tabelas.
-
-NÃO alterar secrets.
-
-NÃO alterar configurações de produção.
-
-NÃO executar migrations de rollback automaticamente.
-
-Neste momento, restaurar prioritariamente o CÓDIGO/FRONTEND/APLICAÇÃO para a B4B.
-
-Se a versão B4B exigir alguma configuração específica incompatível com o banco atual:
-
-NÃO improvisar.
-
-Informe no relatório antes de alterar banco ou infraestrutura.
-
----
-
-6. NÃO FAZER NOVAS MELHORIAS
-
-Durante a restauração:
-
-NÃO melhorar design.
-
-NÃO modernizar componentes.
-
-NÃO alterar cores.
-
-NÃO alterar textos.
-
-NÃO alterar espaçamentos.
-
-NÃO adicionar funcionalidades.
-
-NÃO corrigir coisas que não impeçam a B4B de funcionar.
-
-NÃO adaptar para as etapas posteriores.
-
-A B4B já estava aprovada.
-
-Queremos aquela versão.
-
----
-
-7. APÓS RESTAURAR
-
-Executar:
-
-TypeScript/typecheck
-
-Build
-
-Abrir a aplicação restaurada e conferir visualmente.
-
-Confirmar que a página voltou a corresponder à B4B.
-
----
-
-8. TESTAR SEM REDESENHAR
-
-Verificar apenas se:
-
-* página inicial abre;
-* hero original aparece;
-* frase original aparece;
-* produtos/modelos aparecem como na B4B;
-* seleção funciona;
-* formulário funciona;
-* navegação funciona;
-* não existem erros críticos de console.
-
-Se algum problema funcional ocorrer por incompatibilidade com configuração atual:
-
-NÃO iniciar refatoração.
-
-Documentar o problema.
-
----
-
-9. PUBLICAÇÃO
-
-Depois de restaurar com sucesso e confirmar:
-
-TYPECHECK: PASS
-BUILD: PASS
-
-publique a B4B restaurada no mesmo ambiente de produção.
-
-Não publique nenhuma versão híbrida.
-
-A versão publicada deve corresponder ao snapshot B4B recuperado.
-
----
-
-10. RELATÓRIO FINAL
-
-Informar:
-
-B4B SNAPSHOT FOUND:
-YES / NO
-
-IDENTIFICADOR DA VERSÃO:
-commit/snapshot/version identificado
-
-BACKUP DO ESTADO ATUAL:
-CREATED / NOT CREATED
-
-B4B RESTORED:
-YES / NO
-
-TYPECHECK:
-PASS / FAIL
-
-BUILD:
-PASS / FAIL
-
-HERO B4B:
-RESTORED / FAIL
-
-TEXTO/FRASE INICIAL B4B:
-RESTORED / FAIL
-
-LAYOUT B4B:
-RESTORED / FAIL
-
-PRODUTOS/MODELOS B4B:
-RESTORED / FAIL
-
-ORDER FLOW B4B:
-PASS / FAIL
-
-PRODUCTION DEPLOY:
-SUCCESS / FAIL / NOT EXECUTED
-
-DATABASE MODIFIED:
-NO
-
-SECRETS MODIFIED:
-NO
-
-MIGRATIONS EXECUTED:
-NO
-
-ALTERAÇÕES POSTERIORES MANTIDAS:
-NONE
-
-FINAL STATUS:
-
-B4B FULLY RESTORED
-
-ou
-
-B4B RESTORE INCOMPLETE
-
-PARE APÓS RESTAURAR E PUBLICAR A B4B.
-
-NÃO CONTINUE DESENVOLVENDO. */}
-
       <Header />
 
       <main>
@@ -428,12 +140,8 @@ NÃO CONTINUE DESENVOLVENDO. */}
             <div id="camisa">
               <ModelsSection
                 models={catalog?.data?.models || []}
-                selectedModelId={selectedModelId}
-                onSelectModel={(model) => {
-                  setSelectedModelId(model.id);
-                  setEditingItemId(null);
-                  setStep("configurator");
-                }}
+                selectedModelId={null}
+                onSelectModel={() => setStep("configurator")}
                 eventInfo={catalog?.data?.event || ({} as any)}
               />
             </div>
@@ -441,11 +149,11 @@ NÃO CONTINUE DESENVOLVENDO. */}
             <FinalCTA />
           </>
         )}
+
         {currentStep === "configurator" && activeModel && catalog && (
           <OrderConfigurator
             selectedModel={activeModel}
             eventInfo={catalog.data.event}
-            isMultiModel={catalog.data.models.length > 1}
             onAddItem={(item) => {
               addItem(item);
               setStep("summary");
@@ -468,7 +176,6 @@ NÃO CONTINUE DESENVOLVENDO. */}
           <OrderItemsSummary
             items={items}
             eventInfo={catalog.data.event}
-            isMultiModel={catalog.data.models.length > 1}
             onRemove={removeItem}
             onEdit={(localId) => {
               setEditingItemId(localId);
@@ -509,33 +216,22 @@ NÃO CONTINUE DESENVOLVENDO. */}
               <Button
                 className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
                 disabled={!customer.name || !customer.whatsapp || !customer.email}
-                onClick={() => setIsReviewOpen(true)}
+                onClick={() => setStep("review")}
               >
                 Revisar Pedido
               </Button>
             </div>
-
-            <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-navy border-white/10 p-0 rounded-[32px]">
-                <DialogHeader className="p-8 pb-0">
-                  <DialogTitle className="sr-only">Revisão do Pedido</DialogTitle>
-                </DialogHeader>
-                {catalog && (
-                  <div className="pb-8">
-                    <OrderReview
-                      customer={customer}
-                      items={items}
-                      eventInfo={catalog.data.event}
-                      catalogModels={catalog.data.models}
-                      onBack={() => setIsReviewOpen(false)}
-                      onSuccess={handleSuccess}
-                      isMultiModel={catalog.data.models.length > 1}
-                    />
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
           </div>
+        )}
+
+        {currentStep === "review" && catalog && (
+          <OrderReview
+            customer={customer}
+            items={items}
+            eventInfo={catalog.data.event}
+            onBack={() => setStep("customer_data")}
+            onSuccess={handleSuccess}
+          />
         )}
 
         {currentStep === "success" && createdOrder && catalog && (
@@ -556,5 +252,3 @@ NÃO CONTINUE DESENVOLVENDO. */}
     </div>
   );
 }
-
-

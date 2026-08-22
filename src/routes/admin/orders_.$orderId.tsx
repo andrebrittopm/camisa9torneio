@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 import { useServerFn } from '@tanstack/react-start'
 import { toast } from 'sonner'
-import { AdminStatusBadge, getPaymentStatusLabel, getOrderStatusLabel, getAdminProductDisplayName } from '@/utils/av-admin-status-mapper'
+import { AdminStatusBadge, getPaymentStatusLabel, getOrderStatusLabel } from '@/utils/av-admin-status-mapper'
 
 
 export const Route = createFileRoute('/admin/orders_/$orderId')({
@@ -251,8 +251,8 @@ function AdminOrderDetailPage() {
                 <div key={item.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-4">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-white text-lg">{getAdminProductDisplayName(item.modelCode, item.modelName)}</h4>
-                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">Tamanho: {item.sizeOption === 'OUTRO' ? item.customSize : item.sizeOption}</p>
+                      <h4 className="font-bold text-white text-lg">{item.modelName}</h4>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{item.shirtType}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-gold font-black">{item.quantity}x</p>
@@ -357,7 +357,7 @@ function AdminOrderDetailPage() {
                       <h3 className="text-sm font-black uppercase tracking-widest">Pedido Cancelado</h3>
                     </div>
                     
-                    {order.paymentStatus === 'payment_confirmed' && (
+                    {order.paymentStatus === 'paid' && (
                       <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
                         <div className="flex items-center gap-2">
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
@@ -515,7 +515,7 @@ function AdminOrderDetailPage() {
               <div className="space-y-6">
                  <div>
                     <p className="text-[8px] text-slate-500 font-black uppercase mb-1">Status Global</p>
-                    <p className="text-lg text-white font-black uppercase">{getPaymentStatusLabel(order.paymentStatus)}</p>
+                    <p className="text-lg text-white font-black uppercase">{order.paymentStatus}</p>
                  </div>
                  
                  <div className="space-y-4 pt-4 border-t border-white/5">
@@ -878,11 +878,11 @@ function AdminOrderDetailPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Status Atual:</span>
-                <span className="text-white font-bold uppercase">{getOrderStatusLabel(order.orderStatus)}</span>
+                <span className="text-white font-bold uppercase">{order.orderStatus}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Pagamento:</span>
-                <span className="text-white font-bold uppercase">{getPaymentStatusLabel(order.paymentStatus)}</span>
+                <span className="text-white font-bold uppercase">{order.paymentStatus}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-white/5">
                 <span className="text-slate-500 uppercase font-black text-[9px]">Total:</span>
@@ -890,7 +890,7 @@ function AdminOrderDetailPage() {
               </div>
             </div>
 
-            {order.paymentStatus === 'payment_confirmed' && (
+            {order.paymentStatus === 'paid' && (
               <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
