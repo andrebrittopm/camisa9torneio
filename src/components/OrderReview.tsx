@@ -154,9 +154,9 @@ export function OrderReview({ customer, items, eventInfo, onBack, onSuccess }: O
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-4xl mx-auto space-y-8 px-6 lg:px-0"
+      className="max-w-4xl mx-auto space-y-8 px-6 lg:px-0 pt-20 md:pt-24"
     >
-      <div className="text-center mb-12">
+      <div className="text-center mb-12 pt-4 md:pt-8">
         <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">Revise sua Camisa</h2>
         <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Confira os detalhes da sua CAMISA OFICIAL antes de finalizar</p>
       </div>
