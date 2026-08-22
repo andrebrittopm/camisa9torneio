@@ -86,3 +86,83 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const orderState = useOrderState();
+
+  const loadCatalog = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchAvCatalog();
+      setCatalog(data);
+    } catch (err) {
+      setError("Não foi possível carregar as informações do torneio.");
+      toast.error("Erro ao conectar com o servidor.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCatalog();
+  }, [loadCatalog]);
+
+  const activeEvent = useMemo(() => catalog?.events.find(e => e.is_active), [catalog]);
+  const models = useMemo(() => catalog?.models || [], [catalog]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-av-navy flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-av-gold animate-spin mx-auto" />
+          <p className="text-av-gold font-sora">Carregando Arena...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !activeEvent) {
+    return (
+      <div className="min-h-screen bg-av-navy flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-av-navy-light/50 border border-white/10 p-8 rounded-2xl text-center space-y-6">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
+          <h2 className="text-2xl font-sora text-white">Ops! Algo deu errado</h2>
+          <p className="text-white/60 font-inter">{error || "Nenhum evento ativo no momento."}</p>
+          <Button 
+            onClick={loadCatalog}
+            className="w-full bg-av-gold text-av-navy hover:bg-av-gold/90"
+          >
+            <RefreshCcw className="w-4 h-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-av-navy selection:bg-av-gold selection:text-av-navy">
+      <Header />
+      
+      {orderState.step === 'idle' && (
+        <>
+          <HeroSection eventName={activeEvent.name} />
+          <ModelsSection models={models} />
+          <HowItWorks />
+          <FinalCTA />
+        </>
+      )}
+
+      {orderState.step === 'configurator' && <OrderConfigurator models={models} />}
+      {orderState.step === 'customer_data' && <CustomerDataForm />}
+      {orderState.step === 'items_summary' && <OrderItemsSummary />}
+      {orderState.step === 'review' && <OrderReview />}
+      {orderState.step === 'success' && <OrderSuccess />}
+
+      <Footer />
+      <Toaster position="top-center" richColors />
+    </div>
+  );
+}
