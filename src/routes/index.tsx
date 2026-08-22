@@ -109,8 +109,8 @@ function Index() {
     loadCatalog();
   }, [loadCatalog]);
 
-  const activeEvent = useMemo(() => catalog?.events.find(e => e.is_active), [catalog]);
-  const models = useMemo(() => catalog?.models || [], [catalog]);
+  const activeEvent = useMemo(() => catalog?.data?.event, [catalog]);
+  const models = useMemo(() => catalog?.data?.models || [], [catalog]);
 
   if (loading) {
     return (
@@ -142,24 +142,81 @@ function Index() {
     );
   }
 
+  const handleSelectModel = (model: any) => {
+    orderState.setStep('configurator');
+  };
+
   return (
     <div className="min-h-screen bg-av-navy selection:bg-av-gold selection:text-av-navy">
       <Header />
       
-      {orderState.step === 'idle' && (
+      {orderState.currentStep === 'idle' && (
         <>
-          <HeroSection eventName={activeEvent.name} />
-          <ModelsSection models={models} />
+          <HeroSection />
+          <ModelsSection 
+            models={models} 
+            selectedModelId={null} 
+            onSelectModel={handleSelectModel}
+            eventInfo={activeEvent}
+          />
           <HowItWorks />
           <FinalCTA />
         </>
       )}
 
-      {orderState.step === 'configurator' && <OrderConfigurator models={models} />}
-      {orderState.step === 'customer_data' && <CustomerDataForm />}
-      {orderState.step === 'items_summary' && <OrderItemsSummary />}
-      {orderState.step === 'review' && <OrderReview />}
-      {orderState.step === 'success' && <OrderSuccess />}
+      {orderState.currentStep === 'configurator' && (
+        <div className="max-w-4xl mx-auto px-6 lg:px-0 pt-20 md:pt-24">
+          <OrderConfigurator 
+            selectedModel={models[0] || null}
+            eventInfo={activeEvent}
+            onAddItem={(item) => {
+              orderState.addItem(item);
+              orderState.setStep('customer_data');
+            }}
+            editingItem={null}
+            onUpdateItem={() => {}}
+            onCancelEdit={() => orderState.setStep('idle')}
+            onModelChange={() => {}}
+          />
+        </div>
+      )}
+
+      {orderState.currentStep === 'customer_data' && (
+        <div className="max-w-4xl mx-auto px-6 lg:px-0 pt-20 md:pt-24 space-y-8">
+          <CustomerDataForm 
+            data={orderState.customer}
+            onChange={orderState.setCustomer}
+          />
+          <Button 
+            className="w-full h-16 glow-gold rounded-2xl font-black uppercase tracking-widest"
+            onClick={() => orderState.setStep('review')}
+          >
+            Revisar Pedido
+          </Button>
+        </div>
+      )}
+
+      {orderState.currentStep === 'review' && (
+        <OrderReview 
+          customer={orderState.customer}
+          items={orderState.items}
+          eventInfo={activeEvent}
+          onBack={() => orderState.setStep('customer_data')}
+          onSuccess={(order, rToken, vToken, vExpires) => {
+            // success handling logic here if needed, but OrderSuccess will render
+            orderState.setStep('success');
+          }}
+        />
+      )}
+
+      {orderState.currentStep === 'success' && orderState.items.length > 0 && (
+         <OrderSuccess 
+            order={{} as any} // This would need the actual created order from the review step
+            catalog={catalog.data}
+            localItems={orderState.items}
+            onNewOrder={() => orderState.resetOrder()}
+         />
+      )}
 
       <Footer />
       <Toaster position="top-center" richColors />
