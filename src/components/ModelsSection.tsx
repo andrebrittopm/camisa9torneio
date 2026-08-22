@@ -21,6 +21,13 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
   const [isZoomed, setIsZoomed] = useState(false);
 
   useEffect(() => {
+    if (isOpen) {
+      setActiveSide('front');
+      setIsZoomed(false);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (isZoomed) setIsZoomed(false);
@@ -58,14 +65,29 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${activeSide}-${model.id}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, x: activeSide === 'front' ? -20 : 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: activeSide === 'front' ? 20 : -20 }}
                 transition={{ duration: 0.3 }}
                 className={cn(
                   "relative w-full h-full flex items-center justify-center transition-transform duration-500",
                   isZoomed ? "scale-[2.5] z-50 cursor-zoom-out" : "cursor-zoom-in"
                 )}
+                onPanEnd={(_, info) => {
+                  if (isZoomed) return;
+                  const threshold = 60;
+                  if (info.offset.x < -threshold) {
+                    if (activeSide === 'front' && hasBackImage) {
+                      setActiveSide('back');
+                      setIsZoomed(false);
+                    }
+                  } else if (info.offset.x > threshold) {
+                    if (activeSide === 'back') {
+                      setActiveSide('front');
+                      setIsZoomed(false);
+                    }
+                  }
+                }}
                 onClick={() => setIsZoomed(!isZoomed)}
               >
                 {currentImage ? (
@@ -143,6 +165,16 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                   </div>
                 )}
 
+                {/* Gesture Indicator - Mobile/Touch context */}
+                {!isZoomed && hasBackImage && (
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none opacity-20 animate-pulse lg:hidden">
+                    <div className="flex items-center gap-3">
+                      <ChevronLeft className="w-3 h-3" />
+                      <span className="text-[8px] font-black uppercase tracking-[0.3em]">Deslize para o lado</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
