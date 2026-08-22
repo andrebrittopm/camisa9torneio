@@ -1,3 +1,7 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+/*
 VISUAL-CAMISA-R1 — RESULTADO
 
 ASSET FRENTE:
@@ -45,6 +49,7 @@ PASS
 
 FINAL:
 A) READY FOR PREVIEW REVIEW
+*/
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { ModelsSection } from "@/components/ModelsSection";
