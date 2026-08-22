@@ -137,7 +137,7 @@ function Index() {
         {currentStep === "idle" && (
           <>
             <HeroSection />
-            <div id="camisa">
+            <div>
               <ModelsSection
                 models={catalog?.data?.models || []}
                 selectedModelId={null}
