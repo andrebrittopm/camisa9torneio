@@ -222,15 +222,17 @@ function Index() {
         )}
 
         {currentStep === "summary" && catalog && (
-          <OrderItemsSummary
-            items={items}
-            eventInfo={catalog.data.event}
-            onRemove={removeItem}
-            onEdit={(localId) => {
-              setEditingItemId(localId);
-              setStep("configurator");
-            }}
-          />
+          <div className="max-w-4xl mx-auto px-6 pt-20 md:pt-24">
+            <OrderItemsSummary
+              items={items}
+              eventInfo={catalog.data.event}
+              onRemove={removeItem}
+              onEdit={(localId) => {
+                setEditingItemId(localId);
+                setStep("configurator");
+              }}
+            />
+          </div>
         )}
 
         {currentStep === "summary" && items.length > 0 && (
