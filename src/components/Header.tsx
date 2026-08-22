@@ -67,6 +67,10 @@ export function Header() {
             <a
               key={link.label}
               href={link.href}
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToSection(link.href);
+              }}
               className="text-[11px] font-black hover:text-gold transition-all duration-300 uppercase tracking-[0.2em] relative group py-2"
             >
               {link.label}
@@ -106,7 +110,11 @@ export function Header() {
                 key={link.label}
                 href={link.href}
                 className="text-lg font-black py-3 uppercase tracking-[0.2em] border-b border-white/5 hover:text-gold transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  navigateToSection(link.href);
+                }}
               >
                 {link.label}
               </a>
