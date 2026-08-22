@@ -44,10 +44,10 @@ import { Button } from "@/components/ui/button";
 import { useOrderState } from "@/lib/order-state";
 import { OrderConfigurator } from "@/components/OrderConfigurator";
 import { CustomerDataForm } from "@/components/CustomerDataForm";
-import { OrderItemsSummary } from "@/components/OrderItemsSummary";
 import { OrderReview } from "@/components/OrderReview";
 import { OrderSuccess } from "@/components/OrderSuccess";
 import { Toaster } from "@/components/ui/sonner";
+import type { AvCreatedOrder } from "@/lib/av-order-client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -90,6 +90,12 @@ function Index() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const orderState = useOrderState();
+  const [createdOrder, setCreatedOrder] = useState<AvCreatedOrder | null>(null);
+  const [tokens, setTokens] = useState<{receipt: string | null, view: string | null, expires: number | null}>({
+    receipt: null,
+    view: null,
+    expires: null
+  });
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -123,7 +129,7 @@ function Index() {
     );
   }
 
-  if (error || !activeEvent) {
+  if (error || !activeEvent || !catalog?.data) {
     return (
       <div className="min-h-screen bg-av-navy flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-av-navy-light/50 border border-white/10 p-8 rounded-2xl text-center space-y-6">
@@ -190,6 +196,7 @@ function Index() {
           <Button 
             className="w-full h-16 glow-gold rounded-2xl font-black uppercase tracking-widest"
             onClick={() => orderState.setStep('review')}
+            disabled={orderState.items.length === 0}
           >
             Revisar Pedido
           </Button>
@@ -203,18 +210,25 @@ function Index() {
           eventInfo={activeEvent}
           onBack={() => orderState.setStep('customer_data')}
           onSuccess={(order, rToken, vToken, vExpires) => {
-            // success handling logic here if needed, but OrderSuccess will render
+            setCreatedOrder(order);
+            setTokens({ receipt: rToken, view: vToken, expires: vExpires });
             orderState.setStep('success');
           }}
         />
       )}
 
-      {orderState.currentStep === 'success' && orderState.items.length > 0 && (
+      {orderState.currentStep === 'success' && createdOrder && (
          <OrderSuccess 
-            order={{} as any} // This would need the actual created order from the review step
+            order={createdOrder}
             catalog={catalog.data}
             localItems={orderState.items}
-            onNewOrder={() => orderState.resetOrder()}
+            onNewOrder={() => {
+              orderState.resetOrder();
+              setCreatedOrder(null);
+            }}
+            receiptAccessToken={tokens.receipt}
+            orderViewToken={tokens.view}
+            orderViewExpiresAt={tokens.expires}
          />
       )}
 
