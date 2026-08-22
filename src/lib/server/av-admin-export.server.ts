@@ -63,6 +63,7 @@ export async function generateProductionWorkbookInternal() {
       order_seq,
       created_at,
       payment_status,
+      order_status,
       av_order_items (
         model_name,
         shirt_type,
