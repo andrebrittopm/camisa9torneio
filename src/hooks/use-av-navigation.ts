@@ -8,13 +8,12 @@ export function useAvNavigation() {
 
   const navigateToSection = useCallback((sectionId: string): void => {
     const id = sectionId.startsWith('#') ? sectionId.substring(1) : sectionId;
-    console.log(`[useAvNavigation] navigateToSection: ${id}, currentStep: ${currentStep}`);
     
     if (currentStep !== 'idle') {
-      console.log(`[useAvNavigation] Setting pending target: ${id} and switching to idle`);
       setPendingTarget(id);
       setStep('idle');
     } else {
+
 
       const el = document.getElementById(id);
       if (el) {
@@ -28,8 +27,8 @@ export function useAvNavigation() {
     let timer: ReturnType<typeof setTimeout>;
     
     if (currentStep === 'idle' && pendingTarget) {
-      console.log(`[useAvNavigation] Idle reached, processing pending target: ${pendingTarget}`);
       timer = setTimeout(() => {
+
 
         const el = document.getElementById(pendingTarget);
         if (el) {
