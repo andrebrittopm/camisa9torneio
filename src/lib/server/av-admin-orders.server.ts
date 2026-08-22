@@ -405,36 +405,75 @@ export async function deleteAdminOrderInternal(params: {
 
   const correlationId = crypto.randomUUID();
 
-  // 1. Buscar caminhos de storage para remoção
+  // 1. Validar pedido e código ANTES do storage
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from('av_orders')
+    .select('order_seq, event_id')
+    .eq('id', params.orderId)
+    .single();
+
+  if (orderError || !order) {
+    return { success: false, code: 'ORDER_NOT_FOUND' };
+  }
+
+  // Obter o ano do evento para construir o código público
+  const { data: event, error: eventError } = await supabaseAdmin
+    .from('av_events')
+    .select('event_year')
+    .eq('id', order.event_id)
+    .single();
+
+  if (eventError || !event) {
+    return { success: false, code: 'EVENT_NOT_FOUND' };
+  }
+
+  const realOrderCode = `AV-${event.event_year}-${order.order_seq.toString().padStart(4, '0')}`;
+  
+  if (realOrderCode !== params.expectedOrderCode.trim()) {
+    return { success: false, code: 'ORDER_CODE_MISMATCH' };
+  }
+
+  // 2. Buscar caminhos de storage e validar prefixo
   const { data: receipts, error: receiptsError } = await supabaseAdmin
     .from('av_payment_receipts')
     .select('storage_path')
     .eq('order_id', params.orderId);
 
   if (receiptsError) {
-    console.error(`[deleteAdminOrderInternal] Error fetching receipts for deletion:`, receiptsError);
     throw new Error('FAILED_TO_FETCH_RECEIPTS_FOR_DELETION');
   }
 
-  // 2. Remover arquivos do Storage (se existirem)
+  const validPaths: string[] = [];
   if (receipts && receipts.length > 0) {
-    const paths = receipts.map(r => r.storage_path);
+    const orderPrefix = `${params.orderId}/`;
+    for (const r of receipts) {
+      if (!r.storage_path) continue;
+      // Validar que o path pertence ao prefixo do pedido
+      if (!r.storage_path.startsWith(orderPrefix)) {
+        return { success: false, code: 'INVALID_STORAGE_PATH' };
+      }
+      validPaths.push(r.storage_path);
+    }
+  }
+
+  // 3. Remover arquivos do Storage (se existirem e forem válidos)
+  if (validPaths.length > 0) {
+    const uniquePaths = Array.from(new Set(validPaths));
     const { error: storageError } = await supabaseAdmin.storage
       .from('av-payment-receipts')
-      .remove(paths);
+      .remove(uniquePaths);
 
     if (storageError) {
       console.error(`[deleteAdminOrderInternal] Storage deletion failed:`, storageError);
-      // Fail-Closed: Não prosseguir se falhar a remoção física (exceto se for "não encontrado", o que o .remove trata idempotentemente)
       return { success: false, code: 'STORAGE_DELETE_FAILED' };
     }
   }
 
-  // 3. Executar RPC transacional
+  // 4. Executar RPC transacional
   const { data, error } = await supabaseAdmin.rpc('av_admin_delete_order' as any, {
     p_order_id: params.orderId,
     p_admin_id: params.adminId,
-    p_expected_order_code: params.expectedOrderCode,
+    p_expected_order_code: params.expectedOrderCode.trim(),
     p_correlation_id: correlationId
   });
 

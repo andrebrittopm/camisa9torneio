@@ -40,6 +40,7 @@ export const Route = createFileRoute('/admin/orders')({
     if (!context.authenticated || !context.active) {
       throw redirect({ to: '/admin/login' });
     }
+    return context;
   },
   validateSearch: (search) => searchSchema.parse(search),
   loaderDeps: ({ search }) => ({ search }),
