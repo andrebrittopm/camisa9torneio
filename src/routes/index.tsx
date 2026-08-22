@@ -1,4 +1,178 @@
-import { createFileRoute } from "@tanstack/react-router";
+ETAPA 13.1 — CADASTRAR IMAGEM REAL DA PRIMEIRA REGATA OFICIAL
+
+OBJETIVO:
+Substituir o placeholder/mockup do primeiro modelo da categoria REGATA pela imagem real que estou anexando neste comando.
+
+IMPORTANTE:
+Esta etapa é exclusivamente visual e de catálogo.
+
+NÃO alterar:
+
+* fluxo de criação de pedidos;
+* create-order;
+* RPC av_create_order;
+* Supabase;
+* políticas RLS;
+* idempotência;
+* Turnstile;
+* CORS;
+* rate limit;
+* pagamento;
+* upload de comprovante;
+* autenticação;
+* painel administrativo;
+* valores dos produtos;
+* tamanhos;
+* personalização;
+* estrutura atual do formulário.
+
+---
+
+1. MODELO
+
+Utilizar a imagem anexada como imagem oficial do PRIMEIRO MODELO DA CATEGORIA REGATA.
+
+Nome de exibição:
+
+REGATA OFICIAL — MODELO 01
+
+Categoria:
+
+REGATA
+
+Preço:
+Manter o preço atualmente configurado no evento/banco.
+
+---
+
+2. IMAGEM
+
+A imagem possui:
+
+* frente da regata;
+* costas da regata;
+* identidade visual azul, amarelo e branco;
+* logo Amigos do Vôlei;
+* exemplo de personalização com nome e número.
+
+Não recriar a arte.
+
+Não gerar uma nova camisa.
+
+Não modificar cores, logos ou layout.
+
+Usar exatamente a imagem anexada como imagem comercial do produto.
+
+---
+
+3. MODELSSECTION
+
+No card correspondente ao primeiro modelo de Regata:
+
+Substituir o placeholder atual pela nova imagem.
+
+A imagem deverá:
+
+* preencher bem a área disponível;
+* manter proporção original;
+* usar object-contain;
+* não sofrer cortes;
+* ficar centralizada;
+* possuir boa visualização em desktop e mobile;
+* não distorcer a camisa.
+
+Manter o mesmo padrão visual dos demais cards.
+
+---
+
+4. VISUALIZAÇÃO AMPLIADA
+
+Ao tocar/clicar na imagem do modelo, permitir uma visualização maior.
+
+Pode utilizar modal/lightbox.
+
+A visualização ampliada deve:
+
+* mostrar a imagem completa;
+* preservar proporção;
+* permitir fechar facilmente;
+* funcionar corretamente no celular;
+* não interferir na seleção do modelo.
+
+---
+
+5. SELEÇÃO DO MODELO
+
+Ao selecionar esta Regata:
+
+* manter o funcionamento atual do OrderConfigurator;
+* carregar corretamente o ID real do modelo;
+* manter preço vindo do catálogo/evento;
+* permitir tamanho;
+* quantidade;
+* nome personalizado;
+* número personalizado.
+
+A troca da imagem NÃO pode criar um novo modelo fictício no frontend caso já exista um registro correspondente no catálogo.
+
+Utilizar o modelo real retornado pelo fetchAvCatalog.
+
+---
+
+6. RESPONSIVIDADE
+
+Validar especialmente:
+
+375px
+390px
+430px
+768px
+Desktop
+
+A imagem deve permanecer nítida, centralizada e sem overflow.
+
+---
+
+7. PREPARAÇÃO PARA OS PRÓXIMOS MODELOS
+
+Não implementar ainda o 360°.
+
+Porém, manter a arquitetura preparada para posteriormente suportar:
+
+front_image_url
+back_image_url
+gallery_images
+model_3d_url
+
+Nesta etapa utilizaremos apenas a imagem comercial anexada.
+
+---
+
+8. REGRA DE SEGURANÇA DA ALTERAÇÃO
+
+Faça a menor alteração possível.
+
+Não realizar refatorações desnecessárias.
+
+Não alterar componentes que não sejam necessários para exibir esta imagem.
+
+Não modificar nenhuma funcionalidade já validada.
+
+---
+
+AO FINAL, INFORME:
+
+1. arquivos modificados;
+2. qual modelo do catálogo recebeu a imagem;
+3. onde a imagem foi armazenada/utilizada;
+4. se ModelsSection foi atualizado;
+5. se OrderConfigurator continua utilizando o ID real do catálogo;
+6. resultado do TypeScript/typecheck;
+7. resultado do build;
+8. confirmação de que nenhuma lógica de pedido/pagamento/backend foi alterada.
+
+Não avance para o próximo modelo.
+Pare após concluir esta etapa.
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Header } from "@/components/Header";
