@@ -142,345 +142,282 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
-      {/* CORREÇÃO PRIORITÁRIA — RECUPERAR ELEMENTOS VISUAIS DA LANDING PAGE
+      {/* RECUPERAÇÃO EXATA DO PROJETO — RESTAURAR B4B
 
-O projeto sofreu alterações recentes e elementos importantes que já existiam e estavam aprovados desapareceram da página.
+Quero interromper todas as alterações posteriores e RESTAURAR EXATAMENTE a versão do projeto correspondente ao ponto identificado no histórico como:
 
-NÃO quero um novo design.
+B4B
 
-NÃO quero uma nova estrutura.
+Referência da conversa/desenvolvimento:
 
-Quero recuperar a landing page que já estávamos desenvolvendo e continuar a partir dela.
+“Pode publicar a B4B.”
 
----
+ESTE É O PONTO EXATO QUE DEVE SER RECUPERADO.
 
-OBJETIVO IMEDIATO
+Não quero uma reconstrução aproximada.
+Não quero corrigir a versão atual.
+Não quero combinar B4B com funcionalidades posteriores.
+Não quero redesign.
 
-Recuperar na página pública:
-
-1. A apresentação inicial/hero que existia anteriormente;
-2. A frase principal que aparecia no início da página;
-3. A área onde o visitante conseguia visualizar as camisas;
-4. A CAMISA OFICIAL;
-5. A REGATA OFICIAL.
-
-Esses elementos precisam voltar a ficar VISÍVEIS na landing page.
+Quero o projeto exatamente como estava na B4B.
 
 ---
 
-1. USE O HISTÓRICO DO PROJETO
+1. LOCALIZAR B4B NO HISTÓRICO
 
-Verifique o histórico Git/versões anteriores do projeto e identifique a última versão em que:
+Utilize o histórico real do projeto:
 
-* o hero inicial estava correto;
-* a frase principal aparecia no topo;
-* as camisas apareciam visualmente na página;
-* o layout estava seguindo a identidade visual do torneio.
+* version history;
+* Git history;
+* commits;
+* snapshots/checkpoints;
+* histórico interno do Lovable.
 
-Use essa versão APENAS como referência visual.
+Localize a versão correspondente ao momento em que a B4B estava concluída e pronta para publicação.
 
-NÃO faça rollback completo.
+A referência é:
 
-Recupere somente os elementos que desapareceram.
+“Pode publicar a B4B.”
 
----
+Não utilizar ETAPA 15.1, 15.2, 15.3, 15.4, 16.1 ou qualquer versão posterior como base.
 
-2. NÃO INVENTAR A FRASE
-
-A frase/texto que existia no início da landing page deve ser recuperada do histórico.
-
-NÃO criar uma frase nova.
-
-NÃO reescrever o conteúdo.
-
-NÃO substituir por texto genérico.
-
-Restaurar o texto que já existia na versão anterior aprovada.
+A BASE CORRETA É B4B.
 
 ---
 
-3. CAMISAS DEVEM VOLTAR A APARECER
+2. CRIAR BACKUP ANTES
 
-A landing page precisa novamente mostrar claramente os dois produtos oficiais:
+Antes de restaurar:
 
-CAMISA OFICIAL — TSHIRT-01
+crie um snapshot/branch de segurança do estado atual.
 
-REGATA OFICIAL — TANK-01
+Exemplo:
 
-O visitante deve conseguir visualizar os produtos ANTES de começar a configurar o pedido.
+backup-before-b4b-restore
 
-Não deixar as camisas escondidas somente dentro do formulário/configurador.
+Isso serve somente para segurança.
 
----
-
-4. IMAGENS OFICIAIS
-
-Utilizar os assets atuais já aprovados.
-
-CAMISA OFICIAL:
-
-front_image_url
-back_image_url
-
-REGATA OFICIAL:
-
-front_image_url
-back_image_url
-
-No card/vitrine principal utilizar a imagem da FRENTE.
-
-Não voltar para imagens antigas ou placeholders.
+Depois prossiga com a restauração.
 
 ---
 
-5. VITRINE DOS MODELOS
+3. RESTAURAÇÃO DEVE SER EXATA
 
-Restaurar a seção visual onde o usuário vê os uniformes.
+Restaure os arquivos da aplicação para o estado exato da B4B.
 
-Ela deve apresentar claramente:
+Não tente reproduzir visualmente a B4B usando o código atual.
 
-CAMISA OFICIAL
+Não faça alterações manuais para “deixar parecido”.
 
-REGATA OFICIAL
+Utilize o snapshot/revisão real daquela versão.
 
-com suas respectivas imagens.
+Queremos recuperar:
 
-O visitante deve entender imediatamente:
+* layout;
+* hero;
+* textos;
+* frase inicial;
+* posicionamento dos elementos;
+* apresentação das camisas;
+* formulário;
+* navegação;
+* identidade visual;
+* componentes;
+* comportamento da página;
 
-"Esses são os modelos disponíveis para o 9º Torneio."
-
----
-
-6. INTERAÇÃO JÁ EXISTENTE
-
-Preservar as funcionalidades que já estão funcionando:
-
-* abrir imagem;
-* Frente / Costas;
-* lightbox;
-* zoom 2.5x;
-* swipe;
-* drag;
-* reset do zoom;
-* abertura pela Frente.
-
-NÃO remover essas funções.
+EXATAMENTE como estavam na B4B.
 
 ---
 
-7. FLUXO PRINCIPAL
+4. NÃO PRESERVAR FUNCIONALIDADES POSTERIORES
 
-A experiência da página deve voltar a ser simples:
+Não misture a B4B com recursos criados depois dela.
 
-ENTRAR NA LANDING PAGE
+Se uma funcionalidade NÃO EXISTIA na B4B:
 
-↓
+não deve permanecer apenas porque foi adicionada posteriormente.
 
-VER APRESENTAÇÃO DO 9º TORNEIO
+Isso inclui qualquer alteração posterior em:
 
-↓
+* prévia de personalização;
+* revisão redesenhada;
+* sticky;
+* novos layouts;
+* reorganização de OrderConfigurator;
+* mudanças posteriores na ModelsSection;
+* alterações de UX;
+* novos componentes visuais;
+* mudanças estruturais.
 
-VER CAMISA OFICIAL E REGATA OFICIAL
+PRIORIDADE:
 
-↓
-
-ESCOLHER MODELO
-
-↓
-
-ESCOLHER TAMANHO
-
-↓
-
-INFORMAR NOME E NÚMERO
-
-↓
-
-QUANTIDADE
-
-↓
-
-ADICIONAR AO PEDIDO
-
-↓
-
-REVISAR
-
-↓
-
-FINALIZAR
-
-Esse é o foco do projeto.
+FIDELIDADE TOTAL À B4B.
 
 ---
 
-8. NÃO ESCONDER OS MODELOS
+5. BANCO E DADOS
 
-Verificar se alguma alteração recente em:
+NÃO fazer rollback destrutivo do banco de dados.
 
-ModelsSection
-OrderConfigurator
-index.tsx
-condicionais de renderização
-tabs
-estado do fluxo
+NÃO apagar pedidos.
 
-passou a esconder a vitrine de modelos.
+NÃO excluir tabelas.
 
-Corrigir somente o necessário para que ela volte a aparecer.
+NÃO alterar secrets.
 
----
+NÃO alterar configurações de produção.
 
-9. PRESERVAR O QUE ESTÁ FUNCIONANDO
+NÃO executar migrations de rollback automaticamente.
 
-NÃO alterar:
+Neste momento, restaurar prioritariamente o CÓDIGO/FRONTEND/APLICAÇÃO para a B4B.
 
-* banco de dados;
-* IDs;
-* catálogo;
-* TSHIRT-01;
-* TANK-01;
-* múltiplos itens;
-* carrinho;
-* nome;
-* número;
-* tamanho;
-* quantidade;
-* revisão;
-* cálculo;
-* PIX;
-* comprovante;
-* create-order;
-* av_create_order;
-* RPC;
-* RLS;
-* Turnstile;
-* CORS;
-* rate limit;
-* idempotência.
+Se a versão B4B exigir alguma configuração específica incompatível com o banco atual:
+
+NÃO improvisar.
+
+Informe no relatório antes de alterar banco ou infraestrutura.
 
 ---
 
-10. NÃO FAZER REDESIGN
+6. NÃO FAZER NOVAS MELHORIAS
 
-NÃO:
+Durante a restauração:
 
-* criar sidebar;
-* criar dashboard;
-* trocar a estrutura geral;
-* trocar paleta;
-* mudar toda a tipografia;
-* criar novas seções;
-* remover seções antigas aprovadas;
-* reorganizar a página inteira;
-* adicionar novas funcionalidades.
+NÃO melhorar design.
 
-O objetivo é RECUPERAR.
+NÃO modernizar componentes.
 
-Não redesenhar.
+NÃO alterar cores.
 
----
+NÃO alterar textos.
 
-11. RESPONSIVIDADE
+NÃO alterar espaçamentos.
 
-Após restaurar os elementos, validar:
+NÃO adicionar funcionalidades.
 
-375px
-390px
-430px
-768px
-1024px
-1440px
+NÃO corrigir coisas que não impeçam a B4B de funcionar.
 
-As duas camisas precisam estar visíveis e bem apresentadas principalmente no celular.
+NÃO adaptar para as etapas posteriores.
+
+A B4B já estava aprovada.
+
+Queremos aquela versão.
 
 ---
 
-12. TESTE O FLUXO
-
-Após a correção:
-
-Abrir a página inicial.
-
-Confirmar que aparece o hero/frase inicial.
-
-Descer a página.
-
-Confirmar que aparecem:
-
-CAMISA OFICIAL
-REGATA OFICIAL
-
-Abrir CAMISA.
-
-Testar Frente/Costas.
-
-Fechar.
-
-Abrir REGATA.
-
-Testar Frente/Costas.
-
-Selecionar um modelo.
-
-Confirmar que o configurador continua funcionando.
-
----
-
-13. ALTERAÇÃO MÍNIMA
-
-Antes de alterar código:
-
-identifique exatamente POR QUE os elementos desapareceram.
-
-Faça a menor correção possível.
-
-Não reescreva componentes inteiros se não for necessário.
-
----
-
-14. TESTES
+7. APÓS RESTAURAR
 
 Executar:
 
 TypeScript/typecheck
+
 Build
 
-Verificar console.
+Abrir a aplicação restaurada e conferir visualmente.
+
+Confirmar que a página voltou a corresponder à B4B.
 
 ---
 
-RELATÓRIO FINAL
+8. TESTAR SEM REDESENHAR
 
-Informe:
+Verificar apenas se:
 
-1. por que a frase inicial havia desaparecido;
-2. por que as camisas haviam desaparecido;
-3. qual versão/histórico foi usado como referência;
-4. quais arquivos foram modificados;
-5. confirmação de que a frase original foi restaurada;
-6. confirmação de que CAMISA OFICIAL está visível;
-7. confirmação de que REGATA OFICIAL está visível;
-8. confirmação de que as imagens atuais foram preservadas;
-9. confirmação de Frente/Costas;
-10. confirmação de zoom;
-11. confirmação de swipe;
-12. confirmação de seleção dos produtos;
-13. resultado mobile;
-14. resultado desktop;
-15. TypeScript/typecheck;
-16. Build;
-17. erros de console;
-18. confirmação de que o fluxo de pedido permaneceu intacto;
-19. confirmação de que backend e segurança não foram alterados.
+* página inicial abre;
+* hero original aparece;
+* frase original aparece;
+* produtos/modelos aparecem como na B4B;
+* seleção funciona;
+* formulário funciona;
+* navegação funciona;
+* não existem erros críticos de console.
 
-IMPORTANTE:
+Se algum problema funcional ocorrer por incompatibilidade com configuração atual:
 
-A prioridade desta correção é fazer a landing page VOLTAR A PARECER UMA LANDING PAGE DE PEDIDOS DE CAMISETAS DO TORNEIO.
+NÃO iniciar refatoração.
 
-Não iniciar nenhuma outra melhoria.
+Documentar o problema.
 
-Pare após restaurar esses elementos. */}
+---
+
+9. PUBLICAÇÃO
+
+Depois de restaurar com sucesso e confirmar:
+
+TYPECHECK: PASS
+BUILD: PASS
+
+publique a B4B restaurada no mesmo ambiente de produção.
+
+Não publique nenhuma versão híbrida.
+
+A versão publicada deve corresponder ao snapshot B4B recuperado.
+
+---
+
+10. RELATÓRIO FINAL
+
+Informar:
+
+B4B SNAPSHOT FOUND:
+YES / NO
+
+IDENTIFICADOR DA VERSÃO:
+commit/snapshot/version identificado
+
+BACKUP DO ESTADO ATUAL:
+CREATED / NOT CREATED
+
+B4B RESTORED:
+YES / NO
+
+TYPECHECK:
+PASS / FAIL
+
+BUILD:
+PASS / FAIL
+
+HERO B4B:
+RESTORED / FAIL
+
+TEXTO/FRASE INICIAL B4B:
+RESTORED / FAIL
+
+LAYOUT B4B:
+RESTORED / FAIL
+
+PRODUTOS/MODELOS B4B:
+RESTORED / FAIL
+
+ORDER FLOW B4B:
+PASS / FAIL
+
+PRODUCTION DEPLOY:
+SUCCESS / FAIL / NOT EXECUTED
+
+DATABASE MODIFIED:
+NO
+
+SECRETS MODIFIED:
+NO
+
+MIGRATIONS EXECUTED:
+NO
+
+ALTERAÇÕES POSTERIORES MANTIDAS:
+NONE
+
+FINAL STATUS:
+
+B4B FULLY RESTORED
+
+ou
+
+B4B RESTORE INCOMPLETE
+
+PARE APÓS RESTAURAR E PUBLICAR A B4B.
+
+NÃO CONTINUE DESENVOLVENDO. */}
 
       <Header />
 
