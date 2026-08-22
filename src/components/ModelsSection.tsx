@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
 import { X, ZoomIn, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { getPublicProductDisplayName } from "@/utils/av-public-status-mapper";
 
 interface ModelGalleryProps {
   model: AvShirtModel;
