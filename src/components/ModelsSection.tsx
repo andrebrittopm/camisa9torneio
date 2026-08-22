@@ -57,13 +57,13 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
           <div className="flex-1 relative bg-black/20 flex items-center justify-center p-6 md:p-12 overflow-hidden group">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeSide}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4 }}
+                key={`${activeSide}-${model.id}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 className={cn(
-                  "relative w-full h-full flex items-center justify-center transition-all duration-700",
+                  "relative w-full h-full flex items-center justify-center transition-transform duration-500",
                   isZoomed ? "scale-[2.5] z-50 cursor-zoom-out" : "cursor-zoom-in"
                 )}
                 onClick={() => setIsZoomed(!isZoomed)}
@@ -109,7 +109,12 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 {hasBackImage && (
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-2">
                     <button
-                      onClick={() => setActiveSide('front')}
+                      onClick={() => {
+                        if (activeSide !== 'front') {
+                          setActiveSide('front');
+                          setIsZoomed(false);
+                        }
+                      }}
                       className={cn(
                         "w-12 h-12 rounded-xl backdrop-blur-md border transition-all flex items-center justify-center font-black text-[10px] tracking-tighter",
                         activeSide === 'front' 
@@ -120,7 +125,12 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                       FRENTE
                     </button>
                     <button
-                      onClick={() => setActiveSide('back')}
+                      onClick={() => {
+                        if (activeSide !== 'back') {
+                          setActiveSide('back');
+                          setIsZoomed(false);
+                        }
+                      }}
                       className={cn(
                         "w-12 h-12 rounded-xl backdrop-blur-md border transition-all flex items-center justify-center font-black text-[10px] tracking-tighter",
                         activeSide === 'back' 
@@ -180,7 +190,12 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 {hasBackImage && (
                   <div className="grid grid-cols-2 gap-4">
                     <button
-                      onClick={() => setActiveSide('front')}
+                      onClick={() => {
+                        if (activeSide !== 'front') {
+                          setActiveSide('front');
+                          setIsZoomed(false);
+                        }
+                      }}
                       className={cn(
                         "h-14 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all",
                         activeSide === 'front' 
@@ -191,7 +206,12 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                       Frente
                     </button>
                     <button
-                      onClick={() => setActiveSide('back')}
+                      onClick={() => {
+                        if (activeSide !== 'back') {
+                          setActiveSide('back');
+                          setIsZoomed(false);
+                        }
+                      }}
                       className={cn(
                         "h-14 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all",
                         activeSide === 'back' 
