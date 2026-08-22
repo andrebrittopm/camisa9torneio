@@ -162,7 +162,11 @@ export const cancelAdminOrder = createServerFn({ method: 'POST' })
 export const deleteAdminOrder = createServerFn({ method: 'POST' })
   .inputValidator((data) => z.object({
     orderId: z.string().uuid(),
-    expectedOrderCode: z.string().min(1)
+    expectedOrderCode: z.string()
+      .trim()
+      .min(10)
+      .max(20)
+      .regex(/^AV-\d{4}-\d{4,8}$/, "Formato inválido (AV-YYYY-SEQUÊNCIA)")
   }).parse(data))
   .handler(async ({ data: input }) => {
     const request = getRequest();

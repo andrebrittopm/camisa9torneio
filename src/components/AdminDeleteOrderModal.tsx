@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AlertTriangle, X, Trash2, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ export function AdminDeleteOrderModal({
 }: AdminDeleteOrderModalProps) {
   const [confirmationInput, setConfirmationInput] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const deleteInFlightRef = useRef(false);
   const deleteOrder = useServerFn(deleteAdminOrder);
 
   // Reset input when modal opens/closes
@@ -45,9 +46,12 @@ export function AdminDeleteOrderModal({
 
   const handleDelete = async () => {
     if (confirmationInput !== orderCode) return;
+    if (deleteInFlightRef.current) return;
 
     try {
+      deleteInFlightRef.current = true;
       setIsDeleting(true);
+      
       const result = await deleteOrder({
         data: {
           orderId,
@@ -64,14 +68,15 @@ export function AdminDeleteOrderModal({
           result.code === 'FORBIDDEN' ? 'Acesso negado. Apenas Superadmins podem excluir pedidos.' :
           result.code === 'ORDER_CODE_MISMATCH' ? 'O código do pedido não coincide.' :
           result.code === 'STORAGE_DELETE_FAILED' ? 'Falha ao remover arquivos do Storage. Operação cancelada por segurança.' :
+          result.code === 'INVALID_STORAGE_PATH' ? 'Erro de integridade no caminho do arquivo.' :
           'Não foi possível excluir o pedido.';
-        toast.error(`Erro: ${errorMsg}`);
+        toast.error(errorMsg);
       }
     } catch (err) {
-      console.error(err);
       toast.error("Ocorreu um erro ao processar a exclusão.");
     } finally {
       setIsDeleting(false);
+      deleteInFlightRef.current = false;
     }
   };
 
