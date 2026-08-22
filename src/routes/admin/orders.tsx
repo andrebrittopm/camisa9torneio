@@ -8,8 +8,10 @@ import {
   ChevronRight, 
   ArrowRight, 
   Clock,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react'
+
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
 import { getAdminOrders } from '@/lib/av-admin-orders.functions'
 import { format } from 'date-fns'
@@ -20,6 +22,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils'
 import { z } from 'zod'
 import { AdminStatusBadge } from '@/utils/av-admin-status-mapper'
+import { AdminDeleteOrderModal } from '@/components/AdminDeleteOrderModal'
+import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+
 
 const searchSchema = z.object({
   page: z.number().catch(1),
@@ -59,8 +65,11 @@ export const Route = createFileRoute('/admin/orders')({
 function AdminOrdersPage() {
   const { page, search, paymentFilter, orderFilter } = Route.useSearch()
   const navigate = useNavigate({ from: Route.fullPath })
+  const queryClient = useQueryClient()
+  const [deletingOrder, setDeletingOrder] = useState<{ id: string, code: string } | null>(null)
 
-  const { data: result } = useSuspenseQuery({
+  const { data: result, refetch } = useSuspenseQuery({
+
     queryKey: ['admin-orders', { page, search, paymentFilter, orderFilter }],
     queryFn: () => getAdminOrders({ 
       data: { 
@@ -85,7 +94,21 @@ function AdminOrdersPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
+      {deletingOrder && (
+        <AdminDeleteOrderModal
+          orderId={deletingOrder.id}
+          orderCode={deletingOrder.code}
+          isOpen={!!deletingOrder}
+          onClose={() => setDeletingOrder(null)}
+          onSuccess={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+            await queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+            refetch();
+          }}
+        />
+      )}
       <div className="flex flex-col gap-6">
+
         <h1 className="text-4xl font-heading font-black uppercase tracking-tight text-white">Pedidos</h1>
         
         <div className="flex flex-col md:flex-row gap-4">
@@ -164,15 +187,30 @@ function AdminOrdersPage() {
                     </td>
                     <td className="p-6 text-slate-500 text-[10px] font-mono">{format(new Date(o.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</td>
                     <td className="p-6 text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-gold hover:text-gold hover:bg-gold/5" 
-                        onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}
-                      >
-                        Detalhes <ArrowRight className="ml-2 w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-gold hover:text-gold hover:bg-gold/5" 
+                          onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}
+                        >
+                          Detalhes <ArrowRight className="ml-2 w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label={`Excluir pedido ${o.publicId}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingOrder({ id: o.id, code: o.publicId });
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -204,9 +242,19 @@ function AdminOrdersPage() {
                       <AdminStatusBadge status={o.orderStatus} type="order" className="text-[7px] px-2 py-0" />
                    </div>
                 </div>
-                <Button className="w-full bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}>
-                  Ver Detalhes
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-[2] bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}>
+                    Ver Detalhes
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="flex-1 border-rose-500/20 bg-rose-500/5 text-rose-500 hover:bg-rose-500 hover:text-white"
+                    onClick={() => setDeletingOrder({ id: o.id, code: o.publicId })}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+
               </div>
             ))}
           </div>
