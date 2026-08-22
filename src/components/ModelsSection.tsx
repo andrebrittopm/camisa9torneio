@@ -387,33 +387,8 @@ export function ModelsSection({
     }
   }, [selectedModelId, models]);
 
-  if (models.length === 1 && models[0]) {
-    const singleModel = models[0];
-    return (
-      <section id="camisa" className="py-24 relative overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
-              Escolha o modelo que combina com você
-            </h2>
-            <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
-              9º Torneio Amigos do Vôlei — ACS
-            </p>
-          </div>
+  // ETAPA 13.4: Removido o atalho de models.length === 1 para garantir a exibição de grid/abas se necessário.
 
-          <div className="max-w-4xl mx-auto">
-            <ModelCard 
-              model={singleModel} 
-              isSelected={true}
-              onSelect={() => {}}
-              eventInfo={eventInfo}
-              allModels={models}
-            />
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section id="camisa" className="py-24 relative overflow-hidden">
