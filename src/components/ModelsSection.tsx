@@ -422,8 +422,8 @@ export function ModelsSection({
           <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
             Escolha seu estilo
           </h2>
-          <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
-            Seis modelos oficiais. Uma só paixão pelo vôlei.
+          <p className="text-gold/60 font-black uppercase tracking-[0.2em] text-[10px] md:text-xs max-w-lg mx-auto">
+            Escolha o modelo que combina com você
           </p>
         </div>
 

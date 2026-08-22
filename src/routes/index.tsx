@@ -159,7 +159,7 @@ function Index() {
             <FinalCTA />
           </>
         )}
-
+        {currentStep === "configurator" && activeModel && catalog && (
           <OrderConfigurator
             selectedModel={activeModel}
             eventInfo={catalog.data.event}
