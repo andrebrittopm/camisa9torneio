@@ -15,7 +15,6 @@ export function getPublicProductDisplayName(model: AvShirtModel, allActiveModels
   if (!isMultiModel) {
     return "CAMISA OFICIAL";
   }
-
-  const suffix = model.category === 'tank' ? 'REGATA' : 'MANGA';
-  return `CAMISA OFICIAL — ${suffix}`;
+  
+  return model.category === 'tank' ? 'REGATA OFICIAL' : 'CAMISA OFICIAL';
 }

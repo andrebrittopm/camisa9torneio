@@ -158,7 +158,7 @@ export const Route = createFileRoute('/api/public/av-catalog')({
             .from('av_shirt_models')
             .select('id, code, name, category, front_image_url, back_image_url, model_3d_url, available_sizes, allow_custom_size, sort_order')
             .eq('event_id', validatedEvent.id)
-            .eq('active', true)
+            .in('code', ['TSHIRT-01', 'TANK-01']) // ETAPA 13.3: Apenas Camisa e Regata oficiais
             .order('sort_order', { ascending: true })
             .order('code', { ascending: true })
 
@@ -222,10 +222,8 @@ export const Route = createFileRoute('/api/public/av-catalog')({
                 front_image_url: m.code === 'TSHIRT-01' 
                   ? '/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp'
                   : m.code === 'TANK-01'
-                    ? '/mnt/user-uploads/94f78f0d-2c3b-4716-9522-542f35fe56b9.png'
-                    : m.code === 'TANK-02'
-                      ? 'user-uploads://ChatGPT_Image_21_de_ago._de_2026_20_32_18.png'
-                      : m.front_image_url,
+                    ? 'user-uploads://ChatGPT_Image_21_de_ago._de_2026_20_32_18.png'
+                    : m.front_image_url,
                 back_image_url: m.back_image_url,
                 model_3d_url: m.model_3d_url,
                 available_sizes: m.available_sizes,
