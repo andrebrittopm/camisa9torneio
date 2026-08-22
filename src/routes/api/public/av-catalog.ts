@@ -158,7 +158,7 @@ export const Route = createFileRoute('/api/public/av-catalog')({
             .from('av_shirt_models')
             .select('id, code, name, category, front_image_url, back_image_url, model_3d_url, available_sizes, allow_custom_size, sort_order')
             .eq('event_id', validatedEvent.id)
-            .eq('active', true)
+            .in('code', ['TSHIRT-01', 'TANK-01']) // ETAPA 13.3: Apenas Camisa e Regata oficiais
             .order('sort_order', { ascending: true })
             .order('code', { ascending: true })
 
