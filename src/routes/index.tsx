@@ -160,10 +160,10 @@ function Index() {
           </>
         )}
 
-        {currentStep === "configurator" && activeModel && catalog && (
           <OrderConfigurator
             selectedModel={activeModel}
             eventInfo={catalog.data.event}
+            isMultiModel={catalog.data.models.length > 1}
             onAddItem={(item) => {
               addItem(item);
               setStep("summary");
@@ -186,6 +186,7 @@ function Index() {
           <OrderItemsSummary
             items={items}
             eventInfo={catalog.data.event}
+            isMultiModel={catalog.data.models.length > 1}
             onRemove={removeItem}
             onEdit={(localId) => {
               setEditingItemId(localId);
@@ -241,6 +242,7 @@ function Index() {
             eventInfo={catalog.data.event}
             onBack={() => setStep("customer_data")}
             onSuccess={handleSuccess}
+            isMultiModel={catalog.data.models.length > 1}
           />
         )}
 

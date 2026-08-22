@@ -71,7 +71,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 {currentImage ? (
                   <img
                     src={currentImage}
-                    alt={`${model.name} - ${activeSide === 'front' ? 'Frente' : 'Costas'}`}
+                    alt={`${getPublicProductDisplayName(model, allModels)} - ${activeSide === 'front' ? 'Frente' : 'Costas'}`}
                     className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                     loading="lazy"
                   />
@@ -264,7 +264,7 @@ export function ModelCard({
             {model.front_image_url ? (
               <img 
                 src={model.front_image_url} 
-                alt={model.name}
+                alt={getPublicProductDisplayName(model, allModels)}
                 className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
               />
