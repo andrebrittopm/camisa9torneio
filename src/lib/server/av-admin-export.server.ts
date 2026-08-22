@@ -22,8 +22,13 @@ function getSizeRank(size: string): number {
  */
 function sanitizeExcelValue(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
-  if (str.startsWith('=') || str.startsWith('+') || str.startsWith('-') || str.startsWith('@')) {
+  let str = String(value);
+  
+  // Remover/substituir caracteres de controle (0x00-0x1F)
+  str = str.replace(/[\x00-\x1F\x7F]/g, '');
+  
+  const trimmed = str.trimStart();
+  if (trimmed.startsWith('=') || trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('@')) {
     return `'${str}`;
   }
   return str;
@@ -58,6 +63,7 @@ export async function generateProductionWorkbookInternal() {
       order_seq,
       created_at,
       payment_status,
+      order_status,
       av_order_items (
         model_name,
         shirt_type,
@@ -85,22 +91,39 @@ export async function generateProductionWorkbookInternal() {
     const items = (order.av_order_items as any[]) || [];
     const publicId = `AV-${event.event_year}-${order.order_seq.toString().padStart(4, '0')}`;
     
-    return items.map(item => ({
-      pedido: publicId,
-      data: new Date(order.created_at),
-      modelo: item.model_name,
-      tipo: item.shirt_type,
-      tamanho: item.size_option === 'custom' 
-        ? (item.custom_size || 'TAMANHO NÃO INFORMADO') 
-        : item.size_option,
-      nome: item.custom_name || 'SEM NOME',
-      numero: item.custom_number || 'SEM NÚMERO',
-      quantidade: Math.floor(item.quantity || 0),
-      status: order.payment_status,
-      // Auxiliares para ordenação
-      sizeRank: getSizeRank(item.size_option === 'custom' ? 'CUSTOMIZADOS' : item.size_option)
-    }));
+    const processedItems = items.map(item => {
+      const qty = Number(item.quantity);
+      if (!Number.isFinite(qty) || !Number.isInteger(qty) || qty <= 0) {
+        throw new Error('INVALID_ITEM_QUANTITY');
+      }
+
+      const rawName = String(item.custom_name ?? '').trim();
+      const rawNumber = String(item.custom_number ?? '').trim();
+      const rawCustomSize = String(item.custom_size ?? '').trim();
+
+      return {
+        pedido: publicId,
+        data: new Date(order.created_at),
+        modelo: item.model_name,
+        tipo: item.shirt_type,
+        tamanho: item.size_option === 'custom' 
+          ? (rawCustomSize || 'TAMANHO NÃO INFORMADO') 
+          : item.size_option,
+        nome: rawName || 'SEM NOME',
+        numero: rawNumber || 'SEM NÚMERO',
+        quantidade: qty,
+        status: order.order_status,
+        // Auxiliares para ordenação
+        sizeRank: getSizeRank(item.size_option === 'custom' ? 'CUSTOMIZADOS' : item.size_option)
+      };
+    });
+
+    return processedItems;
   });
+
+  if (productionItems.length === 0) {
+    return null;
+  }
 
   // Ordenar Produção por: Tipo, Modelo, Tamanho (rank), Pedido
   productionItems.sort((a, b) => {
