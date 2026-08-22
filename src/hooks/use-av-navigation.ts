@@ -6,8 +6,7 @@ export function useAvNavigation() {
   const setStep = useOrderState((s) => s.setStep);
   const [pendingTarget, setPendingTarget] = useState<string | null>(null);
 
-  const navigateToSection = useCallback((sectionId: string) => {
-    // Se o ID for apenas #... remove o #
+  const navigateToSection = useCallback((sectionId: string): void => {
     const id = sectionId.startsWith('#') ? sectionId.substring(1) : sectionId;
     
     if (currentStep !== 'idle') {
@@ -23,9 +22,10 @@ export function useAvNavigation() {
   }, [currentStep, setStep]);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    
     if (currentStep === 'idle' && pendingTarget) {
-      // Pequeno delay para garantir que o React montou os componentes
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         const el = document.getElementById(pendingTarget);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
@@ -33,8 +33,11 @@ export function useAvNavigation() {
         }
         setPendingTarget(null);
       }, 100);
-      return () => clearTimeout(timer);
     }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [currentStep, pendingTarget]);
 
   return { navigateToSection };
