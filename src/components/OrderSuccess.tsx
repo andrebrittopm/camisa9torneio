@@ -124,10 +124,10 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="max-w-4xl mx-auto px-6 lg:px-0 space-y-12 pb-24"
+      className="max-w-4xl mx-auto px-6 lg:px-0 space-y-12 pb-24 pt-20 md:pt-24"
     >
       {/* Hero Success */}
-      <div className="text-center space-y-8">
+      <div className="text-center space-y-8 pt-4 md:pt-8">
         <div className="w-24 h-24 bg-gold rounded-full flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(255,215,0,0.3)] border-4 border-slate-950">
           <CheckCircle2 className="w-12 h-12 text-slate-950" />
         </div>
