@@ -205,15 +205,10 @@ ADMIN-DELETE-R3 — HARDENING REPORT
 
 FILES MODIFIED:
 src/routes/admin/orders.tsx
+src/lib/av-admin-orders.functions.ts
+src/lib/server/av-admin-orders.server.ts
 mem://features/admin-delete-r3-hardening.md
 mem://index.md
-
-MIGRATION FILE:
-(Executed via supabase--run_sql)
-CREATE OR REPLACE FUNCTION public.av_admin_delete_order(...)
-SET search_path = public, pg_temp
-REVOKE ALL FROM PUBLIC, anon, authenticated
-GRANT EXECUTE TO service_role
 
 ORDER_SEQ REAL TYPE:
 bigint
@@ -224,17 +219,8 @@ BIGINT
 SEARCH PATH:
 public, pg_temp
 
-PUBLIC:
-REVOKED
-
-ANON:
-REVOKED
-
-AUTHENTICATED:
-REVOKED
-
-SERVICE_ROLE:
-GRANTED
+PUBLIC / ANON / AUTHENTICATED / SERVICE_ROLE:
+REVOKED / REVOKED / REVOKED / GRANTED
 
 SUPERADMIN BUTTON:
 VISIBLE
@@ -243,10 +229,10 @@ ADMIN BUTTON:
 HIDDEN
 
 SERVER SUPERADMIN GUARD:
-PASS (requireSuperAdmin)
+PASS
 
 DATABASE SUPERADMIN GUARD:
-PASS (role != 'SUPERADMIN' check)
+PASS
 
 CORRELATION ID GENERATED SERVER-SIDE:
 YES
@@ -266,10 +252,9 @@ PASS
 DELETE OPERATIONS EXECUTED:
 NONE
 
-FINAL:
+FINAL VERDICT:
 A) READY FOR FINAL CODE REVIEW
 */
-
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { ModelsSection } from "@/components/ModelsSection";
