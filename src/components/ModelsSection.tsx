@@ -101,21 +101,38 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 <button 
                   onClick={() => setIsZoomed(true)}
                   className="absolute bottom-6 right-6 w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-ice/40 hover:text-gold hover:border-gold/50 transition-all active:scale-90"
+                  title="Ampliar imagem"
                 >
                   <ZoomIn className="w-5 h-5" />
                 </button>
 
                 {hasBackImage && (
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-2">
                     <button
-                      onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
-                      className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-ice/40 hover:text-gold hover:border-gold/50 transition-all active:scale-90"
-                      aria-label="Trocar vista"
+                      onClick={() => setActiveSide('front')}
+                      className={cn(
+                        "w-12 h-12 rounded-xl backdrop-blur-md border transition-all flex items-center justify-center font-black text-[10px] tracking-tighter",
+                        activeSide === 'front' 
+                          ? "bg-gold border-gold text-navy shadow-lg shadow-gold/20" 
+                          : "bg-white/5 border-white/10 text-ice/40 hover:border-white/20"
+                      )}
                     >
-                      {activeSide === 'front' ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
+                      FRENTE
+                    </button>
+                    <button
+                      onClick={() => setActiveSide('back')}
+                      className={cn(
+                        "w-12 h-12 rounded-xl backdrop-blur-md border transition-all flex items-center justify-center font-black text-[10px] tracking-tighter",
+                        activeSide === 'back' 
+                          ? "bg-gold border-gold text-navy shadow-lg shadow-gold/20" 
+                          : "bg-white/5 border-white/10 text-ice/40 hover:border-white/20"
+                      )}
+                    >
+                      COSTAS
                     </button>
                   </div>
                 )}
+
               </>
             )}
           </div>
