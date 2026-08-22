@@ -24,7 +24,6 @@ export function Header() {
     { label: "Início", href: "#inicio" },
     { label: "Camisa", href: "#camisa" },
     { label: "Como funciona", href: "#como-funciona" },
-    { label: "Como funciona", href: "#como-funciona" },
   ];
 
   return (
