@@ -113,56 +113,7 @@ export function OrderConfigurator({
   }).format(eventInfo.unit_price);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
-      {/* Visualização de Personalização (Lado Esquerdo no Desktop, Topo no Mobile) */}
-      <div className="lg:w-1/3 w-full">
-        <div className="sticky top-8 space-y-4">
-          <div className="bg-navy-light/30 backdrop-blur-xl border border-white/5 rounded-[32px] overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-white/5 bg-white/[0.02]">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-ice/60 block text-center">
-                Visualização Ilustrativa
-              </span>
-            </div>
-            
-            <div className="aspect-[3/4] relative flex flex-col items-center justify-start pt-16 px-8 text-center bg-gradient-to-b from-navy-light to-navy">
-              {/* Identificação do Modelo na Prévia */}
-              <div className="absolute top-4 left-0 right-0 px-4">
-                 <span className="text-[8px] font-black uppercase tracking-[0.3em] text-gold/40 block">
-                   {selectedModel ? getPublicProductDisplayName(selectedModel, isMultiModel) : 'CAMISA OFICIAL'}
-                 </span>
-              </div>
-
-              {/* Nome */}
-              <div className="w-full mb-4">
-                <span className="font-heading font-black text-2xl sm:text-3xl uppercase tracking-widest text-ice break-words leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                  {customName.trim() || "ATLETA"}
-                </span>
-              </div>
-
-              {/* Número */}
-              <div className="w-full mb-8">
-                <span className="font-heading font-black text-8xl sm:text-[120px] text-gold leading-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                  {customNumber.trim() || "10"}
-                </span>
-              </div>
-
-              {/* Detalhes fixos da base da prévia */}
-              <div className="mt-auto pb-12 opacity-40">
-                <p className="text-[10px] font-black tracking-[0.3em] text-ice">COXIM - MS</p>
-                <p className="text-[10px] font-black tracking-[0.3em] text-gold">2026</p>
-              </div>
-
-              {/* Efeito de brilho "Arena" na prévia */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.02] to-transparent"></div>
-            </div>
-          </div>
-          <p className="text-[9px] text-center text-ice/30 uppercase tracking-widest px-4">
-            A prévia acima é uma representação visual aproximada. A diagramação final pode sofrer pequenos ajustes técnicos.
-          </p>
-        </div>
-      </div>
-
-      <div className="lg:w-2/3 w-full space-y-10 bg-white/[0.02] backdrop-blur-xl p-6 sm:p-10 rounded-[32px] border border-white/5 shadow-2xl">
+    <div className="max-w-4xl mx-auto w-full space-y-10 bg-white/[0.02] backdrop-blur-xl p-6 sm:p-10 rounded-[32px] border border-white/5 shadow-2xl">
       <div className="flex flex-col gap-2">
         <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Passo único: Personalize sua peça</span>
         <h3 className="text-2xl font-heading font-black uppercase tracking-tight">
@@ -295,7 +246,7 @@ export function OrderConfigurator({
           </div>
         </div>
       </div>
-      </div>
     </div>
+
   );
 }
