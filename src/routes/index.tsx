@@ -1,3 +1,6 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+/*
 Localize e disponibilize para download, sem modificar,
 o arquivo:
 
@@ -7,6 +10,8 @@ Não execute a migration novamente.
 Não alterar o arquivo.
 Não executar o RPC.
 Não excluir pedidos.
+*/
+
 
 
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
