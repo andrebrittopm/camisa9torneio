@@ -155,7 +155,34 @@ export const cancelAdminOrder = createServerFn({ method: 'POST' })
     });
   });
 
+
+/**
+ * RPC para exclusão permanente de um pedido (SUPERADMIN ONLY).
+ */
+export const deleteAdminOrder = createServerFn({ method: 'POST' })
+  .inputValidator((data) => z.object({
+    orderId: z.string().uuid(),
+    expectedOrderCode: z.string().min(1)
+  }).parse(data))
+  .handler(async ({ data: input }) => {
+    const request = getRequest();
+    if (!request) throw new Error('Request Context Missing');
+    
+    // 1. Validar Guard SUPERADMIN
+    const { requireSuperAdmin } = await import('./server/av-admin-auth.server');
+    const adminContext = await requireSuperAdmin(request);
+    
+    // 2. Executar Ação
+    const { deleteAdminOrderInternal } = await import('./server/av-admin-orders.server');
+    return await deleteAdminOrderInternal({
+      orderId: input.orderId,
+      expectedOrderCode: input.expectedOrderCode,
+      adminId: adminContext.userId!
+    });
+  });
+
 export type { AdminOrderListResponse, AdminOrderDetail };
+
 
 
 
