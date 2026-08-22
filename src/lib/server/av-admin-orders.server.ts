@@ -389,6 +389,61 @@ export async function cancelAdminOrderInternal(params: {
   return data as { success: boolean; code?: string };
 }
 
+/**
+ * Executa a exclusão permanente de um pedido.
+ * Implementa remoção de storage primeiro (Fail-Closed) e RPC transacional.
+ */
+export async function deleteAdminOrderInternal(params: {
+  orderId: string;
+  adminId: string;
+  expectedOrderCode: string;
+}): Promise<{ success: boolean; code?: string }> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
 
+  const correlationId = crypto.randomUUID();
+
+  // 1. Buscar caminhos de storage para remoção
+  const { data: receipts, error: receiptsError } = await supabaseAdmin
+    .from('av_payment_receipts')
+    .select('storage_path')
+    .eq('order_id', params.orderId);
+
+  if (receiptsError) {
+    console.error(`[deleteAdminOrderInternal] Error fetching receipts for deletion:`, receiptsError);
+    throw new Error('FAILED_TO_FETCH_RECEIPTS_FOR_DELETION');
+  }
+
+  // 2. Remover arquivos do Storage (se existirem)
+  if (receipts && receipts.length > 0) {
+    const paths = receipts.map(r => r.storage_path);
+    const { error: storageError } = await supabaseAdmin.storage
+      .from('av-payment-receipts')
+      .remove(paths);
+
+    if (storageError) {
+      console.error(`[deleteAdminOrderInternal] Storage deletion failed:`, storageError);
+      // Fail-Closed: Não prosseguir se falhar a remoção física (exceto se for "não encontrado", o que o .remove trata idempotentemente)
+      return { success: false, code: 'STORAGE_DELETE_FAILED' };
+    }
+  }
+
+  // 3. Executar RPC transacional
+  const { data, error } = await supabaseAdmin.rpc('av_admin_delete_order' as any, {
+    p_order_id: params.orderId,
+    p_admin_id: params.adminId,
+    p_expected_order_code: params.expectedOrderCode,
+    p_correlation_id: correlationId
+  });
+
+  if (error) {
+    console.error(`[deleteAdminOrderInternal] RPC Error:`, error);
+    throw new Error('FAILED_TO_DELETE_ORDER_RPC');
+  }
+
+  return data as { success: boolean; code?: string };
+}
 
 
