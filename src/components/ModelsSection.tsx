@@ -17,22 +17,59 @@ interface ModelGalleryProps {
 function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo }: ModelGalleryProps) {
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isZoomed) setIsZoomed(false);
+        if (isZoomed) handleToggleZoom();
         else onClose();
       }
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose, isZoomed]);
+    if (isOpen) {
+      window.addEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose, isZoomed]);
+
+  const handleToggleZoom = useCallback(() => {
+    if (isZoomed) {
+      setZoomLevel(1);
+      setPanPosition({ x: 0, y: 0 });
+    } else {
+      setZoomLevel(2);
+    }
+    setIsZoomed(!isZoomed);
+  }, [isZoomed]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isZoomed) return;
+    setIsDragging(true);
+    setStartPan({ x: e.clientX - panPosition.x, y: e.clientY - panPosition.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !isZoomed) return;
+    setPanPosition({
+      x: e.clientX - startPan.x,
+      y: e.clientY - startPan.y
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
 
   if (!isOpen) return null;
 
   const currentImage = activeSide === 'front' ? model.front_image_url : model.back_image_url;
   const hasBackImage = !!model.back_image_url;
+  const isOfficial = model.code === 'TSHIRT-01';
 
   return (
     <AnimatePresence>
@@ -40,38 +77,47 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8"
       >
-        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-2xl" onClick={onClose} />
+        <div className="absolute inset-0 bg-slate-950/98 backdrop-blur-3xl" onClick={onClose} />
         
         <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="relative w-full max-w-6xl bg-white/[0.02] border border-white/10 rounded-[40px] overflow-hidden shadow-2xl flex flex-col md:flex-row max-h-[90vh]"
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          className="relative w-full max-w-7xl h-full md:h-auto bg-navy/20 md:bg-white/[0.02] md:border md:border-white/10 md:rounded-[40px] overflow-hidden shadow-2xl flex flex-col md:flex-row md:max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Main Display Area */}
-          <div className="flex-1 relative bg-black/20 flex items-center justify-center p-6 md:p-12 overflow-hidden group">
+          <div className="flex-1 relative bg-black/40 flex items-center justify-center overflow-hidden group min-h-[50vh] md:min-h-0">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeSide}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4 }}
+                key={`${activeSide}-${isZoomed}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className={cn(
-                  "relative w-full h-full flex items-center justify-center transition-all duration-700 cursor-zoom-in",
-                  isZoomed && "scale-[1.8] cursor-zoom-out z-50"
+                  "relative w-full h-full flex items-center justify-center select-none",
+                  isZoomed ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
                 )}
-                onClick={() => setIsZoomed(!isZoomed)}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onClick={() => !isDragging && !isZoomed && handleToggleZoom()}
               >
                 {currentImage ? (
-                  <img
+                  <motion.img
                     src={currentImage}
-                    alt={`${model.name} - ${activeSide === 'front' ? 'Frente' : 'Costas'}`}
-                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-                    loading="lazy"
+                    alt={activeSide === 'front' ? "Camisa oficial — vista frontal" : "Camisa oficial — vista das costas"}
+                    style={{
+                      scale: zoomLevel,
+                      x: panPosition.x,
+                      y: panPosition.y,
+                    }}
+                    transition={isDragging ? { type: 'just' } : { type: 'spring', damping: 25, stiffness: 200 }}
+                    className="max-w-[90%] max-h-[90%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+                    draggable={false}
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-6 opacity-20">
@@ -84,114 +130,137 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
               </motion.div>
             </AnimatePresence>
 
-            {!isZoomed && (
-              <>
-                {/* Controls Overlay */}
-                <div className="absolute top-6 left-6 flex items-center gap-4">
-                  <div className="bg-gold text-navy text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-lg">
-                    CAMISA OFICIAL
-                  </div>
-                  <div className="bg-white/5 backdrop-blur-md text-ice/60 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest border border-white/10">
-                    {activeSide === 'front' ? 'Frente' : 'Costas'}
-                  </div>
-                </div>
+            {/* Mobile Touch Navigation */}
+            <div className="absolute inset-0 md:hidden flex items-center justify-between px-4 pointer-events-none">
+               {hasBackImage && !isZoomed && (
+                 <>
+                   <button 
+                     className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center text-white pointer-events-auto"
+                     onClick={() => setActiveSide('front')}
+                     aria-label="Ver frente"
+                   >
+                     <ChevronLeft className="w-6 h-6" />
+                   </button>
+                   <button 
+                     className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl flex items-center justify-center text-white pointer-events-auto"
+                     onClick={() => setActiveSide('back')}
+                     aria-label="Ver costas"
+                   >
+                     <ChevronRight className="w-6 h-6" />
+                   </button>
+                 </>
+               )}
+            </div>
 
-                <button 
-                  onClick={() => setIsZoomed(true)}
-                  className="absolute bottom-6 right-6 w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-ice/40 hover:text-gold hover:border-gold/50 transition-all active:scale-90"
-                >
-                  <ZoomIn className="w-5 h-5" />
-                </button>
+            {/* Float Controls */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-2xl px-6 py-3 rounded-2xl border border-white/10 z-50">
+              <button 
+                onClick={() => setZoomLevel(prev => Math.min(prev + 0.5, 4))}
+                className="p-2 text-white/60 hover:text-gold transition-colors"
+                aria-label="Aumentar zoom"
+              >
+                <ZoomIn className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => setZoomLevel(prev => Math.max(prev - 0.5, 1))}
+                className="p-2 text-white/60 hover:text-gold transition-colors"
+                aria-label="Diminuir zoom"
+              >
+                <ZoomOut className="w-5 h-5" />
+              </button>
+              <div className="w-px h-4 bg-white/10 mx-2" />
+              <button 
+                onClick={handleToggleZoom}
+                className={cn("p-2 transition-colors", isZoomed ? "text-gold" : "text-white/60 hover:text-gold")}
+                aria-label={isZoomed ? "Restaurar zoom" : "Maximizar"}
+              >
+                {isZoomed ? <RefreshCcw className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+              </button>
+              {hasBackImage && (
+                <>
+                  <div className="w-px h-4 bg-white/10 mx-2" />
+                  <button 
+                    onClick={() => {
+                      setActiveSide(activeSide === 'front' ? 'back' : 'front');
+                      setPanPosition({ x: 0, y: 0 });
+                    }}
+                    className="p-2 text-white/60 hover:text-gold transition-colors"
+                    aria-label="Girar camisa"
+                  >
+                    <RefreshCcw className="w-5 h-5 animate-spin-slow" />
+                  </button>
+                </>
+              )}
+            </div>
 
-                {hasBackImage && (
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col gap-4">
-                    <button
-                      onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
-                      className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center text-ice/40 hover:text-gold hover:border-gold/50 transition-all active:scale-90"
-                      aria-label="Trocar vista"
-                    >
-                      {activeSide === 'front' ? <ChevronRight className="w-6 h-6" /> : <ChevronLeft className="w-6 h-6" />}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+            <button 
+              onClick={onClose}
+              className="absolute top-6 right-6 w-12 h-12 rounded-full bg-black/40 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-all z-50"
+              aria-label="Fechar visualizador"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          {/* Details Panel */}
-          <div className="w-full md:w-[400px] p-8 md:p-12 flex flex-col justify-between border-t md:border-t-0 md:border-l border-white/5 bg-white/[0.01]">
-            <div className="space-y-8">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-2 block">
-                    {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
-                  </span>
-                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">CAMISA OFICIAL</h3>
-                  <div className="text-3xl font-black text-white">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(eventInfo.unit_price)}
-                  </div>
+          {/* Details Sidebar */}
+          <div className="w-full md:w-[400px] bg-navy/40 backdrop-blur-xl p-8 md:p-12 flex flex-col border-t md:border-t-0 md:border-l border-white/10">
+            <div className="flex-1 space-y-8">
+              <div>
+                <span className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-2 block">
+                  {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
+                </span>
+                <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">{model.name}</h3>
+                <div className="text-3xl font-black text-white">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(eventInfo.unit_price)}
                 </div>
-                <button 
-                  onClick={onClose}
-                  className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-ice/40 hover:text-white transition-colors"
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setActiveSide('front')}
+                  className={cn(
+                    "h-16 rounded-2xl border font-black text-[10px] uppercase tracking-widest transition-all",
+                    activeSide === 'front' 
+                      ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_rgba(252,195,7,0.1)]" 
+                      : "border-white/5 bg-white/[0.02] text-ice/40 hover:border-white/20"
+                  )}
+                  aria-label="Ver vista frontal"
                 >
-                  <X className="w-5 h-5" />
+                  Frente
+                </button>
+                <button
+                  onClick={() => setActiveSide('back')}
+                  className={cn(
+                    "h-16 rounded-2xl border font-black text-[10px] uppercase tracking-widest transition-all",
+                    activeSide === 'back' 
+                      ? "border-gold bg-gold/10 text-gold shadow-[0_0_20px_rgba(252,195,7,0.1)]" 
+                      : "border-white/5 bg-white/[0.02] text-ice/40 hover:border-white/20"
+                  )}
+                  aria-label="Ver vista traseira"
+                >
+                  Costas
                 </button>
               </div>
 
-              <div className="space-y-6">
-                <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 space-y-4">
-                  <span className="text-[9px] font-black uppercase tracking-[0.3em] text-ice/30">Especificações</span>
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-3 text-xs font-bold text-ice/70">
-                      <div className="w-1 h-1 rounded-full bg-gold" />
-                      Tecido Dry-Fit Alta Performance
+              <div className="space-y-4 pt-4">
+                <span className="text-[9px] font-black uppercase tracking-[0.3em] text-ice/30">Destaques do Produto</span>
+                <ul className="space-y-4">
+                  {[
+                    "Dry-Fit Performance Plus",
+                    "Costuras Reforçadas",
+                    "Estampa Digital HD",
+                    "Ajuste Ergonômico"
+                  ].map((text, i) => (
+                    <li key={i} className="flex items-center gap-3 text-xs font-bold text-ice/70">
+                      <div className="w-1.5 h-1.5 rounded-full bg-gold shadow-[0_0_8px_rgba(252,195,7,0.5)]" />
+                      {text}
                     </li>
-                    <li className="flex items-center gap-3 text-xs font-bold text-ice/70">
-                      <div className="w-1 h-1 rounded-full bg-gold" />
-                      Sublimação Digital de Alta Definição
-                    </li>
-                    <li className="flex items-center gap-3 text-xs font-bold text-ice/70">
-                      <div className="w-1 h-1 rounded-full bg-gold" />
-                      Proteção UV 50+
-                    </li>
-                  </ul>
-                </div>
-
-                {hasBackImage && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => setActiveSide('front')}
-                      className={cn(
-                        "h-14 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all",
-                        activeSide === 'front' 
-                          ? "border-gold bg-gold/10 text-gold" 
-                          : "border-white/5 bg-white/[0.02] text-ice/40 hover:border-white/20"
-                      )}
-                    >
-                      Frente
-                    </button>
-                    <button
-                      onClick={() => setActiveSide('back')}
-                      className={cn(
-                        "h-14 rounded-xl border font-black text-[10px] uppercase tracking-widest transition-all",
-                        activeSide === 'back' 
-                          ? "border-gold bg-gold/10 text-gold" 
-                          : "border-white/5 bg-white/[0.02] text-ice/40 hover:border-white/20"
-                      )}
-                    >
-                      Costas
-                    </button>
-                  </div>
-                )}
+                  ))}
+                </ul>
               </div>
             </div>
 
-            <div className="pt-8 space-y-4">
-              <div className="flex items-center gap-3 px-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-ice/40">Disponível para pedido</span>
-              </div>
+            <div className="pt-8 space-y-6">
               <Button
                 size="lg"
                 onClick={() => {
@@ -201,14 +270,11 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                 }}
                 className={cn(
                   "w-full h-20 text-lg font-black uppercase tracking-widest rounded-2xl transition-all",
-                  isSelected ? "bg-slate-800 text-slate-500" : "glow-gold"
+                  isSelected ? "bg-white/10 text-ice/40 pointer-events-none" : "glow-gold"
                 )}
               >
-                {isSelected ? "Já Selecionado" : "Selecionar Modelo"}
+                {isSelected ? "Selecionado" : "Garantir a Minha"}
               </Button>
-              <p className="text-center text-[9px] text-ice/20 font-black uppercase tracking-[0.2em]">
-                A personalização é feita no próximo passo
-              </p>
             </div>
           </div>
         </motion.div>
