@@ -1,8 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-
-
-
-
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Header } from "@/components/Header";
