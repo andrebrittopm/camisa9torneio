@@ -27,10 +27,10 @@ export function OrderItemsSummary({ items, eventInfo, onRemove, onEdit, disabled
                 <span className="font-black text-gold text-lg">CAMISA OFICIAL</span>
                 <span className="text-ice/40 text-xs uppercase">{item.category === 'tshirt' ? 'CAMISA' : 'REGATA'}</span>
               </div>
-              <div className="text-sm text-ice/60 space-x-2">
+              <div className="text-sm text-ice/60 flex flex-wrap gap-x-2">
                 <span>Tam: {item.size_option}{item.custom_size ? ` (${item.custom_size})` : ''}</span>
-                {item.custom_name && <span>• Nome: {item.custom_name}</span>}
-                {item.custom_number && <span>• Nº: {item.custom_number}</span>}
+                <span>• Nome: {item.custom_name?.trim() ? item.custom_name.trim() : 'SEM NOME'}</span>
+                <span>• Nº: {(item.custom_number !== null && item.custom_number !== undefined && item.custom_number.toString().trim() !== '') ? item.custom_number : 'SEM NÚMERO'}</span>
               </div>
               <div className="font-black text-sm text-ice">Qtd: {item.quantity} x {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(eventInfo.unit_price)}</div>
             </div>
