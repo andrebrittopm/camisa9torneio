@@ -36,12 +36,12 @@ export const Route = createFileRoute("/")({
       {
         property: "og:image",
         content:
-          "https://camisa9torneio.lovable.app/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp",
+          "https://camisa9torneio.lovable.app/__l5e/assets-v1/134e51cc-4df3-4151-ab64-d073785a4be6/camisa_oficial_frente.png",
       },
       {
         name: "twitter:image",
         content:
-          "https://camisa9torneio.lovable.app/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp",
+          "https://camisa9torneio.lovable.app/__l5e/assets-v1/134e51cc-4df3-4151-ab64-d073785a4be6/camisa_oficial_frente.png",
       },
     ],
     links: [
