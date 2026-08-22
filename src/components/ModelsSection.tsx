@@ -63,8 +63,8 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.4 }}
                 className={cn(
-                  "relative w-full h-full flex items-center justify-center transition-all duration-700 cursor-zoom-in",
-                  isZoomed && "scale-[1.8] cursor-zoom-out z-50"
+                  "relative w-full h-full flex items-center justify-center transition-all duration-700",
+                  isZoomed ? "scale-[2.5] z-50 cursor-zoom-out" : "cursor-zoom-in"
                 )}
                 onClick={() => setIsZoomed(!isZoomed)}
               >
@@ -72,7 +72,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo,
                   <img
                     src={currentImage}
                     alt={`${getPublicProductDisplayName(model, allModels)} - ${activeSide === 'front' ? 'Frente' : 'Costas'}`}
-                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                    className="max-w-full max-h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-transform"
                     loading="lazy"
                   />
                 ) : (
