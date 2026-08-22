@@ -9,11 +9,13 @@ import {
   ArrowRight, 
   Clock,
   AlertCircle,
-  Trash2
+  Trash2,
+  Download
 } from 'lucide-react'
 
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
 import { getAdminOrders } from '@/lib/av-admin-orders.functions'
+import { exportProductionXlsx } from '@/lib/av-admin-export.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Input } from '@/components/ui/input'
@@ -23,8 +25,9 @@ import { cn } from '@/lib/utils'
 import { z } from 'zod'
 import { AdminStatusBadge } from '@/utils/av-admin-status-mapper'
 import { AdminDeleteOrderModal } from '@/components/AdminDeleteOrderModal'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 
 const searchSchema = z.object({
@@ -72,8 +75,40 @@ function AdminOrdersPage() {
   const queryClient = useQueryClient()
   const [deletingOrder, setDeletingOrder] = useState<{ id: string, code: string } | null>(null)
 
-  const { data: result, refetch } = useSuspenseQuery({
+  const exportMutation = useMutation({
+    mutationFn: () => exportProductionXlsx(),
+    onSuccess: (res) => {
+      if (res.success && res.base64 && res.fileName) {
+        const byteCharacters = atob(res.base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: res.mimeType });
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = res.fileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        toast.success('Planilha gerada com sucesso!');
+      } else if (res.code === 'NO_ELIGIBLE_ORDERS') {
+        toast.error('Nenhum pedido confirmado disponível para exportação.');
+      } else {
+        toast.error('Não foi possível gerar a planilha. Tente novamente.');
+      }
+    },
+    onError: () => {
+      toast.error('Erro ao processar exportação. Tente novamente.');
+    }
+  });
 
+  const { data: result, refetch } = useSuspenseQuery({
     queryKey: ['admin-orders', { page, search, paymentFilter, orderFilter }],
     queryFn: () => getAdminOrders({ 
       data: { 
@@ -113,7 +148,24 @@ function AdminOrdersPage() {
       )}
       <div className="flex flex-col gap-6">
 
-        <h1 className="text-4xl font-heading font-black uppercase tracking-tight text-white">Pedidos</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-4xl font-heading font-black uppercase tracking-tight text-white">Pedidos</h1>
+          
+          <Button 
+            onClick={() => exportMutation.mutate()}
+            disabled={exportMutation.isPending}
+            className="w-full sm:w-auto bg-gold text-navy font-black uppercase tracking-widest text-[10px] h-12 rounded-2xl px-6 flex items-center justify-center gap-2"
+          >
+            {exportMutation.isPending ? (
+              <>GERANDO PLANILHA...</>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                EXPORTAR PRODUÇÃO
+              </>
+            )}
+          </Button>
+        </div>
         
         <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
