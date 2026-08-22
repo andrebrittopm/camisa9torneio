@@ -220,9 +220,11 @@ export const Route = createFileRoute('/api/public/av-catalog')({
                 name: m.name,
                 category: m.category,
                 front_image_url: m.code === 'TSHIRT-01' 
-                  ? '/__l5e/assets-v1/92218de1-3dce-43b7-9845-94b513c0bd06/tshirt-01-oficial-v2.webp'
+                  ? '/__l5e/assets-v1/9f0e05b3-b5ae-40f1-a480-54820dbe26fb/camisa-oficial-frente.png'
                   : m.front_image_url,
-                back_image_url: m.back_image_url,
+                back_image_url: m.code === 'TSHIRT-01'
+                  ? '/__l5e/assets-v1/9cef5119-6b94-4ffc-816f-263e86f8968e/camisa-oficial-costas.png'
+                  : m.back_image_url,
                 model_3d_url: m.model_3d_url,
                 available_sizes: m.available_sizes,
                 allow_custom_size: m.allow_custom_size,
