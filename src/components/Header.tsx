@@ -6,11 +6,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import logoAsset from "@/assets/logo-av-transparente.webp.asset.json";
 import { useOrderState } from "@/lib/order-state";
+import { useAvNavigation } from "@/hooks/use-av-navigation";
 
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { navigateToSection } = useAvNavigation();
+
 
   useEffect(() => {
     const handleScroll = () => {
