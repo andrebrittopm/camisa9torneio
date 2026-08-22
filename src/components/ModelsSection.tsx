@@ -13,9 +13,10 @@ interface ModelGalleryProps {
   onSelect: () => void;
   isSelected: boolean;
   eventInfo: AvCatalogEvent;
+  allModels: AvShirtModel[];
 }
 
-function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo }: ModelGalleryProps) {
+function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo, allModels }: ModelGalleryProps) {
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [isZoomed, setIsZoomed] = useState(false);
 
@@ -90,7 +91,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                 {/* Controls Overlay */}
                 <div className="absolute top-6 left-6 flex items-center gap-4">
                   <div className="bg-gold text-navy text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-lg">
-                    CAMISA OFICIAL
+                    {getPublicProductDisplayName(model, allModels)}
                   </div>
                   <div className="bg-white/5 backdrop-blur-md text-ice/60 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest border border-white/10">
                     {activeSide === 'front' ? 'Frente' : 'Costas'}
@@ -127,7 +128,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                   <span className="text-[10px] text-gold font-black uppercase tracking-[0.4em] mb-2 block">
                     {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
                   </span>
-                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">CAMISA OFICIAL</h3>
+                  <h3 className="text-4xl font-heading font-black uppercase tracking-tighter leading-none mb-4">{getPublicProductDisplayName(model, allModels)}</h3>
                   <div className="text-3xl font-black text-white">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(eventInfo.unit_price)}
                   </div>
@@ -228,6 +229,7 @@ export function ModelCard({
   isSelected: boolean;
   onSelect: () => void;
   eventInfo: AvCatalogEvent;
+  allModels: AvShirtModel[];
 }) {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
@@ -305,7 +307,7 @@ export function ModelCard({
               <span className="text-[10px] text-gold font-black uppercase tracking-[0.3em] mb-1 block">
                 {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
               </span>
-              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">CAMISA OFICIAL</h3>
+              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">{getPublicProductDisplayName(model, allModels)}</h3>
               <div className="text-gold font-black text-lg mt-2">{formattedPrice}</div>
             </div>
           </div>
@@ -340,6 +342,7 @@ export function ModelCard({
         onSelect={onSelect}
         isSelected={isSelected}
         eventInfo={eventInfo}
+        allModels={allModels}
       />
     </>
   );
@@ -390,7 +393,7 @@ export function ModelsSection({
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
-              Conheça a Camisa Oficial
+              Escolha o modelo que combina com você
             </h2>
             <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
               9º Torneio Amigos do Vôlei — ACS
@@ -403,6 +406,7 @@ export function ModelsSection({
               isSelected={true}
               onSelect={() => {}}
               eventInfo={eventInfo}
+              allModels={models}
             />
           </div>
         </div>
