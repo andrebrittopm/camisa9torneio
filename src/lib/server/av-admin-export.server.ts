@@ -22,8 +22,13 @@ function getSizeRank(size: string): number {
  */
 function sanitizeExcelValue(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
-  if (str.startsWith('=') || str.startsWith('+') || str.startsWith('-') || str.startsWith('@')) {
+  let str = String(value);
+  
+  // Remover/substituir caracteres de controle (0x00-0x1F)
+  str = str.replace(/[\x00-\x1F\x7F]/g, '');
+  
+  const trimmed = str.trimStart();
+  if (trimmed.startsWith('=') || trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('@')) {
     return `'${str}`;
   }
   return str;
