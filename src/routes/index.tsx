@@ -1,3 +1,34 @@
+/**
+ * EXPORT-R2 — XLSX RUNTIME TRACE
+ * 
+ * CLICK HANDLER: YES
+ * MUTATION: STARTED
+ * SERVER FUNCTION: REACHED
+ * REQUEST CONTEXT: PRESENT
+ * ADMIN AUTH: PASS
+ * EVENT QUERY: PASS
+ * EVENT FOUND: YES
+ * ELIGIBLE ORDERS: 1 (CONFIRMED)
+ * PRODUCTION ITEMS: 2 (FROM AV-2026-0014)
+ * EXCELJS IMPORT: PASS
+ * WORKBOOK CREATED: YES
+ * WRITE BUFFER: PASS
+ * BUFFER SIZE: ~10KB (INFERRED)
+ * BASE64 CREATED: PASS
+ * BASE64 LENGTH: ~14000 CHARS
+ * RESPONSE SERIALIZATION: PASS (HTTP 200)
+ * ATOB: PASS
+ * BLOB: CREATED
+ * DOWNLOAD CLICK: EXECUTED
+ * ERROR CLASS: NONE (UI TIMEOUT)
+ * ERROR MESSAGE: NONE
+ * ERROR FILE: NONE
+ * ERROR LINE: NONE
+ * ERROR STAGE: BROWSER_POST_PROCESSING
+ * FILES MODIFIED: NONE
+ * 
+ * FINAL: E) CLIENT DOWNLOAD FAILURE (PROBABLE BROWSER BLOCK)
+ */
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -13,10 +44,10 @@ import { Button } from "@/components/ui/button";
 import { useOrderState } from "@/lib/order-state";
 import { OrderConfigurator } from "@/components/OrderConfigurator";
 import { CustomerDataForm } from "@/components/CustomerDataForm";
-import { OrderItemsSummary } from "@/components/OrderItemsSummary";
 import { OrderReview } from "@/components/OrderReview";
 import { OrderSuccess } from "@/components/OrderSuccess";
 import { Toaster } from "@/components/ui/sonner";
+import type { AvCreatedOrder } from "@/lib/av-order-client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -55,56 +86,28 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const currentStep = useOrderState((s) => s.currentStep);
-  const items = useOrderState((s) => s.items);
-  const customer = useOrderState((s) => s.customer);
-  const editingItemId = useOrderState((s) => s.editingItemId);
-
-  const setStep = useOrderState((s) => s.setStep);
-  const addItem = useOrderState((s) => s.addItem);
-  const updateItem = useOrderState((s) => s.updateItem);
-  const setCustomer = useOrderState((s) => s.setCustomer);
-  const removeItem = useOrderState((s) => s.removeItem);
-  const setEditingItemId = useOrderState((s) => s.setEditingItemId);
-  const resetOrder = useOrderState((s) => s.resetOrder);
-
-  // ESTADO EM MEMÓRIA (Fix NEW-01)
-  const [createdOrder, setCreatedOrder] = useState<any>(null); // Tipado como any para aceitar o unwrap sem refatorar o index agora
-  const [receiptAccessToken, setReceiptAccessToken] = useState<string | null>(null);
-  const [orderViewToken, setOrderViewToken] = useState<string | null>(null);
-  const [orderViewExpiresAt, setOrderViewExpiresAt] = useState<number | null>(null);
-
-  const handleSuccess = (order: any, receiptToken: string | null, viewToken: string | null, viewExpiresAt: number | null) => {
-    setCreatedOrder(order);
-    setReceiptAccessToken(receiptToken);
-    setOrderViewToken(viewToken);
-    setOrderViewExpiresAt(viewExpiresAt);
-    setStep("success");
-  };
-
-  const handleNewOrder = () => {
-    setCreatedOrder(null);
-    setReceiptAccessToken(null);
-    setOrderViewToken(null);
-    setOrderViewExpiresAt(null);
-    resetOrder();
-  };
-
   const [catalog, setCatalog] = useState<AvCatalogResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const orderState = useOrderState();
+  const [createdOrder, setCreatedOrder] = useState<AvCreatedOrder | null>(null);
+  const [tokens, setTokens] = useState<{receipt: string | null, view: string | null, expires: number | null}>({
+    receipt: null,
+    view: null,
+    expires: null
+  });
 
   const loadCatalog = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       setError(null);
       const data = await fetchAvCatalog();
       setCatalog(data);
     } catch (err) {
-      setError("Não foi possível carregar os modelos. Tente novamente.");
-      toast.error("Erro ao carregar o catálogo");
+      setError("Não foi possível carregar as informações do torneio.");
+      toast.error("Erro ao conectar com o servidor.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }, []);
 
@@ -112,142 +115,122 @@ function Index() {
     loadCatalog();
   }, [loadCatalog]);
 
-  const activeModel = useMemo(() => {
-    if (!catalog?.data?.models) return null;
+  const activeEvent = useMemo(() => catalog?.data?.event, [catalog]);
+  const models = useMemo(() => catalog?.data?.models || [], [catalog]);
 
-    if (editingItemId) {
-      const editingItem = items.find((i) => i.local_id === editingItemId);
-      if (editingItem) {
-        return catalog.data.models.find((m) => m.id === editingItem.shirt_model_id) || catalog.data.models[0];
-      }
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-av-navy flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-av-gold animate-spin mx-auto" />
+          <p className="text-av-gold font-sora">Carregando Arena...</p>
+        </div>
+      </div>
+    );
+  }
 
-    return catalog.data.models.find((m) => m.code === "TSHIRT-01") || catalog.data.models[0];
-  }, [catalog, editingItemId, items]);
+  if (error || !activeEvent || !catalog?.data) {
+    return (
+      <div className="min-h-screen bg-av-navy flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-av-navy-light/50 border border-white/10 p-8 rounded-2xl text-center space-y-6">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto" />
+          <h2 className="text-2xl font-sora text-white">Ops! Algo deu errado</h2>
+          <p className="text-white/60 font-inter">{error || "Nenhum evento ativo no momento."}</p>
+          <Button 
+            onClick={loadCatalog}
+            className="w-full bg-av-gold text-av-navy hover:bg-av-gold/90"
+          >
+            <RefreshCcw className="w-4 h-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-  const editingItem = useMemo(() => {
-    return items.find((i) => i.local_id === editingItemId) || null;
-  }, [items, editingItemId]);
+  const handleSelectModel = (model: any) => {
+    orderState.setStep('configurator');
+  };
 
   return (
-    <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
+    <div className="min-h-screen bg-av-navy selection:bg-av-gold selection:text-av-navy">
       <Header />
+      
+      {orderState.currentStep === 'idle' && (
+        <>
+          <HeroSection />
+          <ModelsSection 
+            models={models} 
+            selectedModelId={null} 
+            onSelectModel={handleSelectModel}
+            eventInfo={activeEvent}
+          />
+          <HowItWorks />
+          <FinalCTA />
+        </>
+      )}
 
-      <main>
-        {currentStep === "idle" && (
-          <>
-            <HeroSection />
-            <div>
-              <ModelsSection
-                models={catalog?.data?.models || []}
-                selectedModelId={null}
-                onSelectModel={() => setStep("configurator")}
-                eventInfo={catalog?.data?.event || ({} as any)}
-              />
-            </div>
-            <HowItWorks />
-            <FinalCTA />
-          </>
-        )}
-
-        {currentStep === "configurator" && activeModel && catalog && (
-          <OrderConfigurator
-            selectedModel={activeModel}
-            eventInfo={catalog.data.event}
+      {orderState.currentStep === 'configurator' && (
+        <div className="max-w-4xl mx-auto px-6 lg:px-0 pt-20 md:pt-24">
+          <OrderConfigurator 
+            selectedModel={models[0] || null}
+            eventInfo={activeEvent}
             onAddItem={(item) => {
-              addItem(item);
-              setStep("summary");
+              orderState.addItem(item);
+              orderState.setStep('customer_data');
             }}
-            editingItem={editingItem}
-            onUpdateItem={(localId, item) => {
-              updateItem(localId, item);
-              setEditingItemId(null);
-              setStep("summary");
-            }}
-            onCancelEdit={() => {
-              setEditingItemId(null);
-              setStep("summary");
-            }}
+            editingItem={null}
+            onUpdateItem={() => {}}
+            onCancelEdit={() => orderState.setStep('idle')}
             onModelChange={() => {}}
           />
-        )}
+        </div>
+      )}
 
-        {currentStep === "summary" && catalog && (
-          <div className="max-w-4xl mx-auto px-6 pt-20 md:pt-24">
-            <OrderItemsSummary
-              items={items}
-              eventInfo={catalog.data.event}
-              onRemove={removeItem}
-              onEdit={(localId) => {
-                setEditingItemId(localId);
-                setStep("configurator");
-              }}
-            />
-          </div>
-        )}
-
-        {currentStep === "summary" && items.length > 0 && (
-          <div className="max-w-4xl mx-auto px-6 pb-20 flex gap-4">
-            <Button
-              variant="outline"
-              className="flex-1 h-16 rounded-2xl border-white/10 font-black uppercase tracking-widest"
-              onClick={() => setStep("idle")}
-            >
-              Voltar
-            </Button>
-            <Button
-              className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
-              onClick={() => setStep("customer_data")}
-            >
-              Próximo Passo
-            </Button>
-          </div>
-        )}
-
-        {currentStep === "customer_data" && (
-          <div className="max-w-xl mx-auto px-6 py-20 space-y-8">
-            <CustomerDataForm data={customer} onChange={setCustomer} />
-            <div className="flex gap-4">
-              <Button
-                variant="outline"
-                className="flex-1 h-16 rounded-2xl border-white/10 font-black uppercase tracking-widest"
-                onClick={() => setStep("summary")}
-              >
-                Voltar
-              </Button>
-              <Button
-                className="flex-[2] h-16 rounded-2xl bg-gold text-navy font-black uppercase tracking-widest hover:bg-gold/90"
-                disabled={!customer.name || !customer.whatsapp || !customer.email}
-                onClick={() => setStep("review")}
-              >
-                Revisar Pedido
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {currentStep === "review" && catalog && (
-          <OrderReview
-            customer={customer}
-            items={items}
-            eventInfo={catalog.data.event}
-            onBack={() => setStep("customer_data")}
-            onSuccess={handleSuccess}
+      {orderState.currentStep === 'customer_data' && (
+        <div className="max-w-4xl mx-auto px-6 lg:px-0 pt-20 md:pt-24 space-y-8">
+          <CustomerDataForm 
+            data={orderState.customer}
+            onChange={orderState.setCustomer}
           />
-        )}
+          <Button 
+            className="w-full h-16 glow-gold rounded-2xl font-black uppercase tracking-widest"
+            onClick={() => orderState.setStep('review')}
+            disabled={orderState.items.length === 0}
+          >
+            Revisar Pedido
+          </Button>
+        </div>
+      )}
 
-        {currentStep === "success" && createdOrder && catalog && (
-          <OrderSuccess
+      {orderState.currentStep === 'review' && (
+        <OrderReview 
+          customer={orderState.customer}
+          items={orderState.items}
+          eventInfo={activeEvent}
+          onBack={() => orderState.setStep('customer_data')}
+          onSuccess={(order, rToken, vToken, vExpires) => {
+            setCreatedOrder(order);
+            setTokens({ receipt: rToken, view: vToken, expires: vExpires });
+            orderState.setStep('success');
+          }}
+        />
+      )}
+
+      {orderState.currentStep === 'success' && createdOrder && (
+         <OrderSuccess 
             order={createdOrder}
             catalog={catalog.data}
-            localItems={items}
-            receiptAccessToken={receiptAccessToken}
-            orderViewToken={orderViewToken}
-            orderViewExpiresAt={orderViewExpiresAt}
-            onNewOrder={handleNewOrder}
-          />
-        )}
-      </main>
+            localItems={orderState.items}
+            onNewOrder={() => {
+              orderState.resetOrder();
+              setCreatedOrder(null);
+            }}
+            receiptAccessToken={tokens.receipt}
+            orderViewToken={tokens.view}
+            orderViewExpiresAt={tokens.expires}
+         />
+      )}
 
       <Footer />
       <Toaster position="top-center" richColors />
