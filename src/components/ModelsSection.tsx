@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
-import { X, ZoomIn, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { X, ZoomIn, ChevronLeft, ChevronRight, Eye, ZoomOut, Maximize2 } from "lucide-react";
 
 interface ModelGalleryProps {
   model: AvShirtModel;
