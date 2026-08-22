@@ -474,6 +474,15 @@ export type Database = {
         }
         Returns: Json
       }
+      av_admin_delete_order: {
+        Args: {
+          p_admin_id: string
+          p_correlation_id: string
+          p_expected_order_code: string
+          p_order_id: string
+        }
+        Returns: Json
+      }
       av_admin_review_receipt: {
         Args: {
           p_action: string
