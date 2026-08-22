@@ -1,24 +1,19 @@
 /**
- * EXPORT-R0 — AUDITORIA PARA EXPORTAÇÃO DE PRODUÇÃO
+ * EXPORT-R1 — IMPLEMENTAÇÃO SEGURA DA PLANILHA DE PRODUÇÃO
  *
  * MODO:
- * READ ONLY
- * DIAGNOSE ONLY
- * NO CODE CHANGES
+ * IMPLEMENTAÇÃO CIRÚRGICA
+ * PREVIEW ONLY
+ * NO PUBLISH
  * NO DATABASE CHANGES
  * NO MIGRATIONS
- * NO PUBLISH
- *
- * CONTEXTO:
- * O projeto está funcional e não pode sofrer regressões.
- * Precisamos adicionar futuramente, em: Admin → Pedidos, um botão: EXPORTAR PRODUÇÃO.
- * O objetivo é gerar uma planilha XLSX para a confecção das camisas.
+ * NO EXISTING RPC CHANGES
  *
  * ==================================================
- * RESPOSTA
+ * CONTEXTO
  * ==================================================
  *
- * EXPORT-R0 — AUDITORIA DE EXPORTAÇÃO
+ * A auditoria EXPORT-R0 confirmou:
  *
  * ORDER TABLE:
  * public.av_orders
@@ -26,68 +21,476 @@
  * ITEMS TABLE:
  * public.av_order_items
  *
- * PRODUCT/MODEL SOURCE:
- * public.av_shirt_models (primary) and public.av_order_items (snapshot)
+ * MODELS:
+ * public.av_shirt_models
  *
- * PUBLIC ORDER CODE SOURCE:
- * public.av_orders.order_seq formatted via formatPublicId(order_seq) with public.av_events.event_year
+ * ELIGIBILIDADE:
+ * payment_status = 'payment_confirmed'
+ * AND order_status != 'cancelled'
  *
- * REAL EXPORT FIELDS:
- * public_id, created_at, model_name, shirt_type, size_option, custom_name, custom_number, quantity, order_status
+ * DEPENDÊNCIA XLSX:
+ * não instalada
  *
- * PAYMENT CONFIRMED VALUE:
- * payment_confirmed
+ * BIBLIOTECA RECOMENDADA:
+ * exceljs
  *
- * CANCELLED VALUE:
- * cancelled
+ * OBJETIVO:
  *
- * RECOMMENDED ELIGIBILITY:
- * payment_status = 'payment_confirmed' AND order_status != 'cancelled'
+ * Adicionar em:
  *
- * QUANTITY HANDLING:
- * public.av_order_items.quantity (integer)
+ * Admin → Pedidos
  *
- * OPTIONAL NAME HANDLING:
- * public.av_order_items.custom_name (NULL/empty handling required: 'SEM NOME')
+ * um botão:
  *
- * OPTIONAL NUMBER HANDLING:
- * public.av_order_items.custom_number (NULL/empty handling required: 'SEM NÚMERO')
+ * EXPORTAR PRODUÇÃO
  *
- * CUSTOM SIZE HANDLING:
- * public.av_order_items.custom_size (used when size_option is 'custom')
+ * O arquivo deve ser gerado server-side, somente leitura,
+ * sem modificar qualquer pedido ou fluxo existente.
  *
- * XLSX DEPENDENCY AVAILABLE:
- * NO
+ * ==================================================
+ * 1. LIMPEZA DO RELATÓRIO
+ * ==================================================
  *
- * DEPENDENCY:
- * exceljs (recommended for TanStack Start / Node compatibility)
+ * Se algum relatório EXPORT-R0 foi inserido como comentário
+ * em arquivo de runtime, remover SOMENTE esse comentário.
  *
- * SERVER-SIDE ENTRY POINT:
- * src/lib/server/av-admin-export.server.ts (new)
+ * Não inserir novos relatórios dentro de:
+ *
+ * src/routes/index.tsx
+ * componentes
+ * rotas
+ * helpers de runtime
+ *
+ * ==================================================
+ * 2. DEPENDÊNCIA
+ * ==================================================
+ *
+ * Instalar exceljs usando o gerenciador de pacotes já
+ * adotado pelo projeto.
+ *
+ * Modificar somente:
+ *
+ * package.json
+ * lockfile correspondente
+ *
+ * Não instalar bibliotecas de PDF nesta etapa.
+ *
+ * Garantir que exceljs seja importado exclusivamente em
+ * código server-side e não entre no bundle do navegador.
+ *
+ * ==================================================
+ * 3. ESCOPO DO EVENTO
+ * ==================================================
+ *
+ * Exportar somente pedidos pertencentes ao evento atual
+ * do 9º Torneio.
+ *
+ * Usar o event_id real do contexto administrativo ou
+ * identificar com segurança o evento ativo.
+ *
+ * Não misturar pedidos de outros eventos.
+ *
+ * Não confiar apenas em event_year se houver mais de um
+ * evento no mesmo ano.
+ *
+ * ==================================================
+ * 4. AUTENTICAÇÃO
+ * ==================================================
+ *
+ * A geração deve ocorrer exclusivamente no servidor.
+ *
+ * Preservar:
+ *
+ * getRequest()
+ * requireAdmin(request)
+ *
+ * Não consultar Supabase diretamente pelo navegador.
+ *
+ * Não enviar service role key ao client.
+ *
+ * ==================================================
+ * 5. CONSULTA SOMENTE LEITURA
+ * ==================================================
+ *
+ * Consultar todos os pedidos elegíveis, sem depender da
+ * paginação visual da tabela administrativa.
+ *
+ * Aplicar:
+ *
+ * payment_status = 'payment_confirmed'
+ * order_status != 'cancelled'
+ * event_id = evento atual
+ *
+ * Buscar apenas os campos necessários para a produção.
+ *
+ * NÃO selecionar:
+ *
+ * customer_name
+ * customer_phone
+ * WhatsApp
+ * e-mail
+ * notes
+ * tracking_token
+ * storage_path
+ * comprovantes
+ * metadata
+ * correlation_id
+ *
+ * Não executar:
+ *
+ * INSERT
+ * UPDATE
+ * DELETE
+ * RPC de status
+ * RPC de exclusão
+ *
+ * ==================================================
+ * 6. CÓDIGO PÚBLICO
+ * ==================================================
+ *
+ * Gerar o código visual do pedido exatamente no padrão
+ * já utilizado pelo painel:
+ *
+ * AV-YYYY-XXXX
+ *
+ * Usar:
+ *
+ * event_year
+ * order_seq
+ *
+ * Não consultar uma coluna chamada public_id sem confirmar
+ * que ela realmente existe.
+ *
+ * Preferencialmente reutilizar o helper já existente para
+ * displayOrderNumber.
+ *
+ * ==================================================
+ * 7. ABA PRODUÇÃO
+ * ==================================================
+ *
+ * Criar a aba:
+ *
+ * Produção
+ *
+ * Uma linha por av_order_items, preservando quantity.
+ *
+ * Colunas nesta ordem:
+ *
+ * 1. Pedido
+ * 2. Data do pedido
+ * 3. Modelo
+ * 4. Tipo
+ * 5. Tamanho
+ * 6. Nome
+ * 7. Número
+ * 8. Quantidade
+ * 9. Status
+ *
+ * Regras:
+ *
+ * custom_name vazio/null:
+ * SEM NOME
+ *
+ * custom_number vazio/null:
+ * SEM NÚMERO
+ *
+ * size_option = custom:
+ * usar custom_size
+ *
+ * Tamanho custom vazio:
+ * NÃO permitir valor undefined; usar fallback sanitizado
+ *
+ * Nome e número devem ser gravados como texto literal.
+ *
+ * Não permitir que valores iniciados por:
+ *
+ * =
+ * +
+ * -
+ * @
+ *
+ * sejam interpretados como fórmula de planilha.
+ *
+ * ==================================================
+ * 8. ABA RESUMO
+ * ==================================================
+ *
+ * Criar a aba:
+ *
+ * Resumo
+ *
+ * Agrupar as peças por:
+ *
+ * Modelo
+ * Tipo
+ * Tamanho
+ *
+ * Colunas:
+ *
+ * 1. Modelo
+ * 2. Tipo
+ * 3. Tamanho
+ * 4. Total de peças
+ *
+ * O total deve somar:
+ *
+ * av_order_items.quantity
+ *
+ * Adicionar no final:
+ *
+ * TOTAL GERAL DE PEÇAS
+ *
+ * Validar que o total geral da aba Resumo corresponde à
+ * soma da coluna Quantidade da aba Produção.
+ *
+ * ==================================================
+ * 9. FORMATAÇÃO
+ * ==================================================
+ *
+ * Aplicar formatação profissional e simples:
+ *
+ * - cabeçalho azul escuro
+ * - texto branco
+ * - destaque amarelo compatível com o projeto
+ * - primeira linha congelada
+ * - autofiltro
+ * - largura adequada das colunas
+ * - quebra de texto quando necessário
+ * - data no formato brasileiro
+ * - quantidade como número inteiro
+ *
+ * Ordenar a aba Produção por:
+ *
+ * Tipo/Modelo
+ * Tamanho
+ * Código do pedido
+ *
+ * Ordem preferencial de tamanhos:
+ *
+ * PP
+ * P
+ * M
+ * G
+ * GG
+ * XG
+ * XXG
+ * CUSTOMIZADOS
+ *
+ * Nome do arquivo:
+ *
+ * producao-camisas-9-torneio-AAAA-MM-DD.xlsx
+ *
+ * ==================================================
+ * 10. DOWNLOAD
+ * ==================================================
+ *
+ * Implementar endpoint/rota server-side seguindo o padrão
+ * real já utilizado pelo projeto.
+ *
+ * Retornar o arquivo binário com os headers corretos:
+ *
+ * Content-Type:
+ * application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+ *
+ * Content-Disposition:
+ * attachment; filename="producao-camisas-9-torneio-AAAA-MM-DD.xlsx"
+ *
+ * Não converter o arquivo inteiro para base64 se o framework
+ * permitir retornar bytes/ArrayBuffer diretamente.
+ *
+ * ==================================================
+ * 11. INTERFACE
+ * ==================================================
+ *
+ * Adicionar na página:
+ *
+ * Admin → Pedidos
+ *
+ * um botão:
+ *
+ * EXPORTAR PRODUÇÃO
+ *
+ * Posicionar próximo aos filtros, sem modificar o restante
+ * do layout.
+ *
+ * Estados:
+ *
+ * normal:
+ * EXPORTAR PRODUÇÃO
+ *
+ * carregando:
+ * GERANDO PLANILHA...
+ *
+ * Durante o carregamento:
+ *
+ * - bloquear clique duplicado
+ * - manter a listagem visível
+ * - não navegar para outra página
+ *
+ * Se não existirem pedidos elegíveis, mostrar:
+ *
+ * Nenhum pedido confirmado disponível para exportação.
+ *
+ * Em caso de falha:
+ *
+ * Não foi possível gerar a planilha. Tente novamente.
+ *
+ * Não mostrar stack trace ou erro interno.
+ *
+ * ==================================================
+ * 12. NÃO CRIAR EFEITOS COLATERAIS
+ * ==================================================
+ *
+ * A exportação NÃO deve:
+ *
+ * - alterar status
+ * - marcar pedido como exportado
+ * - criar auditoria
+ * - excluir pedido
+ * - modificar comprovante
+ * - escrever no Storage
+ * - invalidar checkout
+ * - limpar carrinho
+ * - alterar dashboard
+ * - alterar tracking público
+ *
+ * Banco de dados:
+ * SOMENTE LEITURA
+ *
+ * ==================================================
+ * 13. PRESERVAR INTEGRALMENTE
+ * ==================================================
+ *
+ * NÃO alterar:
+ *
+ * - landing page
+ * - imagens das camisas
+ * - zoom
+ * - navegação
+ * - carrinho
+ * - revisão do pedido
+ * - criação do pedido
+ * - pagamento PIX
+ * - upload de comprovante
+ * - link de acompanhamento
+ * - dashboard administrativo
+ * - auditoria
+ * - fluxo de produção
+ * - exclusão administrativa
+ * - autenticação
+ * - RPCs existentes
+ *
+ * ==================================================
+ * 14. VALIDAÇÃO
+ * ==================================================
+ *
+ * Gerar uma planilha real em ambiente de Preview sem
+ * alterar dados.
+ *
+ * Confirmar:
+ *
+ * - arquivo abre no Excel/LibreOffice
+ * - duas abas existem
+ * - código AV-YYYY-XXXX correto
+ * - SEM NOME correto
+ * - SEM NÚMERO correto
+ * - tamanho personalizado correto
+ * - quantidade maior que 1 preservada
+ * - somente pagamentos confirmados
+ * - cancelados ausentes
+ * - outros eventos ausentes
+ * - total da Produção igual ao total do Resumo
+ * - nenhuma PII presente
+ * - nenhuma escrita no banco
+ *
+ * Executar:
+ *
+ * TYPECHECK
+ * BUILD
+ *
+ * Não publicar.
+ *
+ * ==================================================
+ * RESPOSTA
+ * ==================================================
+ *
+ * Responder somente:
+ *
+ * EXPORT-R1 — XLSX PRODUCTION EXPORT
+ *
+ * SERVER ENTRY POINT:
+ * [...]
  *
  * ADMIN AUTH:
- * requireAdmin(request) via src/lib/server/av-admin-auth.server.ts
+ * [...]
  *
- * PAGINATION BYPASS:
- * YES (direct database query without .range())
+ * EVENT SCOPE:
+ * [...]
+ *
+ * ELIGIBILITY:
+ * [...]
+ *
+ * ORDER CODE GENERATION:
+ * [...]
+ *
+ * XLSX LIBRARY:
+ * [...]
+ *
+ * WORKBOOK SHEETS:
+ * [...]
+ *
+ * PRODUCTION COLUMNS:
+ * [...]
+ *
+ * SUMMARY GROUPING:
+ * [...]
+ *
+ * CUSTOM SIZE:
+ * [...]
+ *
+ * EMPTY NAME:
+ * [...]
+ *
+ * EMPTY NUMBER:
+ * [...]
+ *
+ * FORMULA INJECTION PROTECTION:
+ * PASS / FAIL
  *
  * PII EXCLUDED:
- * whatsapp, customer_email, storage_path, link_seguro, correlation_id, metadata
+ * [...]
  *
- * PROPOSED WORKBOOK SHEETS:
- * ABA 1: PRODUÇÃO (Item-level), ABA 2: RESUMO (Aggregated by Model/Type/Size)
+ * DATABASE WRITES:
+ * NONE / [...]
  *
- * MINIMAL FILES FOR IMPLEMENTATION:
- * src/lib/server/av-admin-export.server.ts, src/lib/av-admin-export.functions.ts, src/routes/admin/orders.tsx
+ * EXISTING RPC CHANGES:
+ * NONE / [...]
  *
- * DATABASE CHANGES REQUIRED:
- * NONE
+ * DOWNLOAD METHOD:
+ * [...]
+ *
+ * EMPTY RESULT HANDLING:
+ * [...]
+ *
+ * TYPECHECK:
+ * PASS / FAIL
+ *
+ * BUILD:
+ * PASS / FAIL
+ *
+ * FILES CREATED:
+ * [...]
  *
  * FILES MODIFIED:
- * NONE (Diagnostic only)
+ * [...]
+ *
+ * DATABASE MODIFIED:
+ * NO / YES
  *
  * FINAL VERDICT:
- * A) SAFE XLSX IMPLEMENTATION READY
+ * A) READY FOR CODE REVIEW
+ * B) IMPLEMENTATION INCOMPLETE
+ * C) REGRESSION DETECTED
  */
 import { createFileRoute } from "@tanstack/react-router";
 
