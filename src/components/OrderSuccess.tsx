@@ -254,12 +254,23 @@ export function OrderSuccess({ order, catalog, localItems, onNewOrder, receiptAc
               {footerCopy} <br/>
               Acompanhe seu e-mail para novas instruções.
             </p>
-            {secureOrderViewUrl && (
-              <div className="pt-4 border-t border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ice/20 mb-2">Link Seguro de Visualização</p>
-                <code className="block p-3 bg-black/40 rounded-lg text-[9px] text-gold/60 break-all border border-gold/10">
+            {secureOrderViewUrl ? (
+              <a 
+                href={secureOrderViewUrl}
+                aria-label="Acompanhar meu pedido"
+                className="block pt-4 border-t border-white/5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/50 rounded-lg transition-all"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ice/20 mb-2 group-hover:text-ice/40 transition-colors">Link Seguro de Visualização</p>
+                <code className="block p-3 bg-black/40 rounded-lg text-[9px] text-gold/60 break-all border border-gold/10 group-hover:bg-black/60 group-hover:border-gold/30 group-hover:text-gold transition-all cursor-pointer">
                   {secureOrderViewUrl}
                 </code>
+              </a>
+            ) : (
+              <div className="pt-4 border-t border-white/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-ice/20 mb-2">Link Seguro de Visualização</p>
+                <div className="block p-3 bg-black/40 rounded-lg text-[9px] text-ice/20 break-all border border-white/5 italic">
+                  Link indisponível ou expirado. Consulte seu e-mail.
+                </div>
               </div>
             )}
           </div>
