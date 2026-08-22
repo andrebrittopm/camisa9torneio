@@ -115,7 +115,7 @@ function ModelGallery({ model, isOpen, onClose, onSelect, isSelected, eventInfo 
                       x: panPosition.x,
                       y: panPosition.y,
                     }}
-                    transition={isDragging ? { type: 'just' } : { type: 'spring', damping: 25, stiffness: 200 }}
+                    transition={isDragging ? { duration: 0 } : { type: 'spring', damping: 25, stiffness: 200 }}
                     className="max-w-[90%] max-h-[90%] object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
                     draggable={false}
                   />
