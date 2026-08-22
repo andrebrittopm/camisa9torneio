@@ -324,12 +324,39 @@ export function ModelCard({
           
           <div className="relative z-10 w-full h-full flex flex-col items-center justify-center border border-dashed border-ice/10 rounded-2xl group-hover:border-gold/20 transition-all duration-500 bg-white/[0.01]">
             {model.front_image_url ? (
-              <img 
-                src={model.front_image_url} 
-                alt={model.name}
-                className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
-                loading="lazy"
-              />
+              <div className="w-full h-full flex items-center justify-center relative">
+                {model.code === 'TSHIRT-01' ? (
+                  <div className="w-full h-full flex flex-col md:flex-row items-center justify-center gap-2 p-2">
+                    <div className="flex-1 h-full relative">
+                      <img 
+                        src={model.front_image_url} 
+                        alt="Frente"
+                        className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-widest text-white/20">Frente</span>
+                    </div>
+                    {model.back_image_url && (
+                      <div className="flex-1 h-full relative hidden md:block border-l border-white/5 pl-2">
+                        <img 
+                          src={model.back_image_url} 
+                          alt="Costas"
+                          className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-widest text-white/20">Costas</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <img 
+                    src={model.front_image_url} 
+                    alt={model.name}
+                    className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                )}
+              </div>
             ) : (
               <div className="w-32 h-44 md:w-40 md:h-56 relative flex items-center justify-center">
                 <div className="absolute -top-2 -left-2 w-4 h-4 border-t border-l border-gold/30" />
