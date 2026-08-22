@@ -1,7 +1,8 @@
 import { Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { OrderItem } from "@/lib/order-state";
-import { AvCatalogEvent } from "@/lib/av-catalog-client";
+import { AvCatalogEvent, AvShirtModel } from "@/lib/av-catalog-client";
+import { getPublicProductDisplayName } from "@/utils/av-public-status-mapper";
 
 interface OrderItemsSummaryProps {
   items: OrderItem[];
@@ -9,9 +10,10 @@ interface OrderItemsSummaryProps {
   onRemove: (local_id: string) => void;
   onEdit: (local_id: string) => void;
   disabled?: boolean;
+  isMultiModel?: boolean;
 }
 
-export function OrderItemsSummary({ items, eventInfo, onRemove, onEdit, disabled }: OrderItemsSummaryProps) {
+export function OrderItemsSummary({ items, eventInfo, onRemove, onEdit, disabled, isMultiModel = false }: OrderItemsSummaryProps) {
   const totalPieces = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalEstimated = items.reduce((sum, item) => sum + (item.quantity * eventInfo.unit_price), 0);
 
@@ -25,7 +27,7 @@ export function OrderItemsSummary({ items, eventInfo, onRemove, onEdit, disabled
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-black text-gold text-lg">
-                  {item.category === 'tank' ? 'CAMISA OFICIAL — REGATA' : 'CAMISA OFICIAL — MANGA'}
+                  {getPublicProductDisplayName({ category: item.category } as AvShirtModel, isMultiModel)}
                 </span>
               </div>
               <div className="text-sm text-ice/60 space-x-2">

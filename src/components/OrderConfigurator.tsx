@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { AvShirtModel, AvCatalogEvent } from "@/lib/av-catalog-client";
 import type { OrderItem } from "@/lib/order-state";
 import { Minus, Plus, ShoppingCart, Save } from "lucide-react";
+import { getPublicProductDisplayName } from "@/utils/av-public-status-mapper";
 
 interface OrderConfiguratorProps {
   selectedModel: AvShirtModel | null;
@@ -17,6 +18,7 @@ interface OrderConfiguratorProps {
   onUpdateItem: (local_id: string, item: Omit<OrderItem, 'local_id'>) => void;
   onCancelEdit: () => void;
   onModelChange: (model: AvShirtModel) => void;
+  isMultiModel?: boolean;
 }
 
 export function OrderConfigurator({
@@ -26,7 +28,8 @@ export function OrderConfigurator({
   editingItem,
   onUpdateItem,
   onCancelEdit,
-  onModelChange
+  onModelChange,
+  isMultiModel = false
 }: OrderConfiguratorProps) {
   const [sizeOption, setSizeOption] = useState("");
   const [customSize, setCustomSize] = useState("");
@@ -114,7 +117,7 @@ export function OrderConfigurator({
       <div className="flex flex-col gap-2">
         <span className="text-gold font-black uppercase tracking-[0.3em] text-[10px]">Passo único: Personalize sua peça</span>
         <h3 className="text-2xl font-heading font-black uppercase tracking-tight">
-          {selectedModel ? selectedModel.category === 'tank' ? 'CAMISA OFICIAL — REGATA' : 'CAMISA OFICIAL — MANGA' : 'CAMISA OFICIAL'}
+          {selectedModel ? getPublicProductDisplayName(selectedModel, isMultiModel) : 'CAMISA OFICIAL'}
         </h3>
       </div>
 
