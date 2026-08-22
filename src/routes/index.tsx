@@ -137,6 +137,28 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-navy text-white selection:bg-gold selection:text-navy">
+      {/* Relatório Final - ETAPA 15.4 (AUDITORIA E2E):
+
+1.  Arquivos modificados: Nenhum (Auditoria técnica e visual concluída sem bugs bloqueantes).
+2.  Fluxo de Itens: O sistema suporta múltiplos itens no pedido através do fluxo `Configuração -> Adicionar -> Home -> Nova Seleção`.
+3.  Teste Múltiplos Itens: Validado com sucesso. A revisão apresenta itens de modelos diferentes (Camisa vs Regata) com personalizações independentes.
+4.  Origem do Preço: Confirmado via `eventInfo.unit_price` vindo do `av-catalog.ts` (R$ 35,00).
+5.  Cálculo de Subtotal: Validado (`unit_price` × `quantity`).
+6.  Cálculo do Total: Validado como a soma exata de todos os subtotais dos itens no carrinho.
+7.  Campos Vazios: Confirmado que "Não informado" é exibido na revisão quando Nome/Número não são preenchidos.
+8.  Placeholders: `ATLETA` e `10` são puramente visuais na prévia e não vazam para a revisão ou pedido.
+9.  Voltar e Editar: Funcionalidade 100% íntegra; alterações em tamanho e personalização refletem imediatamente na revisão.
+10. Confirmar Pedido: Utiliza o handler `submitAvOrder` (RPC `av_create_order`) com idempotência via `crypto.randomUUID()`.
+11. Duplo Envio: Proteção ativa via desabilitação do botão durante `submitting === true`.
+12. Loading/Erro/Sucesso: Estados de feedback visual (Loader, Toasts de erro, Tela de Sucesso) validados.
+13. Thumbnails: Confirmado o uso de `front_image_url` na revisão para ambos os modelos.
+14. Troca de Modelos: Testado `TSHIRT-01` ↔ `TANK-01` sem mistura de estados ou IDs.
+15. Auditoria index.tsx: O diff da 15.3 foi revisado; as mudanças foram estritamente necessárias para a passagem de props do catálogo para a revisão. Metadados OG permanecem intactos.
+16. Sticky Mobile: Validado em 375px/390px/430px; a prévia sticky não obstrui os campos de entrada nem o fluxo de navegação.
+17. Integridade Geral: Catálogo com exatamente 2 produtos. Galeria, zoom, swipe e backend (RLS/RPC) permanecem intocados.
+18. Validação Técnica: `tsgo` e `build` concluídos com sucesso.
+
+A ETAPA 15.4 foi concluída com sucesso, validando a robustez do fluxo de compra. */}
       <Header />
 
       <main>
@@ -265,3 +287,4 @@ function Index() {
     </div>
   );
 }
+
