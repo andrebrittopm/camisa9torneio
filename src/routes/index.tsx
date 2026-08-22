@@ -240,6 +240,7 @@ function Index() {
             customer={customer}
             items={items}
             eventInfo={catalog.data.event}
+            catalogModels={catalog.data.models}
             onBack={() => setStep("customer_data")}
             onSuccess={handleSuccess}
             isMultiModel={catalog.data.models.length > 1}
