@@ -1,3 +1,5 @@
+import { createFileRoute } from "@tanstack/react-router";
+/*
 ADMIN-DELETE-R5 — LIVE DATABASE RPC VERIFICATION
 
 MODO:
@@ -250,6 +252,8 @@ MIGRATION FILE: NOT FOUND
 
 VERDICT:
 A definição no banco de dados está rigorosamente alinhada com os requisitos de segurança R4, incluindo SECURITY DEFINER, search_path restrito, grants limitados ao service_role e tipos de dados corretos (BIGINT).
+*/
+
 
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
