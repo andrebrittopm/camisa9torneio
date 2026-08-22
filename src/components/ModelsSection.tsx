@@ -473,6 +473,7 @@ export function ModelsSection({
                   isSelected={selectedModelId === model.id}
                   onSelect={() => onSelectModel(model)}
                   eventInfo={eventInfo}
+                  allModels={models}
                 />
               </motion.div>
             ))}
