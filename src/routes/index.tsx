@@ -88,6 +88,25 @@ function Index() {
   const activeEvent = useMemo(() => catalog?.data?.event, [catalog]);
   const models = useMemo(() => catalog?.data?.models || [], [catalog]);
 
+  const activeModel = useMemo(() => {
+    // 1. modelo do item sendo editado (from orderState if needed, but index.tsx doesn't seem to have editingItem state yet)
+    // Looking at the configurator call below: editingItem={null}
+    // So for now, we follow the priority in the instructions.
+    
+    // 2. modelo escolhido pelo usuário
+    if (selectedModelId) {
+      const found = models.find(m => m.id === selectedModelId);
+      if (found) return found;
+    }
+
+    // 3. TSHIRT-01 fallback
+    const tshirt01 = models.find(m => m.code === "TSHIRT-01");
+    if (tshirt01) return tshirt01;
+
+    // 4. primeiro modelo do catálogo
+    return models[0] || null;
+  }, [models, selectedModelId]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-av-navy flex items-center justify-center">
