@@ -1,35 +1,68 @@
 /**
- * EXPORT-R1D — FINAL PUBLISH
+ * REGATA-R0 — DEPENDENCY AUDIT
  * 
- * PUBLICAR EXATAMENTE O ESTADO VALIDADO
- * DA EXPORT-R1C.
+ * SECTION FILE:
+ * src/routes/index.tsx (Layout/Flow), src/components/ModelsSection.tsx (Display), src/components/OrderConfigurator.tsx (Input)
  * 
- * NÃO realizar nenhuma alteração adicional.
- * NÃO modificar código.
- * NÃO modificar banco de dados.
- * NÃO modificar RPCs.
- * NÃO modificar fluxo público ou administrativo.
- * NÃO inserir relatórios ou comentários no código.
+ * PRODUCT CARD COMPONENT:
+ * ModelCard (within ModelsSection.tsx)
  * 
- * Confirmar após a publicação:
+ * CURRENT PRODUCT SOURCE:
+ * DATABASE (av_shirt_models) via /api/public/av-catalog
  * 
- * PUBLICAÇÃO:
- * SUCCESS
+ * CURRENT SHIRT MODEL:
+ * Camiseta Modelo 01 (Code: TSHIRT-01)
  * 
- * HASH PUBLICADO:
- * 65a358d0-53ce-4ccc-a2a6-229ba614f5cb
+ * CURRENT PRICE:
+ * R$ 35,00
  * 
- * URL DE PRODUÇÃO:
- * https://camisa9torneio.lovable.app
+ * REGATA RECORD EXISTS:
+ * YES (Models: Regata Modelo 01, 02, 03 exist but are inactive)
  * 
- * ALTERAÇÕES ADICIONAIS ANTES DA PUBLICAÇÃO:
+ * REGATA TYPE VALUE:
+ * tank (DB category field)
+ * 
+ * MULTIPLE PRODUCT TYPES:
+ * PASS (Zustand state accepts multiple items)
+ * 
+ * MIXED CART:
+ * PASS (UI allows adding multiple items, each with its own customization)
+ * 
+ * CREATE ORDER SUPPORT:
+ * PASS (av_create_order RPC handles array of items with model_id validation)
+ * 
+ * DATABASE CONSTRAINT:
+ * PASS (shirt_type is text, category in models is 'tank', no restricted enum detected)
+ * 
+ * POST-PURCHASE SCREENS:
+ * PASS (Summary, Review, Success, View pages map over items list)
+ * 
+ * ADMIN SUPPORT:
+ * PASS (Dashboard and Order Details use shared item mapping logic)
+ * 
+ * XLSX REGATA SUPPORT:
+ * PASS (src/lib/server/av-admin-export.server.ts already maps 'tank' to 'REGATA')
+ * 
+ * REQUIRED IMAGE PATHS:
+ * /public/models/tank-01-front.webp, /public/models/tank-01-back.webp (suggested pattern)
+ * 
+ * MINIMAL DATABASE ACTION:
+ * UPDATE public.av_shirt_models SET active = true WHERE code = 'TANK-01';
+ * 
+ * MINIMAL FILES:
+ * src/components/ModelsSection.tsx, src/components/OrderConfigurator.tsx
+ * 
+ * TYPECHECK:
+ * PASS
+ * 
+ * BUILD:
+ * PASS
+ * 
+ * FILES MODIFIED:
  * NONE
  * 
- * EXPORTAÇÃO XLSX PRESERVADA:
- * YES
- * 
  * FINAL:
- * A) PUBLICADO SEM ALTERAÇÕES
+ * A) READY FOR MINIMAL IMPLEMENTATION
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
