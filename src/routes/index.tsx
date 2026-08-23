@@ -89,23 +89,25 @@ function Index() {
   const models = useMemo(() => catalog?.data?.models || [], [catalog]);
 
   const activeModel = useMemo(() => {
-    // 1. modelo do item sendo editado (from orderState if needed, but index.tsx doesn't seem to have editingItem state yet)
-    // Looking at the configurator call below: editingItem={null}
-    // So for now, we follow the priority in the instructions.
+    // 1. shirt_model_id do editingItem (from orderState)
+    if (orderState.editingItem?.shirt_model_id) {
+      const found = models.find(m => m.id === orderState.editingItem?.shirt_model_id);
+      if (found) return found;
+    }
     
-    // 2. modelo escolhido pelo usuário
+    // 2. selectedModelId escolhido pelo usuário
     if (selectedModelId) {
       const found = models.find(m => m.id === selectedModelId);
       if (found) return found;
     }
 
-    // 3. TSHIRT-01 fallback
+    // 3. TSHIRT-01 como padrão
     const tshirt01 = models.find(m => m.code === "TSHIRT-01");
     if (tshirt01) return tshirt01;
 
-    // 4. primeiro modelo do catálogo
+    // 4. primeiro modelo somente como último fallback
     return models[0] || null;
-  }, [models, selectedModelId]);
+  }, [models, selectedModelId, orderState.editingItem?.shirt_model_id]);
 
   if (loading) {
     return (
@@ -173,8 +175,11 @@ function Index() {
               orderState.addItem(item);
               orderState.setStep('customer_data');
             }}
-            editingItem={null}
-            onUpdateItem={() => {}}
+            editingItem={orderState.editingItem}
+            onUpdateItem={(id, updates) => {
+              orderState.updateItem(id, updates);
+              orderState.setStep('customer_data');
+            }}
             onCancelEdit={() => orderState.setStep('idle')}
             onModelChange={(model) => setSelectedModelId(model.id)}
           />
