@@ -167,7 +167,7 @@ function Index() {
       {orderState.currentStep === 'configurator' && (
         <div className="max-w-4xl mx-auto px-6 lg:px-0 pt-20 md:pt-24">
           <OrderConfigurator 
-            selectedModel={models[0] || null}
+            selectedModel={activeModel}
             eventInfo={activeEvent}
             onAddItem={(item) => {
               orderState.addItem(item);
@@ -176,7 +176,7 @@ function Index() {
             editingItem={null}
             onUpdateItem={() => {}}
             onCancelEdit={() => orderState.setStep('idle')}
-            onModelChange={() => {}}
+            onModelChange={(modelId) => setSelectedModelId(modelId)}
           />
         </div>
       )}
