@@ -101,18 +101,35 @@ export async function generateProductionWorkbookInternal() {
       const rawNumber = String(item.custom_number ?? '').trim();
       const rawCustomSize = String(item.custom_size ?? '').trim();
 
+      // Mapeamento de Tipos
+      const shirtTypeMap: Record<string, string> = {
+        'tshirt': 'CAMISA',
+        'tank': 'REGATA'
+      };
+      const mappedType = shirtTypeMap[item.shirt_type] || (item.shirt_type ? String(item.shirt_type).toUpperCase() : 'TIPO NÃO INFORMADO');
+
+      // Mapeamento de Status
+      const orderStatusMap: Record<string, string> = {
+        'received': 'PEDIDO RECEBIDO',
+        'confirmed': 'CONFIRMADO',
+        'in_production': 'EM PRODUÇÃO',
+        'ready': 'PRONTO',
+        'delivered': 'ENTREGUE'
+      };
+      const mappedStatus = orderStatusMap[order.order_status] || (order.order_status ? String(order.order_status).toUpperCase() : 'STATUS NÃO INFORMADO');
+
       return {
         pedido: publicId,
         data: new Date(order.created_at),
         modelo: item.model_name,
-        tipo: item.shirt_type,
+        tipo: mappedType,
         tamanho: item.size_option === 'custom' 
           ? (rawCustomSize || 'TAMANHO NÃO INFORMADO') 
           : item.size_option,
         nome: rawName || 'SEM NOME',
         numero: rawNumber || 'SEM NÚMERO',
         quantidade: qty,
-        status: order.order_status,
+        status: mappedStatus,
         // Auxiliares para ordenação
         sizeRank: getSizeRank(item.size_option === 'custom' ? 'CUSTOMIZADOS' : item.size_option)
       };
