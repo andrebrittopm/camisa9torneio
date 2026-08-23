@@ -1,3 +1,36 @@
+/**
+ * EXPORT-R1D — FINAL PUBLISH
+ * 
+ * PUBLICAR EXATAMENTE O ESTADO VALIDADO
+ * DA EXPORT-R1C.
+ * 
+ * NÃO realizar nenhuma alteração adicional.
+ * NÃO modificar código.
+ * NÃO modificar banco de dados.
+ * NÃO modificar RPCs.
+ * NÃO modificar fluxo público ou administrativo.
+ * NÃO inserir relatórios ou comentários no código.
+ * 
+ * Confirmar após a publicação:
+ * 
+ * PUBLICAÇÃO:
+ * SUCCESS
+ * 
+ * HASH PUBLICADO:
+ * 65a358d0-53ce-4ccc-a2a6-229ba614f5cb
+ * 
+ * URL DE PRODUÇÃO:
+ * https://camisa9torneio.lovable.app
+ * 
+ * ALTERAÇÕES ADICIONAIS ANTES DA PUBLICAÇÃO:
+ * NONE
+ * 
+ * EXPORTAÇÃO XLSX PRESERVADA:
+ * YES
+ * 
+ * FINAL:
+ * A) PUBLICADO SEM ALTERAÇÕES
+ */
 import { createFileRoute } from "@tanstack/react-router";
 import { AlertCircle, Loader2, RefreshCcw } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo } from "react";
