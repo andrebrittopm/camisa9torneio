@@ -60,6 +60,7 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const orderState = useOrderState();
   const [createdOrder, setCreatedOrder] = useState<AvCreatedOrder | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [tokens, setTokens] = useState<{receipt: string | null, view: string | null, expires: number | null}>({
     receipt: null,
     view: null,
