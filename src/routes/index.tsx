@@ -176,7 +176,7 @@ function Index() {
             editingItem={null}
             onUpdateItem={() => {}}
             onCancelEdit={() => orderState.setStep('idle')}
-            onModelChange={(modelId) => setSelectedModelId(modelId)}
+            onModelChange={(model) => setSelectedModelId(model.id)}
           />
         </div>
       )}
@@ -219,6 +219,7 @@ function Index() {
             onNewOrder={() => {
               orderState.resetOrder();
               setCreatedOrder(null);
+              setSelectedModelId(null);
             }}
             receiptAccessToken={tokens.receipt}
             orderViewToken={tokens.view}
