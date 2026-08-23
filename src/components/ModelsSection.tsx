@@ -471,20 +471,14 @@ export function ModelsSection({
 
         <div className="max-w-4xl mx-auto space-y-12">
           {displayModels.map((model) => (
-            <motion.div
-              key={model.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
+            <div key={model.id}>
               <ModelCard 
                 model={model} 
                 isSelected={selectedModelId === model.id}
                 onSelect={() => onSelectModel(model)}
                 eventInfo={eventInfo}
               />
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
