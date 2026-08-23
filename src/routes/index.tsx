@@ -138,6 +138,7 @@ function Index() {
   }
 
   const handleSelectModel = (model: any) => {
+    setSelectedModelId(model.id);
     orderState.setStep('configurator');
   };
 
