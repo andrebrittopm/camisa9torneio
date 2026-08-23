@@ -151,7 +151,11 @@ function Index() {
           <HeroSection />
           <ModelsSection 
             models={models} 
-            selectedModelId={null} 
+            selectedModelId={
+              selectedModelId 
+              ?? models.find(m => m.code === "TSHIRT-01")?.id 
+              ?? null
+            } 
             onSelectModel={handleSelectModel}
             eventInfo={activeEvent}
           />
