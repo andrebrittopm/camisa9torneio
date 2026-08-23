@@ -7,7 +7,7 @@ import { ModelsSection } from "@/components/ModelsSection";
 import { HowItWorks } from "@/components/HowItWorks";
 import { FinalCTA } from "@/components/FinalCTA";
 import { Footer } from "@/components/Footer";
-import { fetchAvCatalog, type AvCatalogResponse } from "@/lib/av-catalog-client";
+import { fetchAvCatalog, type AvCatalogResponse, type AvShirtModel } from "@/lib/av-catalog-client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useOrderState } from "@/lib/order-state";
@@ -139,7 +139,8 @@ function Index() {
     );
   }
 
-  const handleSelectModel = (model: any) => {
+  const handleSelectModel = (model: AvShirtModel) => {
+    orderState.setEditingItemId(null);
     setSelectedModelId(model.id);
     orderState.setStep('configurator');
   };
@@ -178,9 +179,13 @@ function Index() {
             editingItem={orderState.items.find(i => i.local_id === orderState.editingItemId) || null}
             onUpdateItem={(id, updates) => {
               orderState.updateItem(id, updates);
+              orderState.setEditingItemId(null);
               orderState.setStep('customer_data');
             }}
-            onCancelEdit={() => orderState.setStep('idle')}
+            onCancelEdit={() => {
+              orderState.setEditingItemId(null);
+              orderState.setStep('idle');
+            }}
             onModelChange={(model) => setSelectedModelId(model.id)}
           />
         </div>
