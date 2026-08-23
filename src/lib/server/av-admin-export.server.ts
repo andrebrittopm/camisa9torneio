@@ -214,7 +214,7 @@ export async function generateProductionWorkbookInternal() {
   summarySheet.columns = [
     { header: 'Modelo', key: 'modelo', width: 30 },
     { header: 'Tipo', key: 'tipo', width: 20 },
-    { header: 'Tamanho', key: 'tamanho', width: 20 },
+    { header: 'Tamanho', key: 'tamanho', width: 30 },
     { header: 'Total de peças', key: 'total', width: 20 },
   ];
 
