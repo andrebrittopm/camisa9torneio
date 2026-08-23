@@ -325,7 +325,7 @@ export function ModelCard({
           <div className="relative z-10 w-full h-full flex flex-col items-center justify-center border border-dashed border-ice/10 rounded-2xl group-hover:border-gold/20 transition-all duration-500 bg-white/[0.01]">
             {model.front_image_url ? (
               <div className="w-full h-full flex items-center justify-center relative">
-                {model.code === 'TSHIRT-01' ? (
+                {model.code === 'TSHIRT-01' || model.code === 'TANK-01' ? (
                   <div className="w-full h-full flex flex-col md:flex-row items-center justify-center gap-2 p-2">
                     <div className="flex-1 h-full relative">
                       <img 
@@ -397,7 +397,9 @@ export function ModelCard({
               <span className="text-[10px] text-gold font-black uppercase tracking-[0.3em] mb-1 block">
                 {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
               </span>
-              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">CAMISA OFICIAL</h3>
+              <h3 className="text-2xl font-heading font-black uppercase tracking-tighter leading-none">
+                {model.category === 'tshirt' ? 'CAMISA OFICIAL' : 'REGATA OFICIAL'}
+              </h3>
               <div className="text-gold font-black text-lg mt-2">{formattedPrice}</div>
             </div>
           </div>
