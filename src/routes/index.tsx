@@ -89,11 +89,11 @@ function Index() {
   const models = useMemo(() => catalog?.data?.models || [], [catalog]);
 
   const activeModel = useMemo(() => {
-    // 1. shirt_model_id do editingItem (from orderState)
-    if (orderState.editingItem?.shirt_model_id) {
-      const found = models.find(m => m.id === orderState.editingItem?.shirt_model_id);
-      if (found) return found;
-    }
+    // 1. shirt_model_id do editingItem (derived from editingItemId)
+    const editingItem = models.find(m => 
+      orderState.items.find(i => i.local_id === orderState.editingItemId)?.shirt_model_id === m.id
+    );
+    if (editingItem) return editingItem;
     
     // 2. selectedModelId escolhido pelo usuário
     if (selectedModelId) {
@@ -107,7 +107,7 @@ function Index() {
 
     // 4. primeiro modelo somente como último fallback
     return models[0] || null;
-  }, [models, selectedModelId, orderState.editingItem?.shirt_model_id]);
+  }, [models, selectedModelId, orderState.items, orderState.editingItemId]);
 
   if (loading) {
     return (
@@ -175,7 +175,7 @@ function Index() {
               orderState.addItem(item);
               orderState.setStep('customer_data');
             }}
-            editingItem={orderState.editingItem}
+            editingItem={orderState.items.find(i => i.local_id === orderState.editingItemId) || null}
             onUpdateItem={(id, updates) => {
               orderState.updateItem(id, updates);
               orderState.setStep('customer_data');
