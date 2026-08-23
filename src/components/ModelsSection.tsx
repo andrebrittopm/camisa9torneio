@@ -450,110 +450,43 @@ export function ModelsSection({
   onSelectModel: (model: AvShirtModel) => void;
   eventInfo: AvCatalogEvent;
 }) {
-  const [activeTab, setActiveTab] = useState<'tshirt' | 'tank'>('tshirt');
-
-  const filteredModels = useMemo(() => models.filter(m => m.category === activeTab), [models, activeTab]);
-
-  const counts = useMemo(() => ({
-    tshirt: models.filter(m => m.category === 'tshirt').length,
-    tank: models.filter(m => m.category === 'tank').length
-  }), [models]);
-
-  useEffect(() => {
-    const currentModel = models.find(m => m.id === selectedModelId);
-    if (currentModel && currentModel.category !== activeTab) {
-      setActiveTab(currentModel.category);
-    }
-  }, [selectedModelId, models]);
-
-  if (models.length === 1 && models[0]) {
-    const singleModel = models[0];
-    return (
-      <section id="camisa" className="py-24 relative overflow-hidden">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
-              Conheça a Camisa Oficial
-            </h2>
-            <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
-              9º Torneio Amigos do Vôlei — ACS
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto">
-            <ModelCard 
-              model={singleModel} 
-              isSelected={true}
-              onSelect={() => {}}
-              eventInfo={eventInfo}
-            />
-          </div>
-        </div>
-      </section>
-    );
-  }
+  const displayModels = useMemo(() => {
+    return [
+      models.find(m => m.code === 'TSHIRT-01'),
+      models.find(m => m.code === 'TANK-01')
+    ].filter((m): m is AvShirtModel => !!m);
+  }, [models]);
 
   return (
     <section id="camisa" className="py-24 relative overflow-hidden">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-5xl md:text-6xl font-heading font-black uppercase mb-4 tracking-tighter">
-            Escolha seu estilo
+            Conheça a Camisa Oficial
           </h2>
           <p className="text-gold font-black uppercase tracking-[0.3em] text-[10px] md:text-xs bg-gold/10 inline-block px-4 py-1 rounded-full">
-            Seis modelos oficiais. Uma só paixão pelo vôlei.
+            9º Torneio Amigos do Vôlei — ACS
           </p>
         </div>
 
-        <div className="flex justify-center mb-16">
-          <div className="inline-flex p-1.5 bg-white/[0.03] backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-            {(['tshirt', 'tank'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "px-8 md:px-12 py-4 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 relative",
-                  activeTab === tab 
-                    ? "text-ice shadow-xl" 
-                    : "text-ice/40 hover:text-ice/80"
-                )}
-              >
-                {activeTab === tab && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-royal rounded-xl -z-10 shadow-[0_0_20px_rgba(3,50,173,0.5)] border border-royal-light/20"
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                  />
-                )}
-                {tab === 'tshirt' ? `Camisa (${counts.tshirt})` : `Regata (${counts.tank})`}
-              </button>
-            ))}
-          </div>
+        <div className="max-w-4xl mx-auto space-y-12">
+          {displayModels.map((model) => (
+            <motion.div
+              key={model.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <ModelCard 
+                model={model} 
+                isSelected={selectedModelId === model.id}
+                onSelect={() => onSelectModel(model)}
+                eventInfo={eventInfo}
+              />
+            </motion.div>
+          ))}
         </div>
-
-        <motion.div 
-          layout
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12"
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredModels.map((model) => (
-              <motion.div
-                key={model.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ModelCard 
-                  model={model} 
-                  isSelected={selectedModelId === model.id}
-                  onSelect={() => onSelectModel(model)}
-                  eventInfo={eventInfo}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
       </div>
     </section>
   );
