@@ -60,6 +60,7 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const orderState = useOrderState();
   const [createdOrder, setCreatedOrder] = useState<AvCreatedOrder | null>(null);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [tokens, setTokens] = useState<{receipt: string | null, view: string | null, expires: number | null}>({
     receipt: null,
     view: null,
@@ -86,6 +87,25 @@ function Index() {
 
   const activeEvent = useMemo(() => catalog?.data?.event, [catalog]);
   const models = useMemo(() => catalog?.data?.models || [], [catalog]);
+
+  const activeModel = useMemo(() => {
+    // 1. modelo do item sendo editado (from orderState if needed, but index.tsx doesn't seem to have editingItem state yet)
+    // Looking at the configurator call below: editingItem={null}
+    // So for now, we follow the priority in the instructions.
+    
+    // 2. modelo escolhido pelo usuário
+    if (selectedModelId) {
+      const found = models.find(m => m.id === selectedModelId);
+      if (found) return found;
+    }
+
+    // 3. TSHIRT-01 fallback
+    const tshirt01 = models.find(m => m.code === "TSHIRT-01");
+    if (tshirt01) return tshirt01;
+
+    // 4. primeiro modelo do catálogo
+    return models[0] || null;
+  }, [models, selectedModelId]);
 
   if (loading) {
     return (
@@ -118,6 +138,7 @@ function Index() {
   }
 
   const handleSelectModel = (model: any) => {
+    setSelectedModelId(model.id);
     orderState.setStep('configurator');
   };
 
@@ -130,7 +151,11 @@ function Index() {
           <HeroSection />
           <ModelsSection 
             models={models} 
-            selectedModelId={null} 
+            selectedModelId={
+              selectedModelId 
+              ?? models.find(m => m.code === "TSHIRT-01")?.id 
+              ?? null
+            } 
             onSelectModel={handleSelectModel}
             eventInfo={activeEvent}
           />
@@ -142,7 +167,7 @@ function Index() {
       {orderState.currentStep === 'configurator' && (
         <div className="max-w-4xl mx-auto px-6 lg:px-0 pt-20 md:pt-24">
           <OrderConfigurator 
-            selectedModel={models[0] || null}
+            selectedModel={activeModel}
             eventInfo={activeEvent}
             onAddItem={(item) => {
               orderState.addItem(item);
@@ -151,7 +176,7 @@ function Index() {
             editingItem={null}
             onUpdateItem={() => {}}
             onCancelEdit={() => orderState.setStep('idle')}
-            onModelChange={() => {}}
+            onModelChange={(model) => setSelectedModelId(model.id)}
           />
         </div>
       )}
@@ -194,6 +219,7 @@ function Index() {
             onNewOrder={() => {
               orderState.resetOrder();
               setCreatedOrder(null);
+              setSelectedModelId(null);
             }}
             receiptAccessToken={tokens.receipt}
             orderViewToken={tokens.view}
