@@ -361,6 +361,32 @@ export async function updateAdminOrderStatusInternal(params: {
 }
 
 /**
+ * Executa a confirmação de recebimento de pagamento.
+ * Atualiza payment_status para 'payment_confirmed' via RPC.
+ */
+export async function confirmPaymentReceivedInternal(params: {
+  orderId: string;
+  adminId: string;
+}): Promise<{ success: boolean; code?: string; message?: string }> {
+  const supabaseUrl = process.env['SUPABASE_URL']!;
+  const supabaseKey = process.env['SUPABASE_SERVICE_ROLE_KEY']!;
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
+
+  const { data, error } = await supabaseAdmin.rpc('av_admin_confirm_payment_status' as any, {
+    p_order_id: params.orderId,
+    p_admin_id: params.adminId
+  });
+
+  if (error) {
+    console.error('[confirmPaymentReceivedInternal] RPC Error:', error);
+    throw new Error('FAILED_TO_CONFIRM_PAYMENT');
+  }
+
+  return data as { success: boolean; code?: string; message?: string };
+}
+
+/**
  * Executa o cancelamento administrativo de um pedido via RPC atômico.
  */
 export async function cancelAdminOrderInternal(params: {
@@ -484,5 +510,3 @@ export async function deleteAdminOrderInternal(params: {
 
   return data as { success: boolean; code?: string };
 }
-
-

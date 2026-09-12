@@ -130,6 +130,28 @@ export const updateAdminOrderStatus = createServerFn({ method: 'POST' })
   });
 
 /**
+ * RPC para confirmar recebimento de pagamento (atualiza para payment_confirmed).
+ */
+export const confirmPaymentReceived = createServerFn({ method: 'POST' })
+  .inputValidator((data) => z.object({
+    orderId: z.string().uuid()
+  }).parse(data))
+  .handler(async ({ data: input }) => {
+    const request = getRequest();
+    if (!request) throw new Error('Request Context Missing');
+    
+    // 1. Validar Guard Administrativo
+    const adminContext = await requireAdmin(request);
+    
+    // 2. Executar Ação
+    const { confirmPaymentReceivedInternal } = await import('./server/av-admin-orders.server');
+    return await confirmPaymentReceivedInternal({
+      orderId: input.orderId,
+      adminId: adminContext.userId!
+    });
+  });
+
+/**
  * RPC para cancelar administrativamente um pedido.
  */
 export const cancelAdminOrder = createServerFn({ method: 'POST' })
@@ -186,8 +208,3 @@ export const deleteAdminOrder = createServerFn({ method: 'POST' })
   });
 
 export type { AdminOrderListResponse, AdminOrderDetail };
-
-
-
-
-

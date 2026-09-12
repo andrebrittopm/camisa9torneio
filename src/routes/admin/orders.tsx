@@ -10,11 +10,12 @@ import {
   Clock,
   AlertCircle,
   Trash2,
-  Download
+  Download,
+  CheckCircle2
 } from 'lucide-react'
 
 import { checkAdminAuth } from '@/lib/av-admin-auth-bridge.functions'
-import { getAdminOrders } from '@/lib/av-admin-orders.functions'
+import { getAdminOrders, confirmPaymentReceived } from '@/lib/av-admin-orders.functions'
 import { exportProductionXlsx } from '@/lib/av-admin-export.functions'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -74,6 +75,26 @@ function AdminOrdersPage() {
   const navigate = useNavigate({ from: Route.fullPath })
   const queryClient = useQueryClient()
   const [deletingOrder, setDeletingOrder] = useState<{ id: string, code: string } | null>(null)
+
+  const confirmPaymentMutation = useMutation({
+    mutationFn: (orderId: string) => confirmPaymentReceived({ data: { orderId } }),
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success('Pagamento confirmado com sucesso!');
+        queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      } else if (res.code === 'INVALID_TRANSITION') {
+        toast.error(res.message || 'Não é possível confirmar este pagamento.');
+      } else if (res.code === 'ORDER_NOT_FOUND') {
+        toast.error('Pedido não encontrado.');
+      } else {
+        toast.error('Erro ao confirmar pagamento. Tente novamente.');
+      }
+    },
+    onError: () => {
+      toast.error('Erro ao confirmar pagamento. Tente novamente.');
+    }
+  });
 
   const exportMutation = useMutation({
     mutationFn: () => exportProductionXlsx(),
@@ -244,6 +265,21 @@ function AdminOrdersPage() {
                     <td className="p-6 text-slate-500 text-[10px] font-mono">{format(new Date(o.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</td>
                     <td className="p-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {o.paymentStatus === 'awaiting_payment' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-400 hover:text-green-300 hover:bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label={`Confirmar recebimento do pedido ${o.publicId}`}
+                            disabled={confirmPaymentMutation.isPending}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmPaymentMutation.mutate(o.id);
+                            }}
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="sm"
@@ -302,8 +338,18 @@ function AdminOrdersPage() {
                    </div>
                 </div>
                 <div className="flex gap-2">
+                  {o.paymentStatus === 'awaiting_payment' && (
+                    <Button
+                      variant="outline"
+                      className="flex-1 border-green-500/20 bg-green-500/5 text-green-400 hover:bg-green-500 hover:text-white"
+                      disabled={confirmPaymentMutation.isPending}
+                      onClick={() => confirmPaymentMutation.mutate(o.id)}
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-1" /> Receber
+                    </Button>
+                  )}
                   <Button className="flex-[2] bg-gold text-navy font-black uppercase tracking-widest text-[10px]" onClick={() => navigate({ to: '/admin/orders/$orderId', params: { orderId: o.id }, search: { page, search, paymentFilter, orderFilter } })}>
-                    Ver Detalhes
+                    Detalhes
                   </Button>
                   {isSuperAdmin && (
                     <Button 
