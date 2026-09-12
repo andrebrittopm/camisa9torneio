@@ -387,9 +387,18 @@ export async function confirmPaymentReceivedInternal(params: {
     throw new Error('FAILED_TO_CONFIRM_PAYMENT');
   }
 
-  // Validar que data é objeto válido com success
-  if (!data || typeof data !== 'object') {
-    console.error('[confirmPaymentReceivedInternal] Resposta RPC inválida (não é objeto):', data);
+  // RPC retornou null — indica que a função não existe no banco
+  if (data === null || data === undefined) {
+    console.error('[confirmPaymentReceivedInternal] RPC retornou null. A migration av_admin_confirm_payment_status foi aplicada ao banco?', {
+      orderId: params.orderId,
+      adminId: params.adminId
+    });
+    throw new Error('RPC_FUNCTION_NOT_FOUND');
+  }
+
+  // Validar estrutura mínima da resposta
+  if (typeof data !== 'object' || !('success' in (data as object))) {
+    console.error('[confirmPaymentReceivedInternal] Resposta RPC malformada (sem campo success):', data);
     throw new Error('INVALID_RPC_RESPONSE');
   }
 

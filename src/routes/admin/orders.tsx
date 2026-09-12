@@ -80,7 +80,7 @@ function AdminOrdersPage() {
     mutationFn: (orderId: string) => confirmPaymentReceived({ data: { orderId } }),
     onSuccess: (res) => {
       console.log('[confirmPaymentMutation onSuccess] res:', JSON.stringify(res));
-      if (res && res.success) {
+      if (res?.success) {
         toast.success('Pagamento confirmado com sucesso!');
         queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
         queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
@@ -89,13 +89,15 @@ function AdminOrdersPage() {
       } else if (res?.code === 'ORDER_NOT_FOUND') {
         toast.error('Pedido não encontrado.');
       } else {
-        console.error('[confirmPaymentMutation] Resposta inesperada:', res);
-        toast.error('Erro ao confirmar pagamento. Tente novamente.');
+        // res é null ou sem success — isso não deveria acontecer sem onError
+        console.error('[confirmPaymentMutation] Resposta inesperada ou RPC inexistente no banco:', res);
+        toast.error('Erro interno. Verifique se a migration de confirmação de pagamento foi aplicada.');
       }
     },
     onError: (err: any) => {
       console.error('[confirmPaymentMutation onError]', err);
-      toast.error('Erro ao confirmar pagamento. Tente novamente.');
+      const msg = err?.message || err?.toString() || 'Erro desconhecido';
+      toast.error(`Erro ao confirmar pagamento: ${msg}`);
     }
   });
 
