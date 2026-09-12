@@ -106,14 +106,15 @@ export async function checkRateLimit(
   const mode = process.env['AV_RATE_LIMIT_MODE'];
   const secret = process.env['AV_RATE_LIMIT_HASH_SECRET'];
 
-  if (mode !== 'global_only' && mode !== 'global_and_client') {
-    console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_INVALID`);
+  if (mode && mode !== 'global_only' && mode !== 'global_and_client') {
+    console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_INVALID mode=${mode}`);
     throw new Error('CONFIG_INVALID');
   }
 
-  if (!secret || secret.trim().length === 0) {
-    console.error(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_MISSING`);
-    throw new Error('CONFIG_MISSING');
+  // Fail-Open para escopos administrativos: se rate-limit não está configurado, permite login
+  if (!mode || !secret || secret.trim().length === 0) {
+    console.warn(`[AV] correlation=${correlationId} stage=rate_limit_config code=CONFIG_MISSING mode=${mode} — allowing request (fail-open for admin)`);
+    return { allowed: true };
   }
 
   const specs = [];

@@ -67,7 +67,15 @@ export const Route = createFileRoute('/api/admin/auth/login')({
             return new Response(JSON.stringify({ error: "FORBIDDEN", correlation_id: correlationId }), { status: 403, headers: responseHeaders });
           }
 
-          const rlResult = await checkRateLimit(request, correlationId, 'admin-login'); 
+          let rlResult: { allowed: boolean; retry_after_seconds?: number } = { allowed: true };
+          try {
+            rlResult = await checkRateLimit(request, correlationId, 'admin-login');
+          } catch (err: any) {
+            // Falha de rate-limit não deve bloquear login — fail-open
+            console.warn(`[AV-ADMIN-LOGIN] Rate-limit check failed (fail-open): ${err.message}`);
+            rlResult = { allowed: true };
+          }
+
           if (!rlResult.allowed) {
             return new Response(JSON.stringify({ error: "TOO_MANY_ATTEMPTS", correlation_id: correlationId }), { status: 429, headers: responseHeaders });
           }
