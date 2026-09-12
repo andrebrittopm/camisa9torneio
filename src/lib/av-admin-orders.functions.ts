@@ -144,11 +144,18 @@ export const confirmPaymentReceived = createServerFn({ method: 'POST' })
     const adminContext = await requireAdmin(request);
     
     // 2. Executar Ação
-    const { confirmPaymentReceivedInternal } = await import('./server/av-admin-orders.server');
-    return await confirmPaymentReceivedInternal({
-      orderId: input.orderId,
-      adminId: adminContext.userId!
-    });
+    try {
+      const { confirmPaymentReceivedInternal } = await import('./server/av-admin-orders.server');
+      const result = await confirmPaymentReceivedInternal({
+        orderId: input.orderId,
+        adminId: adminContext.userId!
+      });
+      console.log('[confirmPaymentReceived] Resultado:', JSON.stringify(result));
+      return result;
+    } catch (err: any) {
+      console.error('[confirmPaymentReceived] Erro capturado:', err?.message || err);
+      throw err;
+    }
   });
 
 /**

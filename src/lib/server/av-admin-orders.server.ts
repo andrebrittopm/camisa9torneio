@@ -373,14 +373,24 @@ export async function confirmPaymentReceivedInternal(params: {
   const { createClient } = await import('@supabase/supabase-js');
   const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseKey);
 
+  console.log('[confirmPaymentReceivedInternal] Iniciando. orderId:', params.orderId, 'adminId:', params.adminId);
+
   const { data, error } = await supabaseAdmin.rpc('av_admin_confirm_payment_status' as any, {
     p_order_id: params.orderId,
     p_admin_id: params.adminId
   });
 
+  console.log('[confirmPaymentReceivedInternal] RPC response. data:', JSON.stringify(data), 'error:', JSON.stringify(error));
+
   if (error) {
     console.error('[confirmPaymentReceivedInternal] RPC Error:', error);
     throw new Error('FAILED_TO_CONFIRM_PAYMENT');
+  }
+
+  // Validar que data é objeto válido com success
+  if (!data || typeof data !== 'object') {
+    console.error('[confirmPaymentReceivedInternal] Resposta RPC inválida (não é objeto):', data);
+    throw new Error('INVALID_RPC_RESPONSE');
   }
 
   return data as { success: boolean; code?: string; message?: string };

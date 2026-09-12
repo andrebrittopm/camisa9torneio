@@ -79,19 +79,22 @@ function AdminOrdersPage() {
   const confirmPaymentMutation = useMutation({
     mutationFn: (orderId: string) => confirmPaymentReceived({ data: { orderId } }),
     onSuccess: (res) => {
-      if (res.success) {
+      console.log('[confirmPaymentMutation onSuccess] res:', JSON.stringify(res));
+      if (res && res.success) {
         toast.success('Pagamento confirmado com sucesso!');
         queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
         queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      } else if (res.code === 'INVALID_TRANSITION') {
+      } else if (res?.code === 'INVALID_TRANSITION') {
         toast.error(res.message || 'Não é possível confirmar este pagamento.');
-      } else if (res.code === 'ORDER_NOT_FOUND') {
+      } else if (res?.code === 'ORDER_NOT_FOUND') {
         toast.error('Pedido não encontrado.');
       } else {
+        console.error('[confirmPaymentMutation] Resposta inesperada:', res);
         toast.error('Erro ao confirmar pagamento. Tente novamente.');
       }
     },
-    onError: () => {
+    onError: (err: any) => {
+      console.error('[confirmPaymentMutation onError]', err);
       toast.error('Erro ao confirmar pagamento. Tente novamente.');
     }
   });
